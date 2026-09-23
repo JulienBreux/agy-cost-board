@@ -31,9 +31,9 @@
 - [x] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 4: Embedded Web Dashboard & REST API (TDD)
-- [ ] Task: Chi HTTP REST API Handlers
-  - [ ] Write unit tests for API endpoints (`/api/v1/metrics/overview`, `/api/v1/costs/users`, `/api/v1/licenses/status`)
-  - [ ] Implement Chi HTTP router, CORS/compression middleware, and graceful shutdown on SIGTERM
+- [x] Task: Chi HTTP REST API Handlers
+  - [x] Write unit tests for API endpoints (`/api/v1/metrics/overview`, `/api/v1/costs/users`, `/api/v1/licenses/status`)
+  - [x] Implement Chi HTTP router, CORS/compression middleware, and graceful shutdown on SIGTERM
 - [ ] Task: React Frontend SPA Development
   - [ ] Build React 18/19 SPA with Tailwind CSS, Recharts, and Lucide icons
   - [ ] Implement 3 core views: Overview KPIs, User Cost Attribution table, and License Governance

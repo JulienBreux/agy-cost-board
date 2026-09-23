@@ -206,6 +206,11 @@ func (e *Engine) GetUserSummary(ctx context.Context, userID string, days int) (*
 		summary.ModelBreakdown[m] = d
 	}
 
+	// If user was never active and has 0 tokens/costs, return ErrUserNotFound
+	if latestActivity.IsZero() && summary.TotalTokens == 0 {
+		return nil, domain.ErrUserNotFound
+	}
+
 	summary.SeatStatus = domain.ClassifySeatStatus(summary.TotalTokens, summary.LastActive, days)
 	return summary, nil
 }

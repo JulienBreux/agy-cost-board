@@ -1,10 +1,14 @@
 package domain
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"time"
 )
+
+// ErrUserNotFound indicates that the requested user has no activity or records.
+var ErrUserNotFound = errors.New("user not found")
 
 // SeatStatus represents the activity status of an assigned license seat.
 type SeatStatus string
