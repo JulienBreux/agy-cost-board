@@ -17,8 +17,12 @@ Based on the Google Cloud architecture article [**"Per-user cost attribution for
 - **Dual-Mode Single Binary Architecture:**
   - **Full CLI Suite:** Query attribution data with terminal tables, machine-readable JSON, or scriptable CSV.
   - **Interactive Terminal UI (TUI):** Keyboard-driven Bubbletea dashboard featuring real-time FinOps metrics, multi-tab switching, column sorting, and developer drilldown.
-  - **Embedded Web Dashboard:** Single binary embeds a compiled React 19 SPA with Tailwind CSS, SVG trend visualizations, search/filter controls, and modal drilldowns.
+  - **Embedded Web Dashboard:** Single binary embeds a compiled React 19 SPA with Tailwind CSS, SVG trend visualizations, search/filter controls, modal drilldowns, and a dedicated **Setup & Health** diagnostics tab.
   - **Cloud Run Native:** Built-in HTTP server listening on dynamic `$PORT`, with `/healthz` liveness probes and graceful shutdown signals (`SIGINT`/`SIGTERM`).
+- **Automated Verification & Setup Engine:**
+  - **5-Point Telemetry Verification:** Probes ADC credentials, IAM permissions, Cloud Logging sink filters, BigQuery billing export, and telemetry extraction.
+  - **Automated Resource Provisioning:** Generates and executes commands to create BigQuery datasets and Cloud Logging inference sinks (`--create`, `--dry-run`).
+  - **Persistent Configuration:** Saves verified settings to `.agy-ge-board.yaml`, automatically inherited by all subcommands.
 - **Proportional Cost Attribution Engine:**
   - Ingests Antigravity inference telemetry logs (`InferenceResponseLog`) from BigQuery.
   - Matches `labels.user_id`, `labels.model`, and `metadata.totalTokenCount`.
@@ -90,9 +94,34 @@ go build -o bin/agy-ge-board ./cmd/agy-ge-board
 
 To connect to live production Google Cloud BigQuery data, follow these configuration steps:
 
-### 1. Create Cloud Logging Sink for Antigravity Inference Logs
+### 1. Automated Verification with `setup`
 
-Route inference telemetry from Cloud Logging into BigQuery:
+The `setup` command automatically diagnoses your GCP environment against the 5 requirements outlined in the Medium article:
+1. **Google Cloud ADC & Project:** Verifies Application Default Credentials and active GCP project.
+2. **IAM Permissions:** Confirms BigQuery Job User (`roles/bigquery.jobUser`) and Data Viewer (`roles/bigquery.dataViewer`).
+3. **Cloud Logging Telemetry Sink:** Validates the presence of the BigQuery telemetry dataset and `InferenceResponseLog` sink filter.
+4. **Cloud Billing Export:** Checks BigQuery standard/detailed billing export table existence.
+5. **Telemetry Extraction Probe:** Executes a sample validation query to ensure token metrics are reconcilable.
+
+```bash
+# Run automated verification
+agy-ge-board setup --project=YOUR_PROJECT_ID
+
+# Verify and persist configuration to .agy-ge-board.yaml
+agy-ge-board setup --project=YOUR_PROJECT_ID --save
+
+# Preview the BigQuery dataset and Logging sink provisioning commands (safe dry-run)
+agy-ge-board setup --project=YOUR_PROJECT_ID --create --dry-run
+
+# Provision missing BigQuery dataset and Logging sink automatically
+agy-ge-board setup --project=YOUR_PROJECT_ID --create
+```
+
+### 2. Manual Provisioning (Alternative)
+
+If you prefer to configure Google Cloud resources manually:
+
+#### A. Create Cloud Logging Sink for Antigravity Inference Logs
 
 ```bash
 gcloud logging sinks create agy-inference-sink \
@@ -103,30 +132,55 @@ gcloud logging sinks create agy-inference-sink \
 
 Ensure the sink service account has `roles/bigquery.dataEditor` on the destination dataset.
 
-### 2. Verify Cloud Billing Export to BigQuery
+#### B. Verify Cloud Billing Export to BigQuery
 
 Ensure Standard or Detailed Cloud Billing Export is enabled in your Google Cloud Console:
 - Destination Table Format: `YOUR_PROJECT_ID.billing_export.gcp_billing_export_v1_XXXXXX_XXXXXX_XXXXXX`
 
-### 3. Required IAM Permissions
+#### C. Required IAM Permissions
 
 The user or Cloud Run service account running `agy-ge-board` requires:
 - `roles/bigquery.jobUser` on the project.
 - `roles/bigquery.dataViewer` on the telemetry dataset and billing export dataset.
 
-### 4. Verify Configuration with `doctor`
+### 3. Configuration File (`.agy-ge-board.yaml`)
 
-```bash
-agy-ge-board doctor \
-  --project=my-gcp-project \
-  --telemetry-table=my-gcp-project.antigravity_telemetry.cloud_logging_sink \
-  --billing-table=my-gcp-project.billing_export.gcp_billing_export_v1_XXXXXX \
-  --seat-quota=25
+When you run `agy-ge-board setup --save`, settings are stored in `.agy-ge-board.yaml`:
+
+```yaml
+project_id: "my-gcp-project"
+telemetry_table: "my-gcp-project.antigravity_telemetry.inference_logs"
+billing_table: "my-gcp-project.billing_export.gcp_billing_export_v1_000"
+seat_quota: 50
+demo: false
 ```
+
+#### Configuration Precedence:
+1. **Command-Line Flags** (e.g. `--project`, `--telemetry-table`)
+2. **Environment Variables** (`GCP_PROJECT`, `TELEMETRY_TABLE`, `BILLING_TABLE`, `SEAT_QUOTA`, `DEMO_MODE`)
+3. **Configuration File** (`.agy-ge-board.yaml`)
+4. **Built-in Demo Defaults**
 
 ---
 
 ## 💻 CLI Command Reference
+
+### `setup`
+Diagnoses GCP prerequisites, validates the Antigravity telemetry pipeline, and provisions required resources.
+
+```bash
+agy-ge-board setup [flags]
+
+Flags:
+      --project string     Target Google Cloud Project ID
+      --telemetry string   BigQuery telemetry table or dataset ID
+      --billing string     BigQuery Cloud Billing export table ID
+      --seat-quota int     Configured Gemini Enterprise license quota
+      --create             Automatically provision missing BigQuery dataset and Cloud Logging sink
+      --dry-run            Print provisioning commands without executing them
+      --save               Persist verified settings to .agy-ge-board.yaml
+      --format string      Output format: table (default) or json
+```
 
 ### `cost`
 Computes proportional cost attribution per developer, model, and date.
@@ -193,6 +247,7 @@ Flags:
 | `GET` | `/api/v1/costs/users?days=30&model=gemini-1.5-pro` | Attributed cost records per developer and model |
 | `GET` | `/api/v1/licenses/status?days=30` | Seat quota, active/dormant breakdown, utilization %, estimated monthly savings |
 | `GET` | `/api/v1/users/{id}?days=30` | Developer drilldown, total spend, model token distributions |
+| `GET` | `/api/v1/setup/status` | Automated GCP prerequisites and telemetry diagnostic report |
 | `GET` | `/*` | Embedded React SPA static files with client-side routing fallback |
 
 ---

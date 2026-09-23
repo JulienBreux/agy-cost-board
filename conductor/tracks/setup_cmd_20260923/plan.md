@@ -44,9 +44,9 @@
 - [x] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 4: End-to-End Validation & Documentation
-- [ ] Task: End-to-End Integration Tests
-  - [ ] Write end-to-end integration tests for `setup` CLI and `/api/v1/setup/status` API endpoint
-  - [ ] Verify test suite coverage remains $\ge 80\%$ with zero race conditions
-- [ ] Task: Documentation & Setup Runbook Updates
-  - [ ] Update `README.md` with `setup` command documentation, `--dry-run`, `--save`, and step-by-step verification guide
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: End-to-End Integration Tests
+  - [x] Write end-to-end integration tests for `setup` CLI and `/api/v1/setup/status` API endpoint
+  - [x] Verify test suite coverage remains $\ge 80\%$ with zero race conditions
+- [x] Task: Documentation & Setup Runbook Updates
+  - [x] Update `README.md` with `setup` command documentation, `--dry-run`, `--save`, and step-by-step verification guide
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md)

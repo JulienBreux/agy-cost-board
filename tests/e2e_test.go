@@ -89,6 +89,48 @@ func TestEndToEndCLIFlows(t *testing.T) {
 			t.Errorf("expected non-empty model breakdown")
 		}
 	})
+
+	t.Run("E2E CLI setup command with diagnostic report", func(t *testing.T) {
+		cli.ResetFlags()
+		buf := new(bytes.Buffer)
+		rootCmd := cli.NewRootCommand()
+		rootCmd.SetOut(buf)
+		rootCmd.SetErr(buf)
+		rootCmd.SetArgs([]string{"setup", "--demo"})
+
+		if err := rootCmd.Execute(); err != nil {
+			t.Fatalf("setup CLI command failed: %v", err)
+		}
+
+		out := buf.String()
+		if !strings.Contains(out, "CHECK") || !strings.Contains(out, "STATUS") {
+			t.Errorf("expected table headers in setup output, got: %s", out)
+		}
+		if !strings.Contains(out, "PASSED: 5") {
+			t.Errorf("expected 5 passed checks in summary, got: %s", out)
+		}
+	})
+
+	t.Run("E2E CLI setup command with --create and --dry-run", func(t *testing.T) {
+		cli.ResetFlags()
+		buf := new(bytes.Buffer)
+		rootCmd := cli.NewRootCommand()
+		rootCmd.SetOut(buf)
+		rootCmd.SetErr(buf)
+		rootCmd.SetArgs([]string{"setup", "--demo", "--create", "--dry-run", "--project", "test-e2e-project"})
+
+		if err := rootCmd.Execute(); err != nil {
+			t.Fatalf("setup --create --dry-run failed: %v", err)
+		}
+
+		out := buf.String()
+		if !strings.Contains(out, "[DRY-RUN]") {
+			t.Errorf("expected [DRY-RUN] in provision plan output, got: %s", out)
+		}
+		if !strings.Contains(out, "bq mk --dataset") {
+			t.Errorf("expected bq mk command in output, got: %s", out)
+		}
+	})
 }
 
 func TestEndToEndHTTPServerFlows(t *testing.T) {
@@ -206,6 +248,47 @@ func TestEndToEndHTTPServerFlows(t *testing.T) {
 		body, _ := io.ReadAll(res.Body)
 		if !strings.Contains(string(body), `<div id="root"></div>`) {
 			t.Errorf("expected SPA fallback HTML, got: %s", string(body))
+		}
+	})
+
+	t.Run("GET /api/v1/setup/status returns 200 with 5 checks", func(t *testing.T) {
+		res, err := client.Get(ts.URL + "/api/v1/setup/status")
+		if err != nil {
+			t.Fatalf("request failed: %v", err)
+		}
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusOK {
+			t.Errorf("expected 200, got %d", res.StatusCode)
+		}
+
+		var report domain.DiagnosticReport
+		if err := json.NewDecoder(res.Body).Decode(&report); err != nil {
+			t.Fatalf("failed to decode setup report: %v", err)
+		}
+
+		if len(report.Checks) != 5 {
+			t.Errorf("expected 5 checks, got %d", len(report.Checks))
+		}
+		if report.OverallStatus != domain.StatusOK {
+			t.Errorf("expected overall OK, got %s", report.OverallStatus)
+		}
+	})
+
+	t.Run("GET /setup SPA client-side fallback routing", func(t *testing.T) {
+		res, err := client.Get(ts.URL + "/setup")
+		if err != nil {
+			t.Fatalf("request failed: %v", err)
+		}
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusOK {
+			t.Errorf("expected 200 for /setup route, got %d", res.StatusCode)
+		}
+
+		body, _ := io.ReadAll(res.Body)
+		if !strings.Contains(string(body), `<div id="root"></div>`) {
+			t.Errorf("expected SPA HTML fallback, got: %s", string(body))
 		}
 	})
 }
