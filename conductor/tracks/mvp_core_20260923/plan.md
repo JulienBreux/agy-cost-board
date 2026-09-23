@@ -25,9 +25,9 @@
 - [x] Task: Cobra Command Hierarchy & Formatters
   - [x] Write unit tests for table, JSON, and CSV formatters
   - [x] Implement Cobra root command with `cost`, `license`, `user`, and `doctor` subcommands
-- [ ] Task: Bubbletea Interactive TUI
-  - [ ] Write unit tests for TUI state transitions, table sorting, and filtering
-  - [ ] Implement interactive terminal dashboard with Lipgloss styling
+- [x] Task: Bubbletea Interactive TUI
+  - [x] Write unit tests for TUI state transitions, table sorting, and filtering
+  - [x] Implement interactive terminal dashboard with Lipgloss styling
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 4: Embedded Web Dashboard & REST API (TDD)

@@ -7,8 +7,10 @@ import (
 	"strings"
 	"time"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/julienbreux/agy-ge-board/internal/attribution"
 	"github.com/julienbreux/agy-ge-board/internal/bigquery"
+	"github.com/julienbreux/agy-ge-board/internal/tui"
 	"github.com/spf13/cobra"
 )
 
@@ -42,6 +44,7 @@ to compute proportional, per-user AI costs and track Gemini Enterprise seat util
 	rootCmd.AddCommand(newLicenseCommand())
 	rootCmd.AddCommand(newUserCommand())
 	rootCmd.AddCommand(newDoctorCommand())
+	rootCmd.AddCommand(newTUICommand())
 
 	return rootCmd
 }
@@ -328,6 +331,29 @@ func newDoctorCommand() *cobra.Command {
 			return nil
 		},
 	}
+}
+
+func newTUICommand() *cobra.Command {
+	var days int
+	cmd := &cobra.Command{
+		Use:   "tui",
+		Short: "Launch interactive terminal dashboard",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := cmd.Context()
+			if ctx == nil {
+				ctx = context.Background()
+			}
+			engine, _, err := buildEngine(ctx)
+			if err != nil {
+				return err
+			}
+			p := tea.NewProgram(tui.NewModel(engine, days), tea.WithAltScreen())
+			_, err = p.Run()
+			return err
+		},
+	}
+	cmd.Flags().IntVar(&days, "days", 30, "Lookback window in days")
+	return cmd
 }
 
 // Execute runs the root CLI command.
