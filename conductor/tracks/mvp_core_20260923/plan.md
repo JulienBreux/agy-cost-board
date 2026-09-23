@@ -34,9 +34,9 @@
 - [x] Task: Chi HTTP REST API Handlers
   - [x] Write unit tests for API endpoints (`/api/v1/metrics/overview`, `/api/v1/costs/users`, `/api/v1/licenses/status`)
   - [x] Implement Chi HTTP router, CORS/compression middleware, and graceful shutdown on SIGTERM
-- [ ] Task: React Frontend SPA Development
-  - [ ] Build React 18/19 SPA with Tailwind CSS, Recharts, and Lucide icons
-  - [ ] Implement 3 core views: Overview KPIs, User Cost Attribution table, and License Governance
+- [x] Task: React Frontend SPA Development
+  - [x] Build React 18/19 SPA with Tailwind CSS, Recharts, and Lucide icons
+  - [x] Implement 3 core views: Overview KPIs, User Cost Attribution table, and License Governance
 - [ ] Task: Binary Embedding & `serve` Subcommand
   - [ ] Write unit tests verifying embedded static file serving via Go `embed.FS`
   - [ ] Connect `serve` command to launch HTTP server on `$PORT` with fallback routing
