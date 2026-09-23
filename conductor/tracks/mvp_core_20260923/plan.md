@@ -10,9 +10,9 @@
 - [x] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 2: BigQuery Client & Attribution Engine (TDD)
-- [ ] Task: Synthetic Mock / Demo Data Engine
-  - [ ] Write tests for synthetic telemetry and billing generator
-  - [ ] Implement `--demo` fixture engine generating 30 days of realistic multi-user/multi-model logs
+- [x] Task: Synthetic Mock / Demo Data Engine
+  - [x] Write tests for synthetic telemetry and billing generator
+  - [x] Implement `--demo` fixture engine generating 30 days of realistic multi-user/multi-model logs
 - [ ] Task: Proportional Cost Attribution Calculator
   - [ ] Write unit tests for proportional cost formula, edge cases (zero tokens, missing SKUs), and TTL caching
   - [ ] Implement attribution engine and in-memory thread-safe cache
