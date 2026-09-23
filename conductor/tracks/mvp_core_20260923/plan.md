@@ -16,9 +16,9 @@
 - [x] Task: Proportional Cost Attribution Calculator
   - [x] Write unit tests for proportional cost formula, edge cases (zero tokens, missing SKUs), and TTL caching
   - [x] Implement attribution engine and in-memory thread-safe cache
-- [ ] Task: Live Google Cloud BigQuery Client
-  - [ ] Write unit tests for SQL query builders and credential validation
-  - [ ] Implement BigQuery client integration for Cloud Logging `InferenceResponseLog` and Cloud Billing exports
+- [x] Task: Live Google Cloud BigQuery Client
+  - [x] Write unit tests for SQL query builders and credential validation
+  - [x] Implement BigQuery client integration for Cloud Logging `InferenceResponseLog` and Cloud Billing exports
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 3: CLI Subcommands & Interactive TUI (TDD)
