@@ -307,3 +307,19 @@ func TestCLICommandsWithDemo(t *testing.T) {
 		}
 	})
 }
+
+func TestBuildEngine(t *testing.T) {
+	t.Run("BuildEngine returns demo provider by default", func(t *testing.T) {
+		cli.ResetFlags()
+		engine, source, err := cli.BuildEngine(t.Context())
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if engine == nil {
+			t.Fatalf("expected non-nil engine")
+		}
+		if !strings.Contains(source, "demo") {
+			t.Errorf("expected demo source, got %s", source)
+		}
+	})
+}

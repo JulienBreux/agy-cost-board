@@ -31,6 +31,16 @@ var (
 	flagFormat         string
 )
 
+// ResetFlags restores default flag values across unit test runs.
+func ResetFlags() {
+	flagDemo = false
+	flagProjectID = ""
+	flagTelemetryTable = ""
+	flagBillingTable = ""
+	flagSeatQuota = 10
+	flagFormat = "table"
+}
+
 // NewRootCommand creates the top-level Cobra command with subcommands.
 func NewRootCommand() *cobra.Command {
 	rootCmd := &cobra.Command{
@@ -57,8 +67,8 @@ to compute proportional, per-user AI costs and track Gemini Enterprise seat util
 	return rootCmd
 }
 
-// buildEngine constructs the attribution Engine from flags or falls back to demo mode.
-func buildEngine(ctx context.Context) (*attribution.Engine, string, error) {
+// BuildEngine constructs the attribution Engine from flags or falls back to demo mode.
+func BuildEngine(ctx context.Context) (*attribution.Engine, string, error) {
 	if flagDemo || flagProjectID == "" {
 		return attribution.NewEngine(bigquery.NewDemoDataProvider(), 5*time.Minute), "demo (synthetic data)", nil
 	}
@@ -91,7 +101,7 @@ func newCostCommand() *cobra.Command {
 				ctx = context.Background()
 			}
 
-			engine, _, err := buildEngine(ctx)
+			engine, _, err := BuildEngine(ctx)
 			if err != nil {
 				return err
 			}
@@ -158,7 +168,7 @@ func newLicenseCommand() *cobra.Command {
 				ctx = context.Background()
 			}
 
-			engine, _, err := buildEngine(ctx)
+			engine, _, err := BuildEngine(ctx)
 			if err != nil {
 				return err
 			}
@@ -245,7 +255,7 @@ func newUserCommand() *cobra.Command {
 			}
 
 			email := args[0]
-			engine, _, err := buildEngine(ctx)
+			engine, _, err := BuildEngine(ctx)
 			if err != nil {
 				return err
 			}
@@ -351,7 +361,7 @@ func newTUICommand() *cobra.Command {
 			if ctx == nil {
 				ctx = context.Background()
 			}
-			engine, _, err := buildEngine(ctx)
+			engine, _, err := BuildEngine(ctx)
 			if err != nil {
 				return err
 			}
@@ -385,7 +395,7 @@ func newServeCommand() *cobra.Command {
 				ctx = context.Background()
 			}
 
-			engine, source, err := buildEngine(ctx)
+			engine, source, err := BuildEngine(ctx)
 			if err != nil {
 				return err
 			}

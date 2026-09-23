@@ -208,3 +208,10 @@ func TestDeriveLicenseSeats(t *testing.T) {
 		t.Errorf("expected fallback quota to equal len(seats)=2, got %d", fallbackQuota)
 	}
 }
+
+func TestClientClose(t *testing.T) {
+	client := &bigquery.BigQueryClient{}
+	if err := client.Close(); err != nil {
+		t.Errorf("expected no error closing uninitialized client: %v", err)
+	}
+}

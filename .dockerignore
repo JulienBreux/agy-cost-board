@@ -1,0 +1,12 @@
+.git
+.github
+.gemini
+conductor
+bin/
+dist/
+web/node_modules/
+web/.vite/
+coverage.out
+coverage.html
+*.local
+.env

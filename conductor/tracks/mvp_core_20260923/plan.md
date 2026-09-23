@@ -43,10 +43,10 @@
 - [x] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 5: Containerization & End-to-End Verification
-- [ ] Task: Multi-Stage Dockerfile & Packaging
-  - [ ] Create multi-stage Dockerfile (Node frontend build -> Go compiler -> distroless static runtime)
-  - [ ] Verify container builds cleanly and runs locally under `$PORT`
-- [ ] Task: End-to-End Validation & Documentation
-  - [ ] Write end-to-end integration tests covering CLI outputs and API responses
-  - [ ] Create comprehensive README with Cloud Run deployment guide and BigQuery log sink setup instructions
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Multi-Stage Dockerfile & Packaging
+  - [x] Create multi-stage Dockerfile (Node frontend build -> Go compiler -> distroless static runtime)
+  - [x] Verify container builds cleanly and runs locally under `$PORT`
+- [x] Task: End-to-End Validation & Documentation
+  - [x] Write end-to-end integration tests covering CLI outputs and API responses
+  - [x] Create comprehensive README with Cloud Run deployment guide and BigQuery log sink setup instructions
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md)
