@@ -19,9 +19,9 @@
 - [x] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 2: CLI `setup` Subcommand & Configuration Persistence
-- [ ] Task: Configuration File Manager (`.agy-ge-board.yaml`)
-  - [ ] Write unit tests for config file reading, writing, and env/flag precedence
-  - [ ] Implement configuration loader and writer in `internal/config`
+- [x] Task: Configuration File Manager (`.agy-ge-board.yaml`)
+  - [x] Write unit tests for config file reading, writing, and env/flag precedence
+  - [x] Implement configuration loader and writer in `internal/config`
 - [ ] Task: CLI `setup` Command Implementation
   - [ ] Write unit tests for `agy-ge-board setup` with table/JSON output
   - [ ] Implement `setup` command with `--save`, `--dry-run`, and `--demo` flags
