@@ -1,0 +1,340 @@
+package cli
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"strings"
+	"time"
+
+	"github.com/julienbreux/agy-ge-board/internal/attribution"
+	"github.com/julienbreux/agy-ge-board/internal/bigquery"
+	"github.com/spf13/cobra"
+)
+
+// Global CLI options
+var (
+	flagDemo           bool
+	flagProjectID      string
+	flagTelemetryTable string
+	flagBillingTable   string
+	flagSeatQuota      int
+	flagFormat         string
+)
+
+// NewRootCommand creates the top-level Cobra command with subcommands.
+func NewRootCommand() *cobra.Command {
+	rootCmd := &cobra.Command{
+		Use:   "agy-ge-board",
+		Short: "Antigravity & Gemini Enterprise Cost Attribution Board",
+		Long: `agy-ge-board reconciles Google Cloud BigQuery inference telemetry with GCP billing exports
+to compute proportional, per-user AI costs and track Gemini Enterprise seat utilization.`,
+	}
+
+	rootCmd.PersistentFlags().BoolVar(&flagDemo, "demo", false, "Use realistic synthetic demo data without GCP connection")
+	rootCmd.PersistentFlags().StringVar(&flagProjectID, "project", os.Getenv("GCP_PROJECT"), "Google Cloud Project ID")
+	rootCmd.PersistentFlags().StringVar(&flagTelemetryTable, "telemetry-table", os.Getenv("TELEMETRY_TABLE"), "BigQuery table for inference logs")
+	rootCmd.PersistentFlags().StringVar(&flagBillingTable, "billing-table", os.Getenv("BILLING_TABLE"), "BigQuery table for GCP billing export")
+	rootCmd.PersistentFlags().IntVar(&flagSeatQuota, "seat-quota", 10, "Gemini Enterprise seat quota")
+	rootCmd.PersistentFlags().StringVar(&flagFormat, "format", "table", "Output format: table, json, or csv")
+
+	rootCmd.AddCommand(newCostCommand())
+	rootCmd.AddCommand(newLicenseCommand())
+	rootCmd.AddCommand(newUserCommand())
+	rootCmd.AddCommand(newDoctorCommand())
+
+	return rootCmd
+}
+
+// buildEngine constructs the attribution Engine from flags or falls back to demo mode.
+func buildEngine(ctx context.Context) (*attribution.Engine, string, error) {
+	if flagDemo || flagProjectID == "" {
+		return attribution.NewEngine(bigquery.NewDemoDataProvider(), 5*time.Minute), "demo (synthetic data)", nil
+	}
+
+	cfg := bigquery.ClientConfig{
+		ProjectID:      flagProjectID,
+		TelemetryTable: flagTelemetryTable,
+		BillingTable:   flagBillingTable,
+		SeatQuota:      flagSeatQuota,
+	}
+
+	bqClient, err := bigquery.NewBigQueryClient(ctx, cfg)
+	if err != nil {
+		return nil, "", fmt.Errorf("failed to initialize BigQuery client: %w", err)
+	}
+
+	return attribution.NewEngine(bqClient, 15*time.Minute), "Google Cloud BigQuery (" + flagProjectID + ")", nil
+}
+
+func newCostCommand() *cobra.Command {
+	var days int
+	var modelFilter string
+
+	cmd := &cobra.Command{
+		Use:   "cost",
+		Short: "Display proportional per-user cost attribution",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := cmd.Context()
+			if ctx == nil {
+				ctx = context.Background()
+			}
+
+			engine, _, err := buildEngine(ctx)
+			if err != nil {
+				return err
+			}
+
+			costs, err := engine.GetAttributedCosts(ctx, days, modelFilter)
+			if err != nil {
+				return fmt.Errorf("calculate attributed costs: %w", err)
+			}
+
+			switch strings.ToLower(flagFormat) {
+			case "json":
+				out, err := FormatJSON(costs)
+				if err != nil {
+					return err
+				}
+				cmd.Println(out)
+
+			case "csv":
+				headers := []string{"USER", "MODEL", "USAGE_DATE", "USER_TOKENS", "TOTAL_MODEL_TOKENS", "TOKEN_SHARE_PCT", "ALLOCATED_COST_USD"}
+				var rows [][]string
+				for _, c := range costs {
+					rows = append(rows, c.ToCSVRow())
+				}
+				out, err := FormatCSV(headers, rows)
+				if err != nil {
+					return err
+				}
+				cmd.Print(out)
+
+			default:
+				headers := []string{"USER", "MODEL", "DATE", "TOKENS", "SHARE %", "ALLOCATED COST"}
+				var rows [][]string
+				for _, c := range costs {
+					rows = append(rows, []string{
+						c.UserID,
+						c.Model,
+						c.UsageDate,
+						fmt.Sprintf("%d", c.UserTokens),
+						fmt.Sprintf("%.1f%%", c.TokenShare*100),
+						fmt.Sprintf("$%.2f", c.AllocatedCost),
+					})
+				}
+				cmd.Print(FormatTable(headers, rows))
+			}
+
+			return nil
+		},
+	}
+
+	cmd.Flags().IntVar(&days, "days", 30, "Time window in days")
+	cmd.Flags().StringVar(&modelFilter, "model", "", "Filter by AI model (e.g. gemini-1.5-pro)")
+	return cmd
+}
+
+func newLicenseCommand() *cobra.Command {
+	var days int
+
+	cmd := &cobra.Command{
+		Use:   "license",
+		Short: "Display Gemini Enterprise seat utilization and dormant license reclamation",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := cmd.Context()
+			if ctx == nil {
+				ctx = context.Background()
+			}
+
+			engine, _, err := buildEngine(ctx)
+			if err != nil {
+				return err
+			}
+
+			gov, err := engine.GetLicenseGovernance(ctx, days)
+			if err != nil {
+				return fmt.Errorf("calculate license governance: %w", err)
+			}
+
+			switch strings.ToLower(flagFormat) {
+			case "json":
+				out, err := FormatJSON(gov)
+				if err != nil {
+					return err
+				}
+				cmd.Println(out)
+
+			case "csv":
+				headers := []string{"SEAT_QUOTA", "ASSIGNED_SEATS", "ACTIVE_SEATS", "DORMANT_SEATS", "UTILIZATION_PCT", "ESTIMATED_MONTHLY_SAVINGS_USD"}
+				rows := [][]string{{
+					fmt.Sprintf("%d", gov.SeatQuota),
+					fmt.Sprintf("%d", gov.AssignedSeats),
+					fmt.Sprintf("%d", gov.ActiveSeats),
+					fmt.Sprintf("%d", gov.DormantSeats),
+					fmt.Sprintf("%.1f%%", gov.UtilizationPct),
+					fmt.Sprintf("$%.2f", gov.EstimatedMonthlySavings),
+				}}
+				out, err := FormatCSV(headers, rows)
+				if err != nil {
+					return err
+				}
+				cmd.Print(out)
+
+			default:
+				headers := []string{"SEAT QUOTA", "ASSIGNED", "ACTIVE", "DORMANT", "UTILIZATION", "EST. MONTHLY SAVINGS"}
+				rows := [][]string{{
+					fmt.Sprintf("%d", gov.SeatQuota),
+					fmt.Sprintf("%d", gov.AssignedSeats),
+					fmt.Sprintf("%d", gov.ActiveSeats),
+					fmt.Sprintf("%d", gov.DormantSeats),
+					fmt.Sprintf("%.1f%%", gov.UtilizationPct),
+					fmt.Sprintf("$%.2f", gov.EstimatedMonthlySavings),
+				}}
+				cmd.Print(FormatTable(headers, rows))
+
+				if len(gov.DormantUsers) > 0 {
+					cmd.Println("\nDormant Licenses (Inactive for >30 days):")
+					dormantHeaders := []string{"USER ID", "STATUS", "LAST ACTIVITY"}
+					var dormantRows [][]string
+					for _, u := range gov.DormantUsers {
+						lastAct := "Never"
+						if !u.LastActivity.IsZero() {
+							lastAct = u.LastActivity.Format("2006-01-02")
+						}
+						dormantRows = append(dormantRows, []string{
+							u.UserID,
+							string(u.Status),
+							lastAct,
+						})
+					}
+					cmd.Print(FormatTable(dormantHeaders, dormantRows))
+				}
+			}
+
+			return nil
+		},
+	}
+
+	cmd.Flags().IntVar(&days, "days", 30, "Lookback window in days")
+	return cmd
+}
+
+func newUserCommand() *cobra.Command {
+	var days int
+
+	cmd := &cobra.Command{
+		Use:   "user <email>",
+		Short: "Display detailed token volume and cost history for a single developer",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := cmd.Context()
+			if ctx == nil {
+				ctx = context.Background()
+			}
+
+			email := args[0]
+			engine, _, err := buildEngine(ctx)
+			if err != nil {
+				return err
+			}
+
+			summary, err := engine.GetUserSummary(ctx, email, days)
+			if err != nil {
+				return fmt.Errorf("fetch user summary: %w", err)
+			}
+
+			switch strings.ToLower(flagFormat) {
+			case "json":
+				out, err := FormatJSON(summary)
+				if err != nil {
+					return err
+				}
+				cmd.Println(out)
+
+			default:
+				headers := []string{"USER", "STATUS", "TOTAL TOKENS", "TOTAL COST", "LAST ACTIVE"}
+				lastAct := "Never"
+				if !summary.LastActive.IsZero() {
+					lastAct = summary.LastActive.Format("2006-01-02 15:04")
+				}
+				rows := [][]string{{
+					summary.UserID,
+					string(summary.SeatStatus),
+					fmt.Sprintf("%d", summary.TotalTokens),
+					fmt.Sprintf("$%.2f", summary.TotalCost),
+					lastAct,
+				}}
+				cmd.Print(FormatTable(headers, rows))
+
+				if len(summary.ModelBreakdown) > 0 {
+					cmd.Println("\nModel Usage Breakdown:")
+					mHeaders := []string{"MODEL", "TOKENS", "SHARE %", "COST"}
+					var mRows [][]string
+					for m, detail := range summary.ModelBreakdown {
+						mRows = append(mRows, []string{
+							m,
+							fmt.Sprintf("%d", detail.Tokens),
+							fmt.Sprintf("%.1f%%", detail.Share*100),
+							fmt.Sprintf("$%.2f", detail.Cost),
+						})
+					}
+					cmd.Print(FormatTable(mHeaders, mRows))
+				}
+			}
+
+			return nil
+		},
+	}
+
+	cmd.Flags().IntVar(&days, "days", 30, "Lookback window in days")
+	return cmd
+}
+
+func newDoctorCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "doctor",
+		Short: "Diagnose GCP connectivity, BigQuery tables, and configuration",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cmd.Println("Running agy-ge-board environment diagnostics...")
+
+			if flagDemo {
+				cmd.Println("[OK] Mode: Demo Mode (synthetic data enabled)")
+				cmd.Println("[OK] Data Source: In-memory deterministic simulator (No GCP credentials required)")
+				cmd.Println("[OK] Diagnostics passed successfully.")
+				return nil
+			}
+
+			if flagProjectID == "" {
+				cmd.Println("[WARN] Project ID is not specified. (Set --project or GCP_PROJECT)")
+				cmd.Println("[TIP] You can test immediately using the --demo flag:")
+				cmd.Println("      agy-ge-board cost --demo")
+				return nil
+			}
+
+			cmd.Printf("[OK] Google Cloud Project: %s\n", flagProjectID)
+			if flagTelemetryTable != "" {
+				cmd.Printf("[OK] Telemetry Table: %s\n", flagTelemetryTable)
+			} else {
+				cmd.Println("[WARN] Missing telemetry table (Set --telemetry-table or TELEMETRY_TABLE)")
+			}
+
+			if flagBillingTable != "" {
+				cmd.Printf("[OK] Billing Export Table: %s\n", flagBillingTable)
+			} else {
+				cmd.Println("[WARN] Missing billing export table (Set --billing-table or BILLING_TABLE)")
+			}
+
+			return nil
+		},
+	}
+}
+
+// Execute runs the root CLI command.
+func Execute() {
+	rootCmd := NewRootCommand()
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+}

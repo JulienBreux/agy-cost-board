@@ -22,9 +22,9 @@
 - [x] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 3: CLI Subcommands & Interactive TUI (TDD)
-- [ ] Task: Cobra Command Hierarchy & Formatters
-  - [ ] Write unit tests for table, JSON, and CSV formatters
-  - [ ] Implement Cobra root command with `cost`, `license`, `user`, and `doctor` subcommands
+- [x] Task: Cobra Command Hierarchy & Formatters
+  - [x] Write unit tests for table, JSON, and CSV formatters
+  - [x] Implement Cobra root command with `cost`, `license`, `user`, and `doctor` subcommands
 - [ ] Task: Bubbletea Interactive TUI
   - [ ] Write unit tests for TUI state transitions, table sorting, and filtering
   - [ ] Implement interactive terminal dashboard with Lipgloss styling
