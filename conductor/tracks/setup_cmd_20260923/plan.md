@@ -4,19 +4,19 @@
 - [x] Task: Diagnostics Domain Models & Checker Interface
   - [x] Write unit tests for CheckResult, DiagnosticReport, and CheckStatus evaluation
   - [x] Implement diagnostic types, status codes (OK, WARNING, ERROR), and report aggregators in `internal/domain`
-- [ ] Task: GCP Environment & ADC Authentication Check
-  - [ ] Write unit tests for ADC & gcloud credential detection
-  - [ ] Implement ADC credential validator with project ID extraction and permission checking
-- [ ] Task: BigQuery Telemetry Dataset & Cloud Logging Sink Checker
-  - [ ] Write unit tests for BigQuery sink and dataset inspection
-  - [ ] Implement checker querying Cloud Logging sink destination and BigQuery dataset existence
-- [ ] Task: Cloud Billing Export Table Checker
-  - [ ] Write unit tests for billing export dataset/table validation
-  - [ ] Implement query probe verifying `gcp_billing_export_v1_*` presence and queryability
-- [ ] Task: Telemetry Pipeline Validation Probe
-  - [ ] Write unit tests for sample query executing token & user extraction
-  - [ ] Implement validation probe querying for recent `InferenceResponseLog` records
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: GCP Environment & ADC Authentication Check
+  - [x] Write unit tests for ADC & gcloud credential detection
+  - [x] Implement ADC credential validator with project ID extraction and permission checking
+- [x] Task: BigQuery Telemetry Dataset & Cloud Logging Sink Checker
+  - [x] Write unit tests for BigQuery sink and dataset inspection
+  - [x] Implement checker querying Cloud Logging sink destination and BigQuery dataset existence
+- [x] Task: Cloud Billing Export Table Checker
+  - [x] Write unit tests for billing export dataset/table validation
+  - [x] Implement query probe verifying `gcp_billing_export_v1_*` presence and queryability
+- [x] Task: Telemetry Pipeline Validation Probe
+  - [x] Write unit tests for sample query executing token & user extraction
+  - [x] Implement validation probe querying for recent `InferenceResponseLog` records
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 2: CLI `setup` Subcommand & Configuration Persistence
 - [ ] Task: Configuration File Manager (`.agy-ge-board.yaml`)
