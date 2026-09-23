@@ -7,7 +7,7 @@
 - [x] Task: Domain Models & Attribution Data Types
   - [x] Write unit tests for domain entities (`UserTokenShare`, `AllocatedUserCost`, `LicenseStatus`)
   - [x] Implement domain structs, JSON/CSV serialization, and attribution math validation
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 2: BigQuery Client & Attribution Engine (TDD)
 - [ ] Task: Synthetic Mock / Demo Data Engine
