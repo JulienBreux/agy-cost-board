@@ -22,16 +22,16 @@
 - [x] Task: Configuration File Manager (`.agy-ge-board.yaml`)
   - [x] Write unit tests for config file reading, writing, and env/flag precedence
   - [x] Implement configuration loader and writer in `internal/config`
-- [ ] Task: CLI `setup` Command Implementation
-  - [ ] Write unit tests for `agy-ge-board setup` with table/JSON output
-  - [ ] Implement `setup` command with `--save`, `--dry-run`, and `--demo` flags
-- [ ] Task: Resource Provisioning Generator (`--create` / `--dry-run`)
-  - [ ] Write unit tests for `gcloud` command generation and dataset/sink provisioning logic
-  - [ ] Implement BigQuery dataset creation and Cloud Logging sink creation helpers
-- [ ] Task: Integrate Config Loader into All Existing CLI Commands
-  - [ ] Write unit tests verifying CLI subcommands (`cost`, `license`, `user`, `serve`, `tui`) inherit settings from `.agy-ge-board.yaml`
-  - [ ] Update `root.go` to auto-load configuration file if flags are omitted
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: CLI `setup` Command Implementation
+  - [x] Write unit tests for `agy-ge-board setup` with table/JSON output
+  - [x] Implement `setup` command with `--save`, `--dry-run`, and `--demo` flags
+- [x] Task: Resource Provisioning Generator (`--create` / `--dry-run`)
+  - [x] Write unit tests for `gcloud` command generation and dataset/sink provisioning logic
+  - [x] Implement BigQuery dataset creation and Cloud Logging sink creation helpers
+- [x] Task: Integrate Config Loader into All Existing CLI Commands
+  - [x] Write unit tests verifying CLI subcommands (`cost`, `license`, `user`, `serve`, `tui`) inherit settings from `.agy-ge-board.yaml`
+  - [x] Update `root.go` to auto-load configuration file if flags are omitted
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 3: REST API & Web Dashboard Integration
 - [ ] Task: REST API `/api/v1/setup/status`

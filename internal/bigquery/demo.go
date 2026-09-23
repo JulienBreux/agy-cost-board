@@ -10,13 +10,23 @@ import (
 
 // DemoDataProvider generates synthetic BigQuery telemetry and billing data.
 type DemoDataProvider struct {
-	seed int64
+	seed  int64
+	quota int
 }
 
-// NewDemoDataProvider returns a new DemoDataProvider with a deterministic seed.
+// NewDemoDataProvider returns a new DemoDataProvider with default quota 12.
 func NewDemoDataProvider() *DemoDataProvider {
+	return NewDemoDataProviderWithQuota(12)
+}
+
+// NewDemoDataProviderWithQuota returns a new DemoDataProvider with the specified seat quota.
+func NewDemoDataProviderWithQuota(quota int) *DemoDataProvider {
+	if quota <= 0 {
+		quota = 12
+	}
 	return &DemoDataProvider{
-		seed: 42,
+		seed:  42,
+		quota: quota,
 	}
 }
 
@@ -116,7 +126,10 @@ func (d *DemoDataProvider) FetchBilledCosts(ctx context.Context, days int) ([]do
 
 // FetchLicenseSeats returns synthetic assigned license seats and the total quota.
 func (d *DemoDataProvider) FetchLicenseSeats(ctx context.Context, windowDays int) ([]domain.LicenseSeat, int, error) {
-	quota := 12
+	quota := d.quota
+	if quota <= 0 {
+		quota = 12
+	}
 	now := time.Now().UTC()
 
 	seats := []domain.LicenseSeat{

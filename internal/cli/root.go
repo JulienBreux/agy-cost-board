@@ -15,6 +15,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/julienbreux/agy-ge-board/internal/attribution"
 	"github.com/julienbreux/agy-ge-board/internal/bigquery"
+	"github.com/julienbreux/agy-ge-board/internal/config"
 	"github.com/julienbreux/agy-ge-board/internal/server"
 	"github.com/julienbreux/agy-ge-board/internal/tui"
 	"github.com/julienbreux/agy-ge-board/web"
@@ -23,6 +24,7 @@ import (
 
 // Global CLI options
 var (
+	flagConfigFile     string
 	flagDemo           bool
 	flagProjectID      string
 	flagTelemetryTable string
@@ -33,12 +35,18 @@ var (
 
 // ResetFlags restores default flag values across unit test runs.
 func ResetFlags() {
+	flagConfigFile = ""
 	flagDemo = false
 	flagProjectID = ""
 	flagTelemetryTable = ""
 	flagBillingTable = ""
 	flagSeatQuota = 10
 	flagFormat = "table"
+	flagSetupSave = false
+	flagSetupCreate = false
+	flagSetupDryRun = false
+	flagSetupSink = "agy-inference-sink"
+	flagSetupDataset = "antigravity_telemetry"
 }
 
 // NewRootCommand creates the top-level Cobra command with subcommands.
@@ -48,8 +56,30 @@ func NewRootCommand() *cobra.Command {
 		Short: "Antigravity & Gemini Enterprise Cost Attribution Board",
 		Long: `agy-ge-board reconciles Google Cloud BigQuery inference telemetry with GCP billing exports
 to compute proportional, per-user AI costs and track Gemini Enterprise seat utilization.`,
+		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			fileCfg, err := config.Load(flagConfigFile)
+			if err != nil {
+				return fmt.Errorf("configuration file error: %w", err)
+			}
+			if fileCfg != nil {
+				if flagProjectID == "" && fileCfg.ProjectID != "" {
+					flagProjectID = fileCfg.ProjectID
+				}
+				if flagTelemetryTable == "" && fileCfg.TelemetryTable != "" {
+					flagTelemetryTable = fileCfg.TelemetryTable
+				}
+				if flagBillingTable == "" && fileCfg.BillingTable != "" {
+					flagBillingTable = fileCfg.BillingTable
+				}
+				if !cmd.Flags().Changed("seat-quota") && fileCfg.SeatQuota > 0 {
+					flagSeatQuota = fileCfg.SeatQuota
+				}
+			}
+			return nil
+		},
 	}
 
+	rootCmd.PersistentFlags().StringVar(&flagConfigFile, "config", "", "Path to configuration file (default .agy-ge-board.yaml)")
 	rootCmd.PersistentFlags().BoolVar(&flagDemo, "demo", false, "Use realistic synthetic demo data without GCP connection")
 	rootCmd.PersistentFlags().StringVar(&flagProjectID, "project", os.Getenv("GCP_PROJECT"), "Google Cloud Project ID")
 	rootCmd.PersistentFlags().StringVar(&flagTelemetryTable, "telemetry-table", os.Getenv("TELEMETRY_TABLE"), "BigQuery table for inference logs")
@@ -57,6 +87,7 @@ to compute proportional, per-user AI costs and track Gemini Enterprise seat util
 	rootCmd.PersistentFlags().IntVar(&flagSeatQuota, "seat-quota", 10, "Gemini Enterprise seat quota")
 	rootCmd.PersistentFlags().StringVar(&flagFormat, "format", "table", "Output format: table, json, or csv")
 
+	rootCmd.AddCommand(newSetupCommand())
 	rootCmd.AddCommand(newCostCommand())
 	rootCmd.AddCommand(newLicenseCommand())
 	rootCmd.AddCommand(newUserCommand())
@@ -70,7 +101,7 @@ to compute proportional, per-user AI costs and track Gemini Enterprise seat util
 // BuildEngine constructs the attribution Engine from flags or falls back to demo mode.
 func BuildEngine(ctx context.Context) (*attribution.Engine, string, error) {
 	if flagDemo || flagProjectID == "" {
-		return attribution.NewEngine(bigquery.NewDemoDataProvider(), 5*time.Minute), "demo (synthetic data)", nil
+		return attribution.NewEngine(bigquery.NewDemoDataProviderWithQuota(flagSeatQuota), 5*time.Minute), "demo (synthetic data)", nil
 	}
 
 	cfg := bigquery.ClientConfig{
