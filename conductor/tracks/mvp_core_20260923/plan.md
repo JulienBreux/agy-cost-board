@@ -13,9 +13,9 @@
 - [x] Task: Synthetic Mock / Demo Data Engine
   - [x] Write tests for synthetic telemetry and billing generator
   - [x] Implement `--demo` fixture engine generating 30 days of realistic multi-user/multi-model logs
-- [ ] Task: Proportional Cost Attribution Calculator
-  - [ ] Write unit tests for proportional cost formula, edge cases (zero tokens, missing SKUs), and TTL caching
-  - [ ] Implement attribution engine and in-memory thread-safe cache
+- [x] Task: Proportional Cost Attribution Calculator
+  - [x] Write unit tests for proportional cost formula, edge cases (zero tokens, missing SKUs), and TTL caching
+  - [x] Implement attribution engine and in-memory thread-safe cache
 - [ ] Task: Live Google Cloud BigQuery Client
   - [ ] Write unit tests for SQL query builders and credential validation
   - [ ] Implement BigQuery client integration for Cloud Logging `InferenceResponseLog` and Cloud Billing exports
