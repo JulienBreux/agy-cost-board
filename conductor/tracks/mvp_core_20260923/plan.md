@@ -4,9 +4,9 @@
 - [x] Task: Project Scaffolding & Dependency Initialization
   - [x] Initialize Go module (`agy-ge-board`) and standard directory layout (`cmd/`, `internal/`, `web/`)
   - [x] Configure linting and test tooling adhering to `workflow.md` and `code_styleguides/`
-- [ ] Task: Domain Models & Attribution Data Types
-  - [ ] Write unit tests for domain entities (`UserTokenShare`, `AllocatedUserCost`, `LicenseStatus`)
-  - [ ] Implement domain structs, JSON/CSV serialization, and attribution math validation
+- [x] Task: Domain Models & Attribution Data Types
+  - [x] Write unit tests for domain entities (`UserTokenShare`, `AllocatedUserCost`, `LicenseStatus`)
+  - [x] Implement domain structs, JSON/CSV serialization, and attribution math validation
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 2: BigQuery Client & Attribution Engine (TDD)
