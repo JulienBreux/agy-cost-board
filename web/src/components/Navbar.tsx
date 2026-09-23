@@ -1,9 +1,9 @@
 import React from 'react';
-import { Layers, DollarSign, ShieldCheck, Zap } from 'lucide-react';
+import { Layers, DollarSign, ShieldCheck, Zap, Activity } from 'lucide-react';
 
 interface NavbarProps {
-  activeTab: 'overview' | 'costs' | 'licenses';
-  setActiveTab: (tab: 'overview' | 'costs' | 'licenses') => void;
+  activeTab: 'overview' | 'costs' | 'licenses' | 'setup';
+  setActiveTab: (tab: 'overview' | 'costs' | 'licenses' | 'setup') => void;
   days: number;
   setDays: (days: number) => void;
 }
@@ -72,6 +72,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <ShieldCheck className="h-4 w-4" />
               <span>Seat Governance</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('setup')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors ${
+                activeTab === 'setup'
+                  ? 'bg-[#1e2330] text-white border border-[#2d3548]'
+                  : 'text-google-gray-400 hover:text-white hover:bg-[#1a1e27]'
+              }`}
+            >
+              <Activity className="h-4 w-4" />
+              <span>Setup & Health</span>
             </button>
           </nav>
 

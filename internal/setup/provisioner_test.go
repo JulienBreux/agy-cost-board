@@ -54,4 +54,31 @@ func TestProvisionPlanGenerator(t *testing.T) {
 			}
 		}
 	})
+
+	t.Run("live execution runs commands and handles failures", func(t *testing.T) {
+		plan := setup.ProvisionPlan{
+			Commands: []string{
+				"",
+				"echo provision-test-ok",
+			},
+		}
+		outputs, err := plan.Execute(context.Background(), false)
+		if err != nil {
+			t.Fatalf("unexpected error running echo command: %v", err)
+		}
+		if len(outputs) != 2 {
+			t.Fatalf("expected 2 outputs, got %d", len(outputs))
+		}
+		if !strings.Contains(outputs[1], "provision-test-ok") {
+			t.Errorf("expected output to contain provision-test-ok, got: %s", outputs[1])
+		}
+
+		failPlan := setup.ProvisionPlan{
+			Commands: []string{"non_existent_binary_for_test_12345"},
+		}
+		_, err = failPlan.Execute(context.Background(), false)
+		if err == nil {
+			t.Error("expected error for non-existent binary, got nil")
+		}
+	})
 }

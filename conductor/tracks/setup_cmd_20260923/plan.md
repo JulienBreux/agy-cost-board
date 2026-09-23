@@ -34,14 +34,14 @@
 - [x] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 3: REST API & Web Dashboard Integration
-- [ ] Task: REST API `/api/v1/setup/status`
-  - [ ] Write unit tests for HTTP GET `/api/v1/setup/status`
-  - [ ] Implement Chi router endpoint returning diagnostic JSON report
-- [ ] Task: React 19 Setup & Health Dashboard Tab
-  - [ ] Implement `SetupView.tsx` component with interactive check cards, badges, and remediation commands
-  - [ ] Integrate Setup tab into navigation bar and main view router
-  - [ ] Rebuild frontend bundle (`npm run build`) and update `web/dist`
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: REST API `/api/v1/setup/status`
+  - [x] Write unit tests for HTTP GET `/api/v1/setup/status`
+  - [x] Implement Chi router endpoint returning diagnostic JSON report
+- [x] Task: React 19 Setup & Health Dashboard Tab
+  - [x] Implement `SetupView.tsx` component with interactive check cards, badges, and remediation commands
+  - [x] Integrate Setup tab into navigation bar and main view router
+  - [x] Rebuild frontend bundle (`npm run build`) and update `web/dist`
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 4: End-to-End Validation & Documentation
 - [ ] Task: End-to-End Integration Tests

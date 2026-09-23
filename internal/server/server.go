@@ -13,21 +13,39 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/julienbreux/agy-ge-board/internal/attribution"
 	"github.com/julienbreux/agy-ge-board/internal/domain"
+	"github.com/julienbreux/agy-ge-board/internal/setup"
 )
 
 // Server encapsulates the HTTP router, middleware, and dependency engine.
 type Server struct {
-	engine   *attribution.Engine
-	staticFS fs.FS
-	router   *chi.Mux
+	engine      *attribution.Engine
+	staticFS    fs.FS
+	router      *chi.Mux
+	setupCfg    setup.Config
+	setupRunner setup.Runner
 }
 
 // NewServer initializes the Chi router with middleware, API routes, and embedded SPA handler.
 func NewServer(engine *attribution.Engine, staticFS fs.FS) *Server {
+	return NewServerWithSetup(engine, staticFS, setup.Config{
+		ProjectID:      "demo-project",
+		TelemetryTable: "demo-project.antigravity_telemetry.inference_logs",
+		BillingTable:   "demo-project.billing_export.gcp_billing_export_v1_000",
+		Demo:           true,
+	}, setup.NewRunner())
+}
+
+// NewServerWithSetup initializes the Chi router with customized setup configuration and diagnostics runner.
+func NewServerWithSetup(engine *attribution.Engine, staticFS fs.FS, cfg setup.Config, runner setup.Runner) *Server {
+	if runner == nil {
+		runner = setup.NewRunner()
+	}
 	s := &Server{
-		engine:   engine,
-		staticFS: staticFS,
-		router:   chi.NewRouter(),
+		engine:      engine,
+		staticFS:    staticFS,
+		router:      chi.NewRouter(),
+		setupCfg:    cfg,
+		setupRunner: runner,
 	}
 
 	s.setupRoutes()
@@ -72,6 +90,7 @@ func (s *Server) setupRoutes() {
 		api.Get("/costs/users", s.handleAttributedCosts)
 		api.Get("/licenses/status", s.handleLicenseGovernance)
 		api.Get("/users/{id}", s.handleUserSummary)
+		api.Get("/setup/status", s.handleSetupStatus)
 	})
 
 	// Embedded SPA static file serving
@@ -130,6 +149,15 @@ func (s *Server) handleUserSummary(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	respondJSON(w, http.StatusOK, summary)
+}
+
+func (s *Server) handleSetupStatus(w http.ResponseWriter, r *http.Request) {
+	runner := s.setupRunner
+	if runner == nil {
+		runner = setup.NewRunner()
+	}
+	report := runner.RunAll(r.Context(), s.setupCfg)
+	respondJSON(w, http.StatusOK, report)
 }
 
 func (s *Server) setupStaticSPA(r *chi.Mux) {

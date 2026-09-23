@@ -4,26 +4,31 @@ import {
   fetchAttributedCosts,
   fetchLicenseGovernance,
   fetchUserSummary,
+  fetchSetupStatus,
   OverviewMetrics,
   AllocatedUserCost,
   LicenseGovernance,
   UserSummary,
+  DiagnosticReport,
 } from './api';
 import { Navbar } from './components/Navbar';
 import { KPICards } from './components/KPICards';
 import { CostChart } from './components/CostChart';
 import { CostTable } from './components/CostTable';
 import { LicenseTable } from './components/LicenseTable';
+import { SetupHealthView } from './components/SetupHealthView';
 import { UserModal } from './components/UserModal';
 import { RefreshCw, AlertTriangle } from 'lucide-react';
 
 export function App() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'costs' | 'licenses'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'costs' | 'licenses' | 'setup'>('overview');
   const [days, setDays] = useState<number>(30);
 
   const [overview, setOverview] = useState<OverviewMetrics | null>(null);
   const [costs, setCosts] = useState<AllocatedUserCost[]>([]);
   const [governance, setGovernance] = useState<LicenseGovernance | null>(null);
+  const [setupReport, setSetupReport] = useState<DiagnosticReport | null>(null);
+  const [setupLoading, setSetupLoading] = useState<boolean>(false);
 
   const [selectedUser, setSelectedUser] = useState<UserSummary | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -52,9 +57,28 @@ export function App() {
     }
   };
 
+  const loadSetup = async () => {
+    setSetupLoading(true);
+    try {
+      const rep = await fetchSetupStatus();
+      setSetupReport(rep);
+    } catch (err: unknown) {
+      console.error('Failed to load setup diagnostics:', err);
+    } finally {
+      setSetupLoading(false);
+    }
+  };
+
   useEffect(() => {
     loadData();
+    loadSetup();
   }, [days]);
+
+  useEffect(() => {
+    if (activeTab === 'setup' && !setupReport) {
+      loadSetup();
+    }
+  }, [activeTab]);
 
   const handleSelectUser = async (userId: string) => {
     try {
@@ -91,16 +115,25 @@ export function App() {
           </div>
         )}
 
-        {/* Loading Spinner */}
-        {loading && !overview && (
+        {/* Loading Spinner for attribution data */}
+        {activeTab !== 'setup' && loading && !overview && (
           <div className="py-24 flex flex-col items-center justify-center space-y-3">
             <RefreshCw className="h-8 w-8 text-google-blue animate-spin" />
             <span className="text-sm text-google-gray-400 font-medium">Reconciling BigQuery Telemetry & Billing...</span>
           </div>
         )}
 
-        {/* Dashboard Content */}
-        {overview && (
+        {/* Setup & Health Tab */}
+        {activeTab === 'setup' && (
+          <SetupHealthView
+            report={setupReport}
+            loading={setupLoading}
+            onRefresh={loadSetup}
+          />
+        )}
+
+        {/* Dashboard Content (Overview, Costs, Licenses) */}
+        {activeTab !== 'setup' && overview && (
           <>
             {/* Top KPIs */}
             <KPICards metrics={overview} />

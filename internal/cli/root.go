@@ -17,6 +17,7 @@ import (
 	"github.com/julienbreux/agy-ge-board/internal/bigquery"
 	"github.com/julienbreux/agy-ge-board/internal/config"
 	"github.com/julienbreux/agy-ge-board/internal/server"
+	"github.com/julienbreux/agy-ge-board/internal/setup"
 	"github.com/julienbreux/agy-ge-board/internal/tui"
 	"github.com/julienbreux/agy-ge-board/web"
 	"github.com/spf13/cobra"
@@ -436,7 +437,14 @@ func newServeCommand() *cobra.Command {
 				return fmt.Errorf("failed to load embedded web assets: %w", err)
 			}
 
-			srv := server.NewServer(engine, staticFS)
+			setupCfg := setup.Config{
+				ProjectID:      flagProjectID,
+				TelemetryTable: flagTelemetryTable,
+				BillingTable:   flagBillingTable,
+				SeatQuota:      flagSeatQuota,
+				Demo:           flagDemo || flagProjectID == "",
+			}
+			srv := server.NewServerWithSetup(engine, staticFS, setupCfg, nil)
 			addr := fmt.Sprintf("%s:%d", host, port)
 
 			httpServer := &http.Server{

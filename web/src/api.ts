@@ -85,3 +85,30 @@ export const fetchUserSummary = async (userId: string, days = 30): Promise<UserS
   if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch user summary`);
   return res.json();
 };
+
+export interface DiagnosticCheck {
+  id: string;
+  name: string;
+  status: 'OK' | 'WARNING' | 'ERROR';
+  message: string;
+  duration: number;
+  details?: Record<string, unknown>;
+  remediation_command?: string;
+}
+
+export interface DiagnosticReport {
+  project_id: string;
+  timestamp: string;
+  overall_status: 'OK' | 'WARNING' | 'ERROR';
+  checks: DiagnosticCheck[];
+  passed_count: number;
+  warning_count: number;
+  error_count: number;
+}
+
+export const fetchSetupStatus = async (): Promise<DiagnosticReport> => {
+  const res = await fetch('/api/v1/setup/status');
+  if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch setup status`);
+  return res.json();
+};
+

@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -12,6 +13,7 @@ import (
 	"github.com/julienbreux/agy-ge-board/internal/bigquery"
 	"github.com/julienbreux/agy-ge-board/internal/domain"
 	"github.com/julienbreux/agy-ge-board/internal/server"
+	"github.com/julienbreux/agy-ge-board/internal/setup"
 )
 
 func setupTestServer() http.Handler {
@@ -188,4 +190,85 @@ func TestAPIEndpoints(t *testing.T) {
 			t.Errorf("expected 200 for SPA fallback /licenses, got %d", rec3.Code)
 		}
 	})
+
+	t.Run("GET /api/v1/setup/status returns diagnostic report", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/setup/status", nil)
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("expected 200 OK, got %d", rec.Code)
+		}
+
+		var report domain.DiagnosticReport
+		if err := json.NewDecoder(rec.Body).Decode(&report); err != nil {
+			t.Fatalf("invalid json response: %v", err)
+		}
+
+		if len(report.Checks) != 5 {
+			t.Errorf("expected 5 checks in report, got %d", len(report.Checks))
+		}
+		if report.OverallStatus != domain.StatusOK {
+			t.Errorf("expected overall OK in demo setup, got %s", report.OverallStatus)
+		}
+	})
+
+	t.Run("query parsing uses default for invalid or negative days", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/metrics/overview?days=invalid", nil)
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+		if rec.Code != http.StatusOK {
+			t.Errorf("expected 200 with default days on invalid query, got %d", rec.Code)
+		}
+
+		reqNeg := httptest.NewRequest(http.MethodGet, "/api/v1/metrics/overview?days=-10", nil)
+		recNeg := httptest.NewRecorder()
+		router.ServeHTTP(recNeg, reqNeg)
+		if recNeg.Code != http.StatusOK {
+			t.Errorf("expected 200 with default days on negative query, got %d", recNeg.Code)
+		}
+	})
+}
+
+type mockSetupRunner struct {
+	invoked bool
+}
+
+func (m *mockSetupRunner) RunAll(ctx context.Context, cfg setup.Config) *domain.DiagnosticReport {
+	m.invoked = true
+	return &domain.DiagnosticReport{
+		ProjectID:     cfg.ProjectID,
+		OverallStatus: domain.StatusWarning,
+		Checks: []domain.CheckResult{
+			{ID: "test-check", Status: domain.StatusWarning},
+		},
+	}
+}
+
+func TestServerWithCustomRunner(t *testing.T) {
+	provider := bigquery.NewDemoDataProvider()
+	engine := attribution.NewEngine(provider, 5*time.Minute)
+	runner := &mockSetupRunner{}
+
+	srv := server.NewServerWithSetup(engine, nil, setup.Config{ProjectID: "custom-test-proj"}, runner)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/setup/status", nil)
+	rec := httptest.NewRecorder()
+	srv.Router().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", rec.Code)
+	}
+	if !runner.invoked {
+		t.Errorf("expected custom runner to be invoked")
+	}
+	var report domain.DiagnosticReport
+	if err := json.NewDecoder(rec.Body).Decode(&report); err != nil {
+		t.Fatalf("decode err: %v", err)
+	}
+	if report.OverallStatus != domain.StatusWarning {
+		t.Errorf("expected status WARNING from custom runner, got %s", report.OverallStatus)
+	}
+	if report.ProjectID != "custom-test-proj" {
+		t.Errorf("expected project custom-test-proj, got %s", report.ProjectID)
+	}
 }
