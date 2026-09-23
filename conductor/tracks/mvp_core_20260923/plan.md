@@ -1,9 +1,9 @@
 # Implementation Plan: MVP Track - Dual-Mode CLI & Cloud Run Web Dashboard
 
 ## Phase 1: Project Scaffolding & Core Domain Models
-- [ ] Task: Project Scaffolding & Dependency Initialization
-  - [ ] Initialize Go module (`agy-ge-board`) and standard directory layout (`cmd/`, `internal/`, `web/`)
-  - [ ] Configure linting and test tooling adhering to `workflow.md` and `code_styleguides/`
+- [x] Task: Project Scaffolding & Dependency Initialization
+  - [x] Initialize Go module (`agy-ge-board`) and standard directory layout (`cmd/`, `internal/`, `web/`)
+  - [x] Configure linting and test tooling adhering to `workflow.md` and `code_styleguides/`
 - [ ] Task: Domain Models & Attribution Data Types
   - [ ] Write unit tests for domain entities (`UserTokenShare`, `AllocatedUserCost`, `LicenseStatus`)
   - [ ] Implement domain structs, JSON/CSV serialization, and attribution math validation
