@@ -1,9 +1,9 @@
 # Implementation Plan: Setup Command & Telemetry Verification Engine (`setup_cmd_20260923`)
 
 ## Phase 1: Diagnostics & Verification Engine (`internal/setup`)
-- [ ] Task: Diagnostics Domain Models & Checker Interface
-  - [ ] Write unit tests for CheckResult, DiagnosticReport, and CheckStatus evaluation
-  - [ ] Implement diagnostic types, status codes (OK, WARNING, ERROR), and report aggregators in `internal/domain`
+- [x] Task: Diagnostics Domain Models & Checker Interface
+  - [x] Write unit tests for CheckResult, DiagnosticReport, and CheckStatus evaluation
+  - [x] Implement diagnostic types, status codes (OK, WARNING, ERROR), and report aggregators in `internal/domain`
 - [ ] Task: GCP Environment & ADC Authentication Check
   - [ ] Write unit tests for ADC & gcloud credential detection
   - [ ] Implement ADC credential validator with project ID extraction and permission checking
