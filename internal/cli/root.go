@@ -2,15 +2,22 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 	"os"
+	"os/signal"
+	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/julienbreux/agy-ge-board/internal/attribution"
 	"github.com/julienbreux/agy-ge-board/internal/bigquery"
+	"github.com/julienbreux/agy-ge-board/internal/server"
 	"github.com/julienbreux/agy-ge-board/internal/tui"
+	"github.com/julienbreux/agy-ge-board/web"
 	"github.com/spf13/cobra"
 )
 
@@ -45,6 +52,7 @@ to compute proportional, per-user AI costs and track Gemini Enterprise seat util
 	rootCmd.AddCommand(newUserCommand())
 	rootCmd.AddCommand(newDoctorCommand())
 	rootCmd.AddCommand(newTUICommand())
+	rootCmd.AddCommand(newServeCommand())
 
 	return rootCmd
 }
@@ -353,6 +361,86 @@ func newTUICommand() *cobra.Command {
 		},
 	}
 	cmd.Flags().IntVar(&days, "days", 30, "Lookback window in days")
+	return cmd
+}
+
+func newServeCommand() *cobra.Command {
+	var port int
+	var host string
+
+	// Cloud Run sets PORT environment variable
+	defaultPort := 8080
+	if envPort := os.Getenv("PORT"); envPort != "" {
+		if p, err := strconv.Atoi(envPort); err == nil && p > 0 {
+			defaultPort = p
+		}
+	}
+
+	cmd := &cobra.Command{
+		Use:   "serve",
+		Short: "Start the web dashboard HTTP server with embedded React SPA",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			ctx := cmd.Context()
+			if ctx == nil {
+				ctx = context.Background()
+			}
+
+			engine, source, err := buildEngine(ctx)
+			if err != nil {
+				return err
+			}
+
+			staticFS, err := web.FS()
+			if err != nil {
+				return fmt.Errorf("failed to load embedded web assets: %w", err)
+			}
+
+			srv := server.NewServer(engine, staticFS)
+			addr := fmt.Sprintf("%s:%d", host, port)
+
+			httpServer := &http.Server{
+				Addr:         addr,
+				Handler:      srv.Router(),
+				ReadTimeout:  15 * time.Second,
+				WriteTimeout: 30 * time.Second,
+				IdleTimeout:  60 * time.Second,
+			}
+
+			cmd.Printf("┌────────────────────────────────────────────────────────┐\n")
+			cmd.Printf("│ AGY & Gemini Enterprise Cost Attribution Board         │\n")
+			cmd.Printf("├────────────────────────────────────────────────────────┤\n")
+			cmd.Printf("│ Data Source : %-41s│\n", source)
+			cmd.Printf("│ Dashboard   : http://localhost:%-25d│\n", port)
+			cmd.Printf("│ Healthz     : http://localhost:%-25s│\n", fmt.Sprintf("%d/healthz", port))
+			cmd.Printf("└────────────────────────────────────────────────────────┘\n\n")
+
+			// Setup graceful shutdown channel
+			shutdownChan := make(chan os.Signal, 1)
+			signal.Notify(shutdownChan, os.Interrupt, syscall.SIGTERM)
+
+			serverErr := make(chan error, 1)
+			go func() {
+				cmd.Printf("Starting HTTP server on %s...\n", addr)
+				if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+					serverErr <- err
+				}
+			}()
+
+			select {
+			case sig := <-shutdownChan:
+				cmd.Printf("\nReceived signal %s: shutting down gracefully...\n", sig)
+				shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+				defer cancel()
+				return httpServer.Shutdown(shutdownCtx)
+			case err := <-serverErr:
+				return fmt.Errorf("HTTP server error: %w", err)
+			}
+		},
+	}
+
+	cmd.Flags().IntVarP(&port, "port", "p", defaultPort, "Port to listen on (defaults to $PORT or 8080)")
+	cmd.Flags().StringVar(&host, "host", "0.0.0.0", "Host address to bind to")
+
 	return cmd
 }
 

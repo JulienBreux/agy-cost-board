@@ -253,4 +253,57 @@ func TestCLICommandsWithDemo(t *testing.T) {
 			t.Errorf("expected doctor output to report configured project, got: %s", out)
 		}
 	})
+
+	t.Run("serve command registers flags properly", func(t *testing.T) {
+		t.Setenv("PORT", "9090")
+		rootCmd := cli.NewRootCommand()
+		serveCmd, _, err := rootCmd.Find([]string{"serve"})
+		if err != nil {
+			t.Fatalf("failed to find serve command: %v", err)
+		}
+		if serveCmd == nil || serveCmd.Name() != "serve" {
+			t.Fatalf("expected serve command to be registered")
+		}
+		portFlag := serveCmd.Flag("port")
+		if portFlag == nil {
+			t.Fatalf("expected port flag on serve command")
+		}
+		if portFlag.DefValue != "9090" {
+			t.Errorf("expected default port 9090 from env, got %s", portFlag.DefValue)
+		}
+	})
+
+	t.Run("tui command registers days flag", func(t *testing.T) {
+		rootCmd := cli.NewRootCommand()
+		tuiCmd, _, err := rootCmd.Find([]string{"tui"})
+		if err != nil {
+			t.Fatalf("failed to find tui command: %v", err)
+		}
+		if tuiCmd == nil || tuiCmd.Name() != "tui" {
+			t.Fatalf("expected tui command to be registered")
+		}
+		if tuiCmd.Flag("days") == nil {
+			t.Errorf("expected days flag on tui command")
+		}
+	})
+
+	t.Run("doctor command reports missing billing or telemetry table", func(t *testing.T) {
+		buf := new(bytes.Buffer)
+		rootCmd := cli.NewRootCommand()
+		rootCmd.SetOut(buf)
+		rootCmd.SetErr(buf)
+		rootCmd.SetArgs([]string{
+			"doctor",
+			"--project=valid-project",
+		})
+
+		if err := rootCmd.Execute(); err != nil {
+			t.Fatalf("command failed: %v", err)
+		}
+
+		out := buf.String()
+		if !strings.Contains(out, "Missing telemetry table") {
+			t.Errorf("expected doctor to report missing tables, got: %s", out)
+		}
+	})
 }

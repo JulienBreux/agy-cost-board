@@ -37,10 +37,10 @@
 - [x] Task: React Frontend SPA Development
   - [x] Build React 18/19 SPA with Tailwind CSS, Recharts, and Lucide icons
   - [x] Implement 3 core views: Overview KPIs, User Cost Attribution table, and License Governance
-- [ ] Task: Binary Embedding & `serve` Subcommand
-  - [ ] Write unit tests verifying embedded static file serving via Go `embed.FS`
-  - [ ] Connect `serve` command to launch HTTP server on `$PORT` with fallback routing
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Binary Embedding & `serve` Subcommand
+  - [x] Write unit tests verifying embedded static file serving via Go `embed.FS`
+  - [x] Connect `serve` command to launch HTTP server on `$PORT` with fallback routing
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 5: Containerization & End-to-End Verification
 - [ ] Task: Multi-Stage Dockerfile & Packaging

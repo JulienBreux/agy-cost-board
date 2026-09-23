@@ -5,7 +5,6 @@ agy-ge-board
 
 # Node & Frontend dependencies and build outputs
 /web/node_modules/
-/web/dist/
 /web/.vite/
 
 # Go test and coverage
