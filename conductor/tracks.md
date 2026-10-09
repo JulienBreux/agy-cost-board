@@ -12,6 +12,6 @@
 
 ---
 
-- [~] **Track: Add a new tab just for a user with a complete dashboard that helps user to driver her consumption**
-  *Link: [./tracks/user_consumption_dashboard_20261009/](./tracks/user_consumption_dashboard_20261009/)*
+- [x] **Track: Add a new tab just for a user with a complete dashboard that helps user to driver her consumption**
+  *Link: [./tracks/user_consumption_dashboard_20261009/index.md](./tracks/user_consumption_dashboard_20261009/index.md)*
 
