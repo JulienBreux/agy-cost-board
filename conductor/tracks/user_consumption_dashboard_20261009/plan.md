@@ -28,9 +28,9 @@
 - [x] Task: Actionable Optimization Insights Card [cc33f72]
     - [x] Write component tests for `OptimizationCard` with model switching and caching tips
     - [x] Implement `OptimizationCard` surfacing actionable recommendations and estimated savings
-- [ ] Task: Recent Activity Log & Live Sync Indicator
-    - [ ] Write component tests for `RecentActivityTable` and `LiveSyncBadge`
-    - [ ] Implement live telemetry activity table with model/date filtering and real-time pulse badge
+- [x] Task: Recent Activity Log & Live Sync Indicator [5f393ab]
+    - [x] Write component tests for `RecentActivityTable` and `LiveSyncBadge`
+    - [x] Implement live telemetry activity table with model/date filtering and real-time pulse badge
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Personal Consumption & Driving UI Components' (Protocol in workflow.md)
 
 ## Phase 4: Full View Assembly, Navigation & Verification
