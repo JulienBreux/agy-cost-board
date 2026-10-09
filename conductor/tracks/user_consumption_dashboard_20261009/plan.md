@@ -13,9 +13,9 @@
 - [x] Task: API Client & Identity Persistence [32b7bee]
     - [x] Write unit tests for personal activity fetching, identity resolution, and localStorage sync
     - [x] Implement `fetchUserActivity`, `fetchCurrentUser`, and `fetchUserBudgets` in `web/src/api.ts`
-- [ ] Task: Searchable User Selector Component
-    - [ ] Write component tests for `UserSelector` with debounced search and keyboard selection
-    - [ ] Implement `UserSelector` component with persistence and clear empty states
+- [x] Task: Searchable User Selector Component [af02613]
+    - [x] Write component tests for `UserSelector` with debounced search and keyboard selection
+    - [x] Implement `UserSelector` component with persistence and clear empty states
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Frontend Data Client & Identity Selection' (Protocol in workflow.md)
 
 ## Phase 3: Personal Consumption & Driving UI Components (TDD)
