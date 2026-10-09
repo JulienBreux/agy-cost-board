@@ -1,0 +1,2 @@
+Task: Personal KPI Cards & Budget Progress Gauge
+Summary: Implemented PersonalKPICards (MTD spend, daily/weekly burn rate velocity, tokens, org share) and BudgetProgressBar (spend gauge, projected month-end forecast, overage alerts, inline budget editing) with 100% Vitest coverage.
