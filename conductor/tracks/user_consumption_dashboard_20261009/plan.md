@@ -34,11 +34,11 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 3: Personal Consumption & Driving UI Components' (Protocol in workflow.md) [5f393ab]
 
 ## Phase 4: Full View Assembly, Navigation & Verification
-- [ ] Task: Navigation Bar & App Assembly
-    - [ ] Add "My Consumption" tab to `Navbar.tsx` and integrate `UserDashboardView.tsx` into `App.tsx`
-    - [ ] Update `UserModal` with a quick link to open full user dashboard in "My Consumption" tab
-    - [ ] Support URL query parameters (`?tab=my-consumption&user=...`)
-- [ ] Task: End-to-End Validation & Verification
-    - [ ] Write integration tests verifying tab switching, user identity resolution, and live data refresh
-    - [ ] Run full test suite (`go test ./...`, frontend tests/build) and verify zero linter warnings
+- [x] Task: Navigation Bar & App Assembly [10e28d2]
+    - [x] Add "My Consumption" tab to `Navbar.tsx` and integrate `UserDashboardView.tsx` into `App.tsx`
+    - [x] Update `UserModal` with a quick link to open full user dashboard in "My Consumption" tab
+    - [x] Support URL query parameters (`?tab=my-consumption&user=...`)
+- [x] Task: End-to-End Validation & Verification [10e28d2]
+    - [x] Write integration tests verifying tab switching, user identity resolution, and live data refresh
+    - [x] Run full test suite (`go test ./...`, frontend tests/build) and verify zero linter warnings
 - [ ] Task: Conductor - User Manual Verification 'Phase 4: Full View Assembly, Navigation & Verification' (Protocol in workflow.md)
