@@ -1,12 +1,20 @@
-.PHONY: all build test cover lint clean run demo
+.PHONY: all build build-web test cover lint clean run demo
 
-BINARY_NAME=agy-ge-board
-CMD_DIR=./cmd/agy-ge-board
+BINARY_NAME=agy-cost-board
+CMD_DIR=./cmd/agy-cost-board
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
+COMMIT ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "none")
+BUILD_DATE ?= $(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
+LDFLAGS = -s -w -X main.Version=$(VERSION) -X main.Commit=$(COMMIT) -X main.BuildDate=$(BUILD_DATE)
 
 all: build
 
+build-web:
+	npm --prefix web ci
+	npm --prefix web run build
+
 build:
-	go build -v -o bin/$(BINARY_NAME) $(CMD_DIR)
+	go build -v -ldflags "$(LDFLAGS)" -o bin/$(BINARY_NAME) $(CMD_DIR)
 
 test:
 	go test -v -race -coverprofile=coverage.out ./...

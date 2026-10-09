@@ -25,13 +25,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
             <div>
               <div className="flex items-center space-x-2">
-                <span className="font-bold text-white tracking-tight text-base sm:text-lg">AGY GE Board</span>
-                <span className="text-[10px] font-semibold bg-google-blue/20 text-google-blue border border-google-blue/30 px-1.5 py-0.5 rounded tracking-wide uppercase">
-                  Cloud Run
-                </span>
+                <span className="font-bold text-white tracking-tight text-base sm:text-lg">Usage and Spend</span>
               </div>
               <p className="text-[11px] text-google-gray-500 hidden sm:block">
-                Antigravity & Gemini Enterprise Cost Attribution
+                Gemini platform
               </p>
             </div>
           </div>

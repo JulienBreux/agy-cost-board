@@ -1,7 +1,10 @@
 export interface DailyTrend {
   date: string;
-  cost: number;
-  tokens: number;
+  cost?: number;
+  total_cost?: number;
+  tokens?: number;
+  total_tokens?: number;
+  active_users?: number;
 }
 
 export interface ModelDetail {

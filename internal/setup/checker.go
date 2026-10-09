@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
-	"github.com/julienbreux/agy-ge-board/internal/domain"
+	"github.com/julienbreux/agy-cost-board/internal/domain"
 	"google.golang.org/api/iterator"
 )
 

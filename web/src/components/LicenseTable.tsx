@@ -8,6 +8,9 @@ interface LicenseTableProps {
 }
 
 export const LicenseTable: React.FC<LicenseTableProps> = ({ governance, onSelectUser }) => {
+  const dormantUsers = Array.isArray(governance?.dormant_users) ? governance.dormant_users : [];
+  const seatQuota = governance?.seat_quota > 0 ? governance.seat_quota : 1;
+
   return (
     <div className="space-y-6">
       {/* Governance Summary Grid */}
@@ -63,12 +66,12 @@ export const LicenseTable: React.FC<LicenseTableProps> = ({ governance, onSelect
         <div className="h-3 w-full bg-[#1e2330] rounded-full overflow-hidden flex">
           <div
             className="h-full bg-google-green transition-all"
-            style={{ width: `${(governance.active_seats / governance.seat_quota) * 100}%` }}
+            style={{ width: `${Math.min((governance.active_seats / seatQuota) * 100, 100)}%` }}
             title="Active Seats"
           />
           <div
             className="h-full bg-google-red transition-all"
-            style={{ width: `${(governance.dormant_seats / governance.seat_quota) * 100}%` }}
+            style={{ width: `${Math.min((governance.dormant_seats / seatQuota) * 100, 100)}%` }}
             title="Dormant Seats"
           />
         </div>
@@ -96,7 +99,7 @@ export const LicenseTable: React.FC<LicenseTableProps> = ({ governance, onSelect
             <p className="text-xs text-google-gray-400">Users with zero inference activity during the selected lookback period</p>
           </div>
           <span className="text-xs bg-google-red/10 text-google-red border border-google-red/20 px-2.5 py-1 rounded font-medium">
-            {governance.dormant_users.length} seats at risk
+            {dormantUsers.length} seats at risk
           </span>
         </div>
 
@@ -112,14 +115,14 @@ export const LicenseTable: React.FC<LicenseTableProps> = ({ governance, onSelect
               </tr>
             </thead>
             <tbody className="divide-y divide-[#1e2330]">
-              {governance.dormant_users.length === 0 ? (
+              {dormantUsers.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="py-8 text-center text-google-gray-500">
                     No dormant licenses detected. All assigned seats are active!
                   </td>
                 </tr>
               ) : (
-                governance.dormant_users.map((seat) => (
+                dormantUsers.map((seat) => (
                   <tr
                     key={seat.user_id}
                     className="hover:bg-[#1a1e28]/70 transition-colors cursor-pointer"

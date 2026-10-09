@@ -9,11 +9,11 @@ import (
 	"testing/fstest"
 	"time"
 
-	"github.com/julienbreux/agy-ge-board/internal/attribution"
-	"github.com/julienbreux/agy-ge-board/internal/bigquery"
-	"github.com/julienbreux/agy-ge-board/internal/domain"
-	"github.com/julienbreux/agy-ge-board/internal/server"
-	"github.com/julienbreux/agy-ge-board/internal/setup"
+	"github.com/julienbreux/agy-cost-board/internal/attribution"
+	"github.com/julienbreux/agy-cost-board/internal/bigquery"
+	"github.com/julienbreux/agy-cost-board/internal/domain"
+	"github.com/julienbreux/agy-cost-board/internal/server"
+	"github.com/julienbreux/agy-cost-board/internal/setup"
 )
 
 func setupTestServer() http.Handler {

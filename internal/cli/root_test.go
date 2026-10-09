@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/julienbreux/agy-ge-board/internal/cli"
+	"github.com/julienbreux/agy-cost-board/internal/cli"
 )
 
 func TestFormatters(t *testing.T) {
@@ -62,6 +62,23 @@ func TestFormatters(t *testing.T) {
 }
 
 func TestCLICommandsWithDemo(t *testing.T) {
+	t.Run("root command outputs version with --version", func(t *testing.T) {
+		buf := new(bytes.Buffer)
+		rootCmd := cli.NewRootCommand()
+		rootCmd.SetOut(buf)
+		rootCmd.SetErr(buf)
+		rootCmd.SetArgs([]string{"--version"})
+
+		if err := rootCmd.Execute(); err != nil {
+			t.Fatalf("command failed: %v", err)
+		}
+
+		out := buf.String()
+		if !strings.Contains(out, "agy-cost-board version") {
+			t.Errorf("expected version output, got: %s", out)
+		}
+	})
+
 	t.Run("cost command executes with --demo and returns table", func(t *testing.T) {
 		buf := new(bytes.Buffer)
 		rootCmd := cli.NewRootCommand()

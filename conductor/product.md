@@ -1,4 +1,4 @@
-# Product Definition: agy-ge-board
+# Product Definition: agy-cost-board
 
 ## Initial Concept
 I want to create an application based on this article: https://medium.com/google-cloud/per-user-cost-attribution-for-antigravity-with-bigquery-3e98fd997c58.
@@ -6,7 +6,7 @@ The idea is to build a web application that can be deployed to Cloud Run (a Dock
 The main goal is to track the allocation of Gemini Enterprise licenses for a project, as well as the costs per user.
 
 ## Executive Summary & Vision
-`agy-ge-board` is a single-binary cloud solution delivering both a modern web dashboard (deployable seamlessly to Cloud Run) and an expressive CLI for FinOps, engineering managers, and platform teams. It provides transparent, per-user cost attribution for Antigravity developer usage and tracks Google Gemini Enterprise license allocations. By reconciling Cloud Logging inference telemetry (`InferenceResponseLog` token shares) with Google Cloud Billing BigQuery exports using a proportional allocation model, `agy-ge-board` eliminates AI cost opacity while identifying unused licenses and budget overruns.
+`agy-cost-board` is a single-binary cloud solution delivering both a modern web dashboard (deployable seamlessly to Cloud Run) and an expressive CLI for FinOps, engineering managers, and platform teams. It provides transparent, per-user cost attribution for Antigravity developer usage and tracks Google Gemini Enterprise license allocations. By reconciling Cloud Logging inference telemetry (`InferenceResponseLog` token shares) with Google Cloud Billing BigQuery exports using a proportional allocation model, `agy-cost-board` eliminates AI cost opacity while identifying unused licenses and budget overruns.
 
 ## Target Personas
 1. **Platform & FinOps Engineers:** Oversee Google Cloud AI spend across projects, reconcile invoiced billing SKUs against actual developer consumption, establish budget alert thresholds, and detect idle or wasted seats.

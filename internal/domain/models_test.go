@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/julienbreux/agy-ge-board/internal/domain"
+	"github.com/julienbreux/agy-cost-board/internal/domain"
 )
 
 func TestCalculateProportionalCost(t *testing.T) {

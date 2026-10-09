@@ -1,4 +1,4 @@
-# Technology Stack: agy-ge-board
+# Technology Stack: agy-cost-board
 
 ## 1. Core Architecture: Single-Binary Dual Mode
 - **Language:** Go (Golang 1.23+)

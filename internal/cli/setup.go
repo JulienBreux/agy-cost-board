@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/julienbreux/agy-ge-board/internal/config"
-	"github.com/julienbreux/agy-ge-board/internal/domain"
-	"github.com/julienbreux/agy-ge-board/internal/setup"
+	"github.com/julienbreux/agy-cost-board/internal/config"
+	"github.com/julienbreux/agy-cost-board/internal/domain"
+	"github.com/julienbreux/agy-cost-board/internal/setup"
 	"github.com/spf13/cobra"
 )
 
@@ -23,9 +23,9 @@ func newSetupCommand() *cobra.Command {
 		Use:   "setup",
 		Short: "Verify GCP prerequisites and optionally provision BigQuery & Logging sinks",
 		Long: `setup validates the Google Cloud Application Default Credentials, BigQuery datasets,
-Cloud Logging sinks, and billing export prerequisites needed for agy-ge-board to compute AI cost attribution.
+Cloud Logging sinks, and billing export prerequisites needed for agy-cost-board to compute AI cost attribution.
 Use --create or --dry-run to generate or provision the required telemetry sink.
-Use --save to persist the configuration locally to .agy-ge-board.yaml for subsequent commands.`,
+Use --save to persist the configuration locally to .agy-cost-board.yaml for subsequent commands.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 
@@ -127,7 +127,7 @@ Use --save to persist the configuration locally to .agy-ge-board.yaml for subseq
 		},
 	}
 
-	setupCmd.Flags().BoolVar(&flagSetupSave, "save", false, "Save configuration to .agy-ge-board.yaml")
+	setupCmd.Flags().BoolVar(&flagSetupSave, "save", false, "Save configuration to .agy-cost-board.yaml")
 	setupCmd.Flags().BoolVar(&flagSetupCreate, "create", false, "Provision missing BigQuery dataset and Cloud Logging sink")
 	setupCmd.Flags().BoolVar(&flagSetupDryRun, "dry-run", false, "Simulate provisioning and print CLI commands")
 	setupCmd.Flags().StringVar(&flagSetupSink, "sink-name", "agy-inference-sink", "Cloud Logging sink name")

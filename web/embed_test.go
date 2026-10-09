@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/julienbreux/agy-ge-board/web"
+	"github.com/julienbreux/agy-cost-board/web"
 )
 
 func TestEmbeddedWebFS(t *testing.T) {
@@ -26,7 +26,7 @@ func TestEmbeddedWebFS(t *testing.T) {
 	}
 
 	contentStr := string(content)
-	if !strings.Contains(contentStr, "AGY & Gemini Enterprise") && !strings.Contains(contentStr, "<div id=\"root\"></div>") {
+	if !strings.Contains(contentStr, "Usage and Spend") && !strings.Contains(contentStr, "<div id=\"root\"></div>") {
 		t.Errorf("embedded index.html does not contain expected HTML template content: %s", contentStr)
 	}
 }

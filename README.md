@@ -1,317 +1,226 @@
-# 📊 AGY & Gemini Enterprise Cost Attribution Board (`agy-ge-board`)
+# agy-cost-board
 
-> **Reconcile Antigravity inference telemetry with Google Cloud Billing to attribute per-user AI spend and optimize Gemini Enterprise seat allocations.**
-
-[![Go Version](https://img.shields.io/badge/go-1.24+-00ADD8?style=flat&logo=go)](https://golang.org)
-[![React](https://img.shields.io/badge/react-19-61DAFB?style=flat&logo=react)](https://react.dev)
-[![Docker](https://img.shields.io/badge/docker-ready-2496ED?style=flat&logo=docker)](https://www.docker.com)
-[![Cloud Run](https://img.shields.io/badge/cloud_run-ready-4285F4?style=flat&logo=googlecloud)](https://cloud.google.com/run)
+[![Go Version](https://img.shields.io/badge/Go-1.24+-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![CI](https://github.com/JulienBreux/agy-cost-board/actions/workflows/ci.yml/badge.svg)](https://github.com/JulienBreux/agy-cost-board/actions/workflows/ci.yml)
+[![Release](https://github.com/JulienBreux/agy-cost-board/actions/workflows/release.yml/badge.svg)](https://github.com/JulienBreux/agy-cost-board/actions/workflows/release.yml)
+[![Cloud Run](https://img.shields.io/badge/Cloud_Run-Ready-4285F4?style=flat&logo=googlecloud)](https://cloud.google.com/run)
 
-Based on the Google Cloud architecture article [**"Per-user cost attribution for Antigravity with BigQuery"**](https://medium.com/google-cloud/per-user-cost-attribution-for-antigravity-with-bigquery-3e98fd997c58), `agy-ge-board` provides FinOps teams, engineering managers, and platform leads with unified cost transparency and license governance for developer AI tooling.
+**agy-cost-board** is an enterprise-grade AI FinOps engine and developer telemetry board built for **Google Antigravity** and **Gemini Enterprise**.
 
----
+It pro-rates Google Cloud Billing export charges strictly proportional to each developer's token share by date and model, eliminates Gemini Enterprise shelfware licenses, and provides immediate cost transparency through a unified single binary (CLI, interactive TUI, and embedded React dashboard).
 
-## 🌟 Key Features
-
-- **Dual-Mode Single Binary Architecture:**
-  - **Full CLI Suite:** Query attribution data with terminal tables, machine-readable JSON, or scriptable CSV.
-  - **Interactive Terminal UI (TUI):** Keyboard-driven Bubbletea dashboard featuring real-time FinOps metrics, multi-tab switching, column sorting, and developer drilldown.
-  - **Embedded Web Dashboard:** Single binary embeds a compiled React 19 SPA with Tailwind CSS, SVG trend visualizations, search/filter controls, modal drilldowns, and a dedicated **Setup & Health** diagnostics tab.
-  - **Cloud Run Native:** Built-in HTTP server listening on dynamic `$PORT`, with `/healthz` liveness probes and graceful shutdown signals (`SIGINT`/`SIGTERM`).
-- **Automated Verification & Setup Engine:**
-  - **5-Point Telemetry Verification:** Probes ADC credentials, IAM permissions, Cloud Logging sink filters, BigQuery billing export, and telemetry extraction.
-  - **Automated Resource Provisioning:** Generates and executes commands to create BigQuery datasets and Cloud Logging inference sinks (`--create`, `--dry-run`).
-  - **Persistent Configuration:** Saves verified settings to `.agy-ge-board.yaml`, automatically inherited by all subcommands.
-- **Proportional Cost Attribution Engine:**
-  - Ingests Antigravity inference telemetry logs (`InferenceResponseLog`) from BigQuery.
-  - Matches `labels.user_id`, `labels.model`, and `metadata.totalTokenCount`.
-  - Pro-rates Google Cloud Billing export charges (`gcp_billing_export_v1_*`) strictly proportional to each developer's token share by date and model.
-  - Thread-safe TTL cache layer prevents duplicate BigQuery scan charges.
-- **Gemini Enterprise License Governance:**
-  - Tracks configured seat quotas against active developer token consumption across configurable lookback windows (7d, 14d, 30d).
-  - Automatically flags **Active**, **At-Risk** (< 1,000 tokens), and **Dormant** (0 tokens) seats.
-  - Computes potential monthly reclamation savings ($45/seat/month) to eliminate shelfware.
-- **Offline Synthetic Demo Mode:**
-  - Built-in `--demo` flag generates 30 days of realistic multi-user/multi-model telemetry and billing records for immediate evaluation without GCP credentials.
+Based on the Google Cloud architecture article [**"Per-user cost attribution for Antigravity with BigQuery"**](https://medium.com/google-cloud/per-user-cost-attribution-for-antigravity-with-bigquery-3e98fd997c58).
 
 ---
 
-## 🏗️ Architecture & Telemetry Pipeline
+## Why agy-cost-board?
+
+When enterprises adopt AI developer tools like Antigravity and Gemini Enterprise, standard Google Cloud invoices pool all model API consumption into aggregate SKU lines. Platform and FinOps teams are left with zero visibility into which engineering squads, repositories, or individual developers drive generative AI costs.
+
+Furthermore, Gemini Enterprise seats are often purchased in bulk quotas ($45/seat/month). Without automated activity tracking, organizations waste thousands of dollars each month on unassigned or dormant licenses.
+
+`agy-cost-board` bridges this gap: it correlates BigQuery inference logs with Cloud Billing exports to allocate exact proportional costs down to the cent, while continuously auditing seat activity to reclaim idle licenses.
 
 ```mermaid
 flowchart LR
-    subgraph Google Cloud Project
-        AGY["Antigravity IDE / CLI\n(Developer Telemetry)"] -->|Cloud Logging Sink| BQ_Logs["BigQuery: InferenceResponseLog\n(user_id, model, tokens)"]
-        Billing["Cloud Billing Export"] -->|Daily / Streaming Export| BQ_Billing["BigQuery: gcp_billing_export_v1_*\n(SKU, cost, currency)"]
+    subgraph Traditional["Traditional Pooled Billing (Black Box)"]
+        direction LR
+        Devs1["100 Developers"] -->|"API Calls"| B1["Single Google Cloud Invoice SKU\n$14,250 / month"]
+        B1 -->|"Unallocated Overhead"| FinOps1["FinOps: No Per-Engineer Attribution"]
     end
 
-    subgraph "agy-ge-board Engine"
-        BQ_Logs --> Engine["Attribution Engine\n(TTL Caching & Proportional Math)"]
-        BQ_Billing --> Engine
-    end
-
-    subgraph Interfaces
-        Engine --> CLI["CLI Commands\n(cost, license, user, doctor)"]
-        Engine --> TUI["Interactive TUI\n(Bubbletea / Lipgloss)"]
-        Engine --> Web["Web Dashboard & REST API\n(Chi Router + Embedded React SPA)"]
+    subgraph Proportional["agy-cost-board Proportional Attribution (<1% Variance)"]
+        direction LR
+        Devs2["Developers\n(Alex, Sophia, Liam...)"] -->|"Telemetry Sink"| Logs["BigQuery Logs\n(user_id, tokens)"]
+        Billing["Cloud Billing Export\n(SKU Daily Totals)"] --> Engine["Attribution Engine\nProportional Formula"]
+        Logs --> Engine
+        Engine --> Reports["Per-Engineer Spend &\nShelfware Reclamation"]
     end
 ```
 
----
+### The Difference at a Glance
 
-## 🚀 Quick Start (Demo Mode)
-
-Run `agy-ge-board` immediately using the embedded demo fixtures without configuring GCP permissions:
-
-```bash
-# Clone the repository
-git clone https://github.com/julienbreux/agy-ge-board.git
-cd agy-ge-board
-
-# Build the single binary
-go build -o bin/agy-ge-board ./cmd/agy-ge-board
-
-# 1. Print proportional cost attribution table
-./bin/agy-ge-board cost --demo
-
-# 2. Inspect Gemini Enterprise license utilization & dormant savings
-./bin/agy-ge-board license --demo
-
-# 3. Drill down into an individual developer's activity
-./bin/agy-ge-board user alex.turner@example.com --demo
-
-# 4. Launch the interactive terminal UI (TUI)
-./bin/agy-ge-board tui --demo
-
-# 5. Start the web dashboard and open http://localhost:8080
-./bin/agy-ge-board serve --demo --port=8080
-```
+| Capability | Traditional Cloud Billing | agy-cost-board |
+|---|---|---|
+| **Cost Attribution** | Aggregate pooled SKU line items; zero developer visibility | **Exact per-developer proportional attribution pro-rated by token share** |
+| **Gemini Enterprise Shelfware** | Blind seat purchases; shelfware goes unnoticed | **Automated dormancy detection (<1k tokens / 0 activity) with instant ROI savings** |
+| **Setup & Diagnostics** | Manual SQL writing & error-prone IAM debugging | **5-Point automated verification engine with 1-click cloud provisioning (`setup --create`)** |
+| **User Interfaces** | Spreadsheet exports or fragmented monitoring tools | **Triple-interface in 1 binary: Full CLI, interactive Terminal UI (TUI), & React 19 SPA** |
+| **Cloud Run Native** | Complex multi-container deployments | **Zero-config single static binary (`CGO_ENABLED=0`), dynamic `$PORT`, & `/healthz`** |
+| **Local Evaluation** | Requires full GCP credentials and BigQuery permissions | **Offline synthetic Demo Mode (`--demo`) with 30 days of multi-user data** |
+| **BigQuery Efficiency** | Costly repetitive full-table scans | **Thread-safe in-memory TTL caching with 0 redundant scan charges** |
 
 ---
 
-## ⚙️ Google Cloud & BigQuery Setup
+## Superpowers
 
-To connect to live production Google Cloud BigQuery data, follow these configuration steps:
+### 📐 Mathematical Proportional Attribution
+Instead of crude token-rate approximations, `agy-cost-board` reconciles real-time Cloud Logging inference records (`InferenceResponseLog`) with actual Google Cloud Billing exports (`gcp_billing_export_v1_*`). Each developer is charged precisely:
+$$\text{Allocated Cost}(u, m, d) = \text{Billed Cost}(m, d) \times \frac{\text{Tokens}(u, m, d)}{\sum_{k} \text{Tokens}(k, m, d)}$$
+Guaranteed mathematically complete attribution with zero unallocated residue.
 
-### 1. Automated Verification with `setup`
+### 💺 Gemini Enterprise Shelfware Reclamation
+Track active seat quota utilization across configurable lookback windows (7d, 14d, 30d). `agy-cost-board` flags **Active**, **At-Risk** (< 1,000 tokens), and **Dormant** (0 tokens) seats, quantifying immediate monthly dollar savings ($45/seat/month) to rightsize your licensing agreements.
 
-The `setup` command automatically diagnoses your GCP environment against the 5 requirements outlined in the Medium article:
-1. **Google Cloud ADC & Project:** Verifies Application Default Credentials and active GCP project.
-2. **IAM Permissions:** Confirms BigQuery Job User (`roles/bigquery.jobUser`) and Data Viewer (`roles/bigquery.dataViewer`).
-3. **Cloud Logging Telemetry Sink:** Validates the presence of the BigQuery telemetry dataset and `InferenceResponseLog` sink filter.
-4. **Cloud Billing Export:** Checks BigQuery standard/detailed billing export table existence.
-5. **Telemetry Extraction Probe:** Executes a sample validation query to ensure token metrics are reconcilable.
+### 🩺 5-Point Automated Setup & Diagnostic Engine
+Never wonder why metrics aren't appearing. The built-in `setup` and `doctor` commands validate:
+1. **Google Cloud ADC & Project:** Active credentials and project binding.
+2. **GCP IAM Permissions:** BigQuery Job User (`roles/bigquery.jobUser`) and Data Viewer.
+3. **Cloud Logging Sink:** Ingestion sink filter for `InferenceResponseLog`.
+4. **Cloud Billing Export:** Validated BigQuery export table schema.
+5. **Telemetry Pipeline Probe:** Live token query verification.
 
-```bash
-# Run automated verification
-agy-ge-board setup --project=YOUR_PROJECT_ID
+Need to provision missing resources? Run `agy-cost-board setup --create` (or preview with `--dry-run`).
 
-# Verify and persist configuration to .agy-ge-board.yaml
-agy-ge-board setup --project=YOUR_PROJECT_ID --save
+### 📦 Standalone Single Binary with Embedded React 19 SPA
+Written in Go with zero CGO dependencies. The frontend (React 19, Tailwind CSS, SVG spend charts, and interactive modals) is compiled and embedded directly into the executable using `embed.FS`. No external web servers, Node runtimes, or CDN dependencies required.
 
-# Preview the BigQuery dataset and Logging sink provisioning commands (safe dry-run)
-agy-ge-board setup --project=YOUR_PROJECT_ID --create --dry-run
+### ⚡ Triple-Mode Interface: CLI, Interactive TUI, and Web
+- **CLI Commands:** Terminal-ready formatted tables, clean JSON for automation, or CSV for FinOps reporting (`cost`, `license`, `user`, `doctor`).
+- **Interactive TUI:** Keyboard-driven terminal dashboard powered by Bubbletea and Lipgloss (`agy-cost-board tui`).
+- **Modern Web Dashboard:** Full-featured web interface with dark mode, interactive cost charts, seat governance tables, and real-time setup diagnostics (`agy-cost-board serve`).
 
-# Provision missing BigQuery dataset and Logging sink automatically
-agy-ge-board setup --project=YOUR_PROJECT_ID --create
-```
-
-### 2. Manual Provisioning (Alternative)
-
-If you prefer to configure Google Cloud resources manually:
-
-#### A. Create Cloud Logging Sink for Antigravity Inference Logs
-
-```bash
-gcloud logging sinks create agy-inference-sink \
-  bigquery.googleapis.com/projects/YOUR_PROJECT_ID/datasets/antigravity_telemetry \
-  --log-filter='resource.type="cloud_function" OR jsonPayload.log_type="InferenceResponseLog"' \
-  --use-partitioned-tables
-```
-
-Ensure the sink service account has `roles/bigquery.dataEditor` on the destination dataset.
-
-#### B. Verify Cloud Billing Export to BigQuery
-
-Ensure Standard or Detailed Cloud Billing Export is enabled in your Google Cloud Console:
-- Destination Table Format: `YOUR_PROJECT_ID.billing_export.gcp_billing_export_v1_XXXXXX_XXXXXX_XXXXXX`
-
-#### C. Required IAM Permissions
-
-The user or Cloud Run service account running `agy-ge-board` requires:
-- `roles/bigquery.jobUser` on the project.
-- `roles/bigquery.dataViewer` on the telemetry dataset and billing export dataset.
-
-### 3. Configuration File (`.agy-ge-board.yaml`)
-
-When you run `agy-ge-board setup --save`, settings are stored in `.agy-ge-board.yaml`:
-
-```yaml
-project_id: "my-gcp-project"
-telemetry_table: "my-gcp-project.antigravity_telemetry.inference_logs"
-billing_table: "my-gcp-project.billing_export.gcp_billing_export_v1_000"
-seat_quota: 50
-demo: false
-```
-
-#### Configuration Precedence:
-1. **Command-Line Flags** (e.g. `--project`, `--telemetry-table`)
-2. **Environment Variables** (`GCP_PROJECT`, `TELEMETRY_TABLE`, `BILLING_TABLE`, `SEAT_QUOTA`, `DEMO_MODE`)
-3. **Configuration File** (`.agy-ge-board.yaml`)
-4. **Built-in Demo Defaults**
+### 🧪 100% Offline Synthetic Demo Lab
+Evaluate and test all features instantly with `--demo`. Built-in deterministic simulation generates 30 days of realistic multi-user and multi-model data without touching Google Cloud or requiring network access.
 
 ---
 
-## 💻 CLI Command Reference
+## Quick Start (60 Seconds)
 
-### `setup`
-Diagnoses GCP prerequisites, validates the Antigravity telemetry pipeline, and provisions required resources.
-
+### 1. Build or Download
+Compile the standalone static binary (requires Go 1.24+ and Node 22+):
 ```bash
-agy-ge-board setup [flags]
-
-Flags:
-      --project string     Target Google Cloud Project ID
-      --telemetry string   BigQuery telemetry table or dataset ID
-      --billing string     BigQuery Cloud Billing export table ID
-      --seat-quota int     Configured Gemini Enterprise license quota
-      --create             Automatically provision missing BigQuery dataset and Cloud Logging sink
-      --dry-run            Print provisioning commands without executing them
-      --save               Persist verified settings to .agy-ge-board.yaml
-      --format string      Output format: table (default) or json
+git clone https://github.com/JulienBreux/agy-cost-board.git
+cd agy-cost-board
+make build
 ```
 
-### `cost`
-Computes proportional cost attribution per developer, model, and date.
+### 2. Run in Demo Mode (No GCP Required)
+Explore all interfaces immediately with synthetic data:
 
 ```bash
-agy-ge-board cost [flags]
+# Print proportional cost attribution table
+./bin/agy-cost-board cost --demo
 
-Flags:
-      --days int        Lookback window in days (default 30)
-      --model string     Filter by model name (e.g., gemini-1.5-pro, claude-3-5-sonnet)
-      --format string    Output format: table (default), json, or csv
-```
+# Inspect Gemini Enterprise license utilization & shelfware savings
+./bin/agy-cost-board license --demo
 
-### `license`
-Analyzes Gemini Enterprise seat quotas, active developers, and dormant licenses.
+# Launch the interactive terminal UI (TUI)
+./bin/agy-cost-board tui --demo
 
-```bash
-agy-ge-board license [flags]
-
-Flags:
-      --days int        Lookback window in days (default 30)
-      --format string    Output format: table (default), json, or csv
-```
-
-### `user <email>`
-Displays detailed token volume and cost history for an individual engineer.
-
-```bash
-agy-ge-board user alex.turner@example.com --days=14 --format=json
-```
-
-### `tui`
-Launches the full-screen terminal interface.
-
-```bash
-agy-ge-board tui [flags]
-
-Controls:
-  [Tab] / [1/2/3]   Switch between Costs, Licenses, and User Breakdown tabs
-  [s]               Cycle table sorting (Cost, Tokens, Date)
-  [Enter]           Open detailed drilldown for selected engineer
-  [Esc] / [q]       Close drilldown / Exit dashboard
-```
-
-### `serve`
-Starts the HTTP server delivering the embedded React SPA and REST API.
-
-```bash
-agy-ge-board serve [flags]
-
-Flags:
-  -p, --port int        Port to listen on (default 8080, automatically inherits $PORT)
-      --host string     Host address to bind to (default "0.0.0.0")
+# Launch the web dashboard and open http://localhost:8080
+./bin/agy-cost-board serve --demo
 ```
 
 ---
 
-## 🌐 REST API Endpoints
+## Connecting to Google Cloud & BigQuery
+
+### 1. Run Automated Environment Verification
+```bash
+# Diagnose existing setup
+./bin/agy-cost-board setup --project=YOUR_PROJECT_ID
+
+# Automatically provision missing BigQuery dataset and Logging sink
+./bin/agy-cost-board setup --project=YOUR_PROJECT_ID --create
+
+# Save verified configuration to .agy-cost-board.yaml
+./bin/agy-cost-board setup --project=YOUR_PROJECT_ID --save
+```
+
+### 2. Launch with Production BigQuery
+Once configured in `.agy-cost-board.yaml` (or via environment variables):
+```bash
+./bin/agy-cost-board serve --port 8080
+```
+
+---
+
+## CLI Command Reference
+
+| Command | Description | Example |
+|---|---|---|
+| `setup` | Diagnose GCP requirements and optionally provision datasets/sinks | `agy-cost-board setup --project=my-prj --save` |
+| `cost` | Display proportional per-developer AI spend attribution | `agy-cost-board cost --days=30 --format=json` |
+| `license` | Analyze Gemini Enterprise seat utilization and dormant licenses | `agy-cost-board license --days=30` |
+| `user <email>` | Drill down into an individual developer's token history and spend | `agy-cost-board user alex@example.com` |
+| `doctor` | Fast connectivity and configuration sanity check | `agy-cost-board doctor` |
+| `tui` | Launch interactive full-screen terminal dashboard | `agy-cost-board tui` |
+| `serve` | Start web dashboard HTTP server with embedded React SPA | `agy-cost-board serve --port=8080` |
+
+---
+
+## REST API Reference
+
+The built-in HTTP server exposes clean JSON APIs consumed by the embedded frontend and third-party monitoring:
 
 | Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/healthz` | Kubernetes / Cloud Run liveness probe (`{"status":"ok"}`) |
-| `GET` | `/api/v1/metrics/overview?days=30` | High-level KPIs, total spend, token count, active users, daily spend trends |
-| `GET` | `/api/v1/costs/users?days=30&model=gemini-1.5-pro` | Attributed cost records per developer and model |
-| `GET` | `/api/v1/licenses/status?days=30` | Seat quota, active/dormant breakdown, utilization %, estimated monthly savings |
-| `GET` | `/api/v1/users/{id}?days=30` | Developer drilldown, total spend, model token distributions |
-| `GET` | `/api/v1/setup/status` | Automated GCP prerequisites and telemetry diagnostic report |
-| `GET` | `/*` | Embedded React SPA static files with client-side routing fallback |
+|---|---|---|
+| `GET` | `/healthz` | Liveness and readiness probe for Cloud Run / Kubernetes |
+| `GET` | `/api/v1/metrics/overview?days=30` | High-level FinOps KPIs, total spend, tokens, and daily trends |
+| `GET` | `/api/v1/costs/users?days=30&model=` | Attributed cost records per developer and model |
+| `GET` | `/api/v1/licenses/status?days=30` | Seat quota, active/dormant status, and estimated monthly savings |
+| `GET` | `/api/v1/users/{id}?days=30` | Developer drilldown, historical spend, and model breakdown |
+| `GET` | `/api/v1/setup/status` | Real-time 5-point GCP telemetry diagnostic status |
 
 ---
 
-## 🐳 Google Cloud Run Deployment
+## Deployment to Google Cloud Run
 
-Deploy `agy-ge-board` as a zero-maintenance, autoscaling container on Google Cloud Run:
-
-### 1. Build and Push Container Image
-
-Using Google Cloud Build or local Docker:
+Deploy `agy-cost-board` as a lightweight, auto-scaling service in minutes:
 
 ```bash
 export PROJECT_ID="YOUR_GCP_PROJECT_ID"
-export IMAGE="gcr.io/${PROJECT_ID}/agy-ge-board:latest"
+export IMAGE="gcr.io/${PROJECT_ID}/agy-cost-board:latest"
 
-# Build container via Google Cloud Build (no local Docker required)
+# 1. Build and push container using Google Cloud Build
 gcloud builds submit --tag ${IMAGE} .
-```
 
-### 2. Deploy to Cloud Run
-
-```bash
-gcloud run deploy agy-ge-board \
+# 2. Deploy to Cloud Run
+gcloud run deploy agy-cost-board \
   --image=${IMAGE} \
   --project=${PROJECT_ID} \
   --region=us-central1 \
   --platform=managed \
   --allow-unauthenticated \
-  --set-env-vars="PROJECT_ID=${PROJECT_ID},TELEMETRY_TABLE=${PROJECT_ID}.antigravity_telemetry.logs,BILLING_TABLE=${PROJECT_ID}.billing_export.gcp_billing_export_v1_XXXXXX,SEAT_QUOTA=50"
+  --set-env-vars="GCP_PROJECT=${PROJECT_ID},TELEMETRY_TABLE=${PROJECT_ID}.antigravity_telemetry.logs,BILLING_TABLE=${PROJECT_ID}.billing_export.gcp_billing_export_v1_XXXXXX,SEAT_QUOTA=50"
 ```
-
-Cloud Run will automatically pass the `$PORT` environment variable, which the binary detects on startup.
 
 ---
 
-## 🛠️ Local Development & Testing
-
-### Prerequisites
-- **Go:** 1.24+
-- **Node.js:** 22+ & npm
-
-### Development Workflow
+## Development & Testing
 
 ```bash
-# 1. Install frontend dependencies and build assets
-cd web
-npm install
-npm run build
-cd ..
+# Run unit tests with race detection and coverage
+make test
 
-# 2. Run Go test suite with coverage
-go test -v -coverprofile=coverage.out ./...
-go tool cover -func=coverage.out
+# View test coverage report
+make cover
 
-# 3. Run race condition check
-go test -v -race ./...
+# Run static analysis
+make lint
 
-# 4. Run end-to-end integration tests
-go test -v ./tests/...
+# Rebuild web frontend assets
+make build-web
+
+# Build static binary with version ldflags
+make build
 ```
 
 ---
 
-## 📄 License
+## Community & Contributing
 
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+We welcome contributions from everyone! Please check out our project guidelines:
+
+- 🤝 [**Contributing Guide**](CONTRIBUTING.md) - How to report issues, develop locally, and submit pull requests.
+- 📜 [**Code of Conduct**](CODE_OF_CONDUCT.md) - Our standards for community engagement.
+- 🔒 [**Security Policy**](SECURITY.md) - Vulnerability reporting and least-privilege GCP security.
+- 👥 [**Maintainers**](MAINTAINERS.md) - Project maintainers and governance.
+
+---
+
+## License
+
+This project is licensed under the [Apache 2.0 License](LICENSE).

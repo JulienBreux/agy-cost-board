@@ -1,4 +1,4 @@
-module github.com/julienbreux/agy-ge-board
+module github.com/julienbreux/agy-cost-board
 
 go 1.27.1
 

@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/julienbreux/agy-ge-board/internal/bigquery"
-	"github.com/julienbreux/agy-ge-board/internal/domain"
+	"github.com/julienbreux/agy-cost-board/internal/bigquery"
+	"github.com/julienbreux/agy-cost-board/internal/domain"
 )
 
 // Standard license seat cost per month in USD used for savings estimates.
@@ -230,6 +230,7 @@ func (e *Engine) GetLicenseGovernance(ctx context.Context, windowDays int) (*dom
 	summary := &domain.LicenseGovernanceSummary{
 		SeatQuota:     quota,
 		AssignedSeats: len(seats),
+		DormantUsers:  make([]domain.LicenseSeat, 0),
 	}
 
 	for _, s := range seats {
@@ -282,6 +283,7 @@ func (e *Engine) GetOverviewMetrics(ctx context.Context, days int) (*domain.Over
 		EstimatedMonthlySavings: gov.EstimatedMonthlySavings,
 		Currency:                "USD",
 		ModelBreakdown:          make(map[string]domain.ModelCostDetail),
+		DailyTrends:             make([]domain.DailySpendTrend, 0),
 	}
 
 	for _, b := range billedCosts {
@@ -316,10 +318,12 @@ func (e *Engine) GetOverviewMetrics(ctx context.Context, days int) (*domain.Over
 	overview.ActiveUsersCount = len(activeUsers)
 
 	// Format daily trends
-	var trendList []domain.DailySpendTrend
+	trendList := make([]domain.DailySpendTrend, 0)
 	for d, tr := range dailyAgg {
 		tr.ActiveUsers = len(dailyUsers[d])
 		tr.TotalCost = math.Round(tr.TotalCost*100) / 100
+		tr.Cost = tr.TotalCost
+		tr.Tokens = tr.TotalTokens
 		trendList = append(trendList, *tr)
 	}
 

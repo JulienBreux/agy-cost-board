@@ -13,14 +13,21 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/julienbreux/agy-ge-board/internal/attribution"
-	"github.com/julienbreux/agy-ge-board/internal/bigquery"
-	"github.com/julienbreux/agy-ge-board/internal/config"
-	"github.com/julienbreux/agy-ge-board/internal/server"
-	"github.com/julienbreux/agy-ge-board/internal/setup"
-	"github.com/julienbreux/agy-ge-board/internal/tui"
-	"github.com/julienbreux/agy-ge-board/web"
+	"github.com/julienbreux/agy-cost-board/internal/attribution"
+	"github.com/julienbreux/agy-cost-board/internal/bigquery"
+	"github.com/julienbreux/agy-cost-board/internal/config"
+	"github.com/julienbreux/agy-cost-board/internal/server"
+	"github.com/julienbreux/agy-cost-board/internal/setup"
+	"github.com/julienbreux/agy-cost-board/internal/tui"
+	"github.com/julienbreux/agy-cost-board/web"
 	"github.com/spf13/cobra"
+)
+
+// Version metadata set at build time via ldflags.
+var (
+	Version   = "dev"
+	Commit    = "none"
+	BuildDate = "unknown"
 )
 
 // Global CLI options
@@ -53,9 +60,10 @@ func ResetFlags() {
 // NewRootCommand creates the top-level Cobra command with subcommands.
 func NewRootCommand() *cobra.Command {
 	rootCmd := &cobra.Command{
-		Use:   "agy-ge-board",
-		Short: "Antigravity & Gemini Enterprise Cost Attribution Board",
-		Long: `agy-ge-board reconciles Google Cloud BigQuery inference telemetry with GCP billing exports
+		Use:     "agy-cost-board",
+		Short:   "Antigravity & Gemini Enterprise Cost Attribution Board",
+		Version: fmt.Sprintf("%s (commit: %s, built: %s)", Version, Commit, BuildDate),
+		Long: `agy-cost-board reconciles Google Cloud BigQuery inference telemetry with GCP billing exports
 to compute proportional, per-user AI costs and track Gemini Enterprise seat utilization.`,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			fileCfg, err := config.Load(flagConfigFile)
@@ -80,7 +88,7 @@ to compute proportional, per-user AI costs and track Gemini Enterprise seat util
 		},
 	}
 
-	rootCmd.PersistentFlags().StringVar(&flagConfigFile, "config", "", "Path to configuration file (default .agy-ge-board.yaml)")
+	rootCmd.PersistentFlags().StringVar(&flagConfigFile, "config", "", "Path to configuration file (default .agy-cost-board.yaml)")
 	rootCmd.PersistentFlags().BoolVar(&flagDemo, "demo", false, "Use realistic synthetic demo data without GCP connection")
 	rootCmd.PersistentFlags().StringVar(&flagProjectID, "project", os.Getenv("GCP_PROJECT"), "Google Cloud Project ID")
 	rootCmd.PersistentFlags().StringVar(&flagTelemetryTable, "telemetry-table", os.Getenv("TELEMETRY_TABLE"), "BigQuery table for inference logs")
@@ -349,7 +357,7 @@ func newDoctorCommand() *cobra.Command {
 		Use:   "doctor",
 		Short: "Diagnose GCP connectivity, BigQuery tables, and configuration",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cmd.Println("Running agy-ge-board environment diagnostics...")
+			cmd.Println("Running agy-cost-board environment diagnostics...")
 
 			if flagDemo {
 				cmd.Println("[OK] Mode: Demo Mode (synthetic data enabled)")
@@ -361,7 +369,7 @@ func newDoctorCommand() *cobra.Command {
 			if flagProjectID == "" {
 				cmd.Println("[WARN] Project ID is not specified. (Set --project or GCP_PROJECT)")
 				cmd.Println("[TIP] You can test immediately using the --demo flag:")
-				cmd.Println("      agy-ge-board cost --demo")
+				cmd.Println("      agy-cost-board cost --demo")
 				return nil
 			}
 

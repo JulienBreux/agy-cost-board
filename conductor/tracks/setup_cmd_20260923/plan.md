@@ -19,17 +19,17 @@
 - [x] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 2: CLI `setup` Subcommand & Configuration Persistence
-- [x] Task: Configuration File Manager (`.agy-ge-board.yaml`)
+- [x] Task: Configuration File Manager (`.agy-cost-board.yaml`)
   - [x] Write unit tests for config file reading, writing, and env/flag precedence
   - [x] Implement configuration loader and writer in `internal/config`
 - [x] Task: CLI `setup` Command Implementation
-  - [x] Write unit tests for `agy-ge-board setup` with table/JSON output
+  - [x] Write unit tests for `agy-cost-board setup` with table/JSON output
   - [x] Implement `setup` command with `--save`, `--dry-run`, and `--demo` flags
 - [x] Task: Resource Provisioning Generator (`--create` / `--dry-run`)
   - [x] Write unit tests for `gcloud` command generation and dataset/sink provisioning logic
   - [x] Implement BigQuery dataset creation and Cloud Logging sink creation helpers
 - [x] Task: Integrate Config Loader into All Existing CLI Commands
-  - [x] Write unit tests verifying CLI subcommands (`cost`, `license`, `user`, `serve`, `tui`) inherit settings from `.agy-ge-board.yaml`
+  - [x] Write unit tests verifying CLI subcommands (`cost`, `license`, `user`, `serve`, `tui`) inherit settings from `.agy-cost-board.yaml`
   - [x] Update `root.go` to auto-load configuration file if flags are omitted
 - [x] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 

@@ -1,7 +1,7 @@
 # Specification: Setup & Telemetry Verification Engine (`setup_cmd_20260923`)
 
 ## 1. Overview
-This track introduces the `setup` command (`agy-ge-board setup`), configuration persistence, and Web Dashboard integration. Based on the Google Cloud reference architecture article [*"Per-user cost attribution for Antigravity with BigQuery"*](https://medium.com/google-cloud/per-user-cost-attribution-for-antigravity-with-bigquery-3e98fd997c58), this capability allows users and administrators to verify, diagnose, and optionally provision all Google Cloud prerequisites needed for Antigravity inference logging and billing attribution.
+This track introduces the `setup` command (`agy-cost-board setup`), configuration persistence, and Web Dashboard integration. Based on the Google Cloud reference architecture article [*"Per-user cost attribution for Antigravity with BigQuery"*](https://medium.com/google-cloud/per-user-cost-attribution-for-antigravity-with-bigquery-3e98fd997c58), this capability allows users and administrators to verify, diagnose, and optionally provision all Google Cloud prerequisites needed for Antigravity inference logging and billing attribution.
 
 ## 2. Functional Requirements
 
@@ -23,8 +23,8 @@ This track introduces the `setup` command (`agy-ge-board setup`), configuration 
   - `--create`: Automatically create missing BigQuery datasets and Cloud Logging sink.
   - `--dry-run`: Output the exact `gcloud` CLI commands and BigQuery DDL without executing changes.
 - **Local Configuration Persistence (`--save` / auto-save):**
-  - Save verified configuration to `.agy-ge-board.yaml` (or `.env`).
-  - Automatically load `.agy-ge-board.yaml` across all commands (`cost`, `license`, `user`, `serve`, `tui`) with precedence: Flags > Env Vars > Config File > Demo Fallback.
+  - Save verified configuration to `.agy-cost-board.yaml` (or `.env`).
+  - Automatically load `.agy-cost-board.yaml` across all commands (`cost`, `license`, `user`, `serve`, `tui`) with precedence: Flags > Env Vars > Config File > Demo Fallback.
 
 ### 2.2 REST API & Embedded Web Dashboard Integration
 - **REST Endpoint:**
@@ -41,9 +41,9 @@ This track introduces the `setup` command (`agy-ge-board setup`), configuration 
 - **High Test Coverage:** Target $\ge 80\%$ statement coverage with unit and integration tests.
 
 ## 4. Acceptance Criteria
-1. `agy-ge-board setup --demo` outputs formatted diagnostic checklist with all checks passing.
-2. `agy-ge-board setup --dry-run` outputs exact `gcloud` commands to configure sink and dataset.
-3. `agy-ge-board setup --save` creates `.agy-ge-board.yaml` respected by all subcommands.
+1. `agy-cost-board setup --demo` outputs formatted diagnostic checklist with all checks passing.
+2. `agy-cost-board setup --dry-run` outputs exact `gcloud` commands to configure sink and dataset.
+3. `agy-cost-board setup --save` creates `.agy-cost-board.yaml` respected by all subcommands.
 4. `GET /api/v1/setup/status` returns full diagnostic report in JSON.
 5. React web dashboard includes Setup & Health tab displaying interactive status cards and remediation snippets.
 6. Test coverage $\ge 80\%$ across new code.

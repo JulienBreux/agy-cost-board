@@ -7,9 +7,9 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/julienbreux/agy-ge-board/internal/attribution"
-	"github.com/julienbreux/agy-ge-board/internal/bigquery"
-	"github.com/julienbreux/agy-ge-board/internal/tui"
+	"github.com/julienbreux/agy-cost-board/internal/attribution"
+	"github.com/julienbreux/agy-cost-board/internal/bigquery"
+	"github.com/julienbreux/agy-cost-board/internal/tui"
 )
 
 func setupTestModel(t *testing.T) tui.Model {

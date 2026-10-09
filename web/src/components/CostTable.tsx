@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Filter, ArrowUpDown, ChevronRight } from 'lucide-react';
+import { Search, Filter, ArrowUpDown } from 'lucide-react';
 import { AllocatedUserCost } from '../api';
 
 interface CostTableProps {
@@ -124,13 +124,12 @@ export const CostTable: React.FC<CostTableProps> = ({ costs, onSelectUser }) => 
                   <ArrowUpDown className="h-3 w-3" />
                 </div>
               </th>
-              <th className="py-3 px-4 text-center">Action</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#1e2330]">
             {paginatedRows.length === 0 ? (
               <tr>
-                <td colSpan={7} className="py-8 text-center text-google-gray-500">
+                <td colSpan={6} className="py-8 text-center text-google-gray-500">
                   No attributed cost records found matching your filters.
                 </td>
               </tr>
@@ -171,17 +170,6 @@ export const CostTable: React.FC<CostTableProps> = ({ costs, onSelectUser }) => 
                   </td>
                   <td className="py-3 px-4 text-right font-semibold text-white font-mono">
                     ${r.allocated_cost.toFixed(2)}
-                  </td>
-                  <td className="py-3 px-4 text-center">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSelectUser(r.user_id);
-                      }}
-                      className="p-1 rounded hover:bg-google-blue/20 text-google-gray-400 hover:text-google-blue transition-colors"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </button>
                   </td>
                 </tr>
               ))

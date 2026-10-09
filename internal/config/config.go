@@ -7,7 +7,7 @@ import (
 )
 
 // DefaultConfigFileName is the standard configuration file name searched in the workspace.
-const DefaultConfigFileName = ".agy-ge-board.yaml"
+const DefaultConfigFileName = ".agy-cost-board.yaml"
 
 // FileConfig represents the structure of the persisted configuration file.
 type FileConfig struct {
@@ -23,6 +23,11 @@ type FileConfig struct {
 func Load(path string) (*FileConfig, error) {
 	if path == "" {
 		path = DefaultConfigFileName
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			if _, legacyErr := os.Stat(".agy-ge-board.yaml"); legacyErr == nil {
+				path = ".agy-ge-board.yaml"
+			}
+		}
 	}
 
 	data, err := os.ReadFile(path)

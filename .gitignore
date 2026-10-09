@@ -1,7 +1,8 @@
 # Binaries and build outputs
 /bin/
 /dist/
-agy-ge-board
+/agy-cost-board
+/agy-ge-board
 
 # Node & Frontend dependencies and build outputs
 /web/node_modules/
@@ -17,6 +18,8 @@ coverage.html
 *.local
 credentials.json
 service-account*.json
+.agy-cost-board.yaml
+.agy-ge-board.yaml
 
 # OS files
 .DS_Store

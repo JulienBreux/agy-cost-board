@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
-	"github.com/julienbreux/agy-ge-board/internal/domain"
+	"github.com/julienbreux/agy-cost-board/internal/domain"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
@@ -36,25 +36,33 @@ func (c ClientConfig) Validate() error {
 	return nil
 }
 
-// BuildTelemetryQuery generates SQL to extract Antigravity inference logs.
+// BuildTelemetryQuery generates SQL to extract Antigravity inference logs with default payload field.
 func BuildTelemetryQuery(table string, days int) string {
+	return BuildTelemetryQueryForField(table, days, "jsonPayload")
+}
+
+// BuildTelemetryQueryForField generates SQL to extract Antigravity inference logs with a specified payload column.
+func BuildTelemetryQueryForField(table string, days int, payloadField string) string {
 	if days <= 0 {
 		days = 30
+	}
+	if payloadField == "" {
+		payloadField = "jsonPayload"
 	}
 	return fmt.Sprintf(`SELECT
   timestamp,
   labels.user_id AS user_id,
   labels.model AS model,
-  IFNULL(CAST(jsonPayload.metadata.totalTokenCount AS INT64), 0) AS total_tokens,
-  IFNULL(CAST(jsonPayload.metadata.promptTokenCount AS INT64), 0) AS prompt_tokens,
-  IFNULL(CAST(jsonPayload.metadata.candidatesTokenCount AS INT64), 0) AS completion_tokens
+  IFNULL(CAST(%s.metadata.totalTokenCount AS INT64), 0) AS total_tokens,
+  IFNULL(CAST(%s.metadata.promptTokenCount AS INT64), 0) AS prompt_tokens,
+  IFNULL(CAST(%s.metadata.candidatesTokenCount AS INT64), 0) AS completion_tokens
 FROM
   `+"`%s`"+`
 WHERE
   timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL %d DAY)
-  AND jsonPayload.metadata.totalTokenCount IS NOT NULL
+  AND %s.metadata.totalTokenCount IS NOT NULL
 ORDER BY
-  timestamp DESC`, table, days)
+  timestamp DESC`, payloadField, payloadField, payloadField, table, days, payloadField)
 }
 
 // BuildBillingQuery generates SQL to extract net costs for Gemini & Antigravity SKUs.
@@ -192,9 +200,31 @@ func DeriveLicenseSeats(logs []domain.TelemetryLog, windowDays int, configuredQu
 	return seats, quota
 }
 
+// DetectPayloadField inspects the telemetry table schema to determine the root payload column name.
+// Cloud Logging writes typed protobuf logs as jsonpayload_v1_inferenceresponselog,
+// while untyped JSON logs are stored under jsonPayload.
+func (c *BigQueryClient) DetectPayloadField(ctx context.Context) string {
+	if c == nil || c.client == nil {
+		return "jsonPayload"
+	}
+	parts := strings.Split(c.config.TelemetryTable, ".")
+	if len(parts) >= 3 {
+		md, err := c.client.DatasetInProject(parts[0], parts[1]).Table(parts[2]).Metadata(ctx)
+		if err == nil && md != nil {
+			for _, f := range md.Schema {
+				if strings.EqualFold(f.Name, "jsonpayload_v1_inferenceresponselog") {
+					return "jsonpayload_v1_inferenceresponselog"
+				}
+			}
+		}
+	}
+	return "jsonPayload"
+}
+
 // FetchTelemetryLogs executes the telemetry query and returns individual events.
 func (c *BigQueryClient) FetchTelemetryLogs(ctx context.Context, days int) ([]domain.TelemetryLog, error) {
-	sql := BuildTelemetryQuery(c.config.TelemetryTable, days)
+	field := c.DetectPayloadField(ctx)
+	sql := BuildTelemetryQueryForField(c.config.TelemetryTable, days, field)
 	q := c.client.Query(sql)
 
 	it, err := q.Read(ctx)

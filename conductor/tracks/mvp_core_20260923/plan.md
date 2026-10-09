@@ -2,7 +2,7 @@
 
 ## Phase 1: Project Scaffolding & Core Domain Models
 - [x] Task: Project Scaffolding & Dependency Initialization
-  - [x] Initialize Go module (`agy-ge-board`) and standard directory layout (`cmd/`, `internal/`, `web/`)
+  - [x] Initialize Go module (`agy-cost-board`) and standard directory layout (`cmd/`, `internal/`, `web/`)
   - [x] Configure linting and test tooling adhering to `workflow.md` and `code_styleguides/`
 - [x] Task: Domain Models & Attribution Data Types
   - [x] Write unit tests for domain entities (`UserTokenShare`, `AllocatedUserCost`, `LicenseStatus`)

@@ -1,7 +1,7 @@
 # Specification: MVP Track - Dual-Mode CLI & Cloud Run Web Dashboard for Gemini Enterprise & Antigravity
 
 ## 1. Overview & Objectives
-Build the core MVP of `agy-ge-board`, a single-binary application deployable to Cloud Run and operable via CLI/TUI. It extracts Antigravity inference telemetry from Cloud Logging in BigQuery, computes exact per-user proportional cost allocations against GCP Cloud Billing export datasets, monitors Gemini Enterprise seat quotas, and flags dormant or inactive license holders.
+Build the core MVP of `agy-cost-board`, a single-binary application deployable to Cloud Run and operable via CLI/TUI. It extracts Antigravity inference telemetry from Cloud Logging in BigQuery, computes exact per-user proportional cost allocations against GCP Cloud Billing export datasets, monitors Gemini Enterprise seat quotas, and flags dormant or inactive license holders.
 
 ## 2. Functional Requirements
 
@@ -51,10 +51,10 @@ Build the core MVP of `agy-ge-board`, a single-binary application deployable to 
 - **Quality & Testing:** Adherence to strict TDD (Red/Green/Refactor) with >80% test coverage on Go core logic and React UI components.
 
 ## 4. Acceptance Criteria
-- [ ] Running `./agy-ge-board cost --demo` outputs formatted tabular cost attribution in the terminal.
-- [ ] Running `./agy-ge-board cost --demo --format=json` outputs valid JSON parseable by `jq`.
-- [ ] Running `./agy-ge-board license --demo` shows seat utilization and identifies dormant users.
-- [ ] Running `./agy-ge-board serve --demo` launches HTTP server on `$PORT` and serves the React dashboard at `http://localhost:$PORT`.
+- [ ] Running `./agy-cost-board cost --demo` outputs formatted tabular cost attribution in the terminal.
+- [ ] Running `./agy-cost-board cost --demo --format=json` outputs valid JSON parseable by `jq`.
+- [ ] Running `./agy-cost-board license --demo` shows seat utilization and identifies dormant users.
+- [ ] Running `./agy-cost-board serve --demo` launches HTTP server on `$PORT` and serves the React dashboard at `http://localhost:$PORT`.
 - [ ] Navigating between Overview, Cost Attribution, and License views in the web UI renders data and charts seamlessly.
 - [ ] Docker container builds cleanly and runs locally with `docker run -e PORT=8080 -p 8080:8080 <image> serve --demo`.
 - [ ] Go test suite passes with >80% coverage.

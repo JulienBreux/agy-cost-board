@@ -119,7 +119,9 @@ type OverviewMetrics struct {
 type DailySpendTrend struct {
 	Date        string  `json:"date"`
 	TotalCost   float64 `json:"total_cost"`
+	Cost        float64 `json:"cost"`
 	TotalTokens int64   `json:"total_tokens"`
+	Tokens      int64   `json:"tokens"`
 	ActiveUsers int     `json:"active_users"`
 }
 

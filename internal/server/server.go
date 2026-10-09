@@ -11,9 +11,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
-	"github.com/julienbreux/agy-ge-board/internal/attribution"
-	"github.com/julienbreux/agy-ge-board/internal/domain"
-	"github.com/julienbreux/agy-ge-board/internal/setup"
+	"github.com/julienbreux/agy-cost-board/internal/attribution"
+	"github.com/julienbreux/agy-cost-board/internal/domain"
+	"github.com/julienbreux/agy-cost-board/internal/setup"
 )
 
 // Server encapsulates the HTTP router, middleware, and dependency engine.
@@ -80,7 +80,7 @@ func (s *Server) setupRoutes() {
 	r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
 		respondJSON(w, http.StatusOK, map[string]string{
 			"status":  "ok",
-			"service": "agy-ge-board",
+			"service": "agy-cost-board",
 		})
 	})
 

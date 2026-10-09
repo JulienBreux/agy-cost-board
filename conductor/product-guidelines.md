@@ -1,4 +1,4 @@
-# Product Guidelines: agy-ge-board
+# Product Guidelines: agy-cost-board
 
 ## 1. Visual & UI Design System
 - **Aesthetic:** Modern, high-density FinOps dashboard inspired by Google Cloud Console clarity, utilizing Tailwind / modern CSS with seamless Dark and Light theme support.
@@ -22,7 +22,7 @@
 
 ## 4. Diagnostics, Error Handling & Resilience
 - **Actionable Diagnostic Errors:** When a BigQuery query fails due to missing IAM permissions, provide explicit remediation commands (e.g., `gcloud projects add-iam-policy-binding ... --role="roles/bigquery.dataViewer"`).
-- **Proactive Prerequisites Check:** An `agy-ge-board doctor` / diagnostic check to validate GCP ADC credentials, BigQuery sink connectivity, and dataset accessibility.
+- **Proactive Prerequisites Check:** An `agy-cost-board doctor` / diagnostic check to validate GCP ADC credentials, BigQuery sink connectivity, and dataset accessibility.
 - **Graceful Demo Fallback:** When GCP credentials are not detected or `--demo` is passed, offer instant demonstration mode with realistic synthetic datasets to explore the UI and TUI offline.
 
 ## 5. Performance & Resource Constraints

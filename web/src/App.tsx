@@ -196,7 +196,17 @@ export function App() {
 
       {/* Footer */}
       <footer className="border-t border-[#1e2330] py-6 text-center text-xs text-google-gray-500">
-        <p>AGY & Gemini Enterprise Cost Attribution Board • Built for Google Cloud Run & Cloud Billing</p>
+        <p>
+          With &lt;3 by{' '}
+          <a
+            href="https://github.com/julienbreux"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-google-gray-400 hover:text-white transition-colors underline underline-offset-2"
+          >
+            Julien Breux
+          </a>
+        </p>
       </footer>
     </div>
   );

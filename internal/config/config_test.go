@@ -5,12 +5,12 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/julienbreux/agy-ge-board/internal/config"
+	"github.com/julienbreux/agy-cost-board/internal/config"
 )
 
 func TestConfigLoadAndSave(t *testing.T) {
 	tmpDir := t.TempDir()
-	cfgPath := filepath.Join(tmpDir, ".agy-ge-board.yaml")
+	cfgPath := filepath.Join(tmpDir, ".agy-cost-board.yaml")
 
 	t.Run("loading non-existent file returns default empty config without error", func(t *testing.T) {
 		cfg, err := config.Load(filepath.Join(tmpDir, "missing.yaml"))

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/julienbreux/agy-ge-board/internal/cli"
+	"github.com/julienbreux/agy-cost-board/internal/cli"
 )
 
 func TestSetupCommand(t *testing.T) {
@@ -82,7 +82,7 @@ func TestSetupCommand(t *testing.T) {
 
 	t.Run("persists configuration when --save flag is provided", func(t *testing.T) {
 		tmpDir := t.TempDir()
-		cfgFile := filepath.Join(tmpDir, ".agy-ge-board.yaml")
+		cfgFile := filepath.Join(tmpDir, ".agy-cost-board.yaml")
 
 		cli.ResetFlags()
 		cmd := cli.NewRootCommand()
@@ -123,7 +123,7 @@ func TestSetupCommand(t *testing.T) {
 
 	t.Run("subcommands inherit settings from config file when flags omitted", func(t *testing.T) {
 		tmpDir := t.TempDir()
-		cfgFile := filepath.Join(tmpDir, ".agy-ge-board.yaml")
+		cfgFile := filepath.Join(tmpDir, ".agy-cost-board.yaml")
 
 		// Pre-populate configuration file
 		configData := `project_id: config-project

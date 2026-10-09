@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/julienbreux/agy-ge-board/internal/setup"
+	"github.com/julienbreux/agy-cost-board/internal/setup"
 )
 
 func TestProvisionPlanGenerator(t *testing.T) {

@@ -10,12 +10,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/julienbreux/agy-ge-board/internal/attribution"
-	"github.com/julienbreux/agy-ge-board/internal/bigquery"
-	"github.com/julienbreux/agy-ge-board/internal/cli"
-	"github.com/julienbreux/agy-ge-board/internal/domain"
-	"github.com/julienbreux/agy-ge-board/internal/server"
-	"github.com/julienbreux/agy-ge-board/web"
+	"github.com/julienbreux/agy-cost-board/internal/attribution"
+	"github.com/julienbreux/agy-cost-board/internal/bigquery"
+	"github.com/julienbreux/agy-cost-board/internal/cli"
+	"github.com/julienbreux/agy-cost-board/internal/domain"
+	"github.com/julienbreux/agy-cost-board/internal/server"
+	"github.com/julienbreux/agy-cost-board/web"
 )
 
 func TestEndToEndCLIFlows(t *testing.T) {
@@ -226,7 +226,7 @@ func TestEndToEndHTTPServerFlows(t *testing.T) {
 
 		body, _ := io.ReadAll(res.Body)
 		bodyStr := string(body)
-		if !strings.Contains(bodyStr, "AGY & Gemini Enterprise") {
+		if !strings.Contains(bodyStr, "Usage and Spend") {
 			t.Errorf("expected title in SPA index.html, got: %s", bodyStr)
 		}
 		if !strings.Contains(bodyStr, `<div id="root"></div>`) {

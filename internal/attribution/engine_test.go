@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/julienbreux/agy-ge-board/internal/attribution"
-	"github.com/julienbreux/agy-ge-board/internal/bigquery"
+	"github.com/julienbreux/agy-cost-board/internal/attribution"
+	"github.com/julienbreux/agy-cost-board/internal/bigquery"
 )
 
 func TestAttributionEngine(t *testing.T) {

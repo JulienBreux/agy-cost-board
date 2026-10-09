@@ -31,8 +31,8 @@ COPY --from=web-builder /app/web/dist ./web/dist
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -trimpath \
     -ldflags="-w -s" \
-    -o /app/bin/agy-ge-board \
-    ./cmd/agy-ge-board
+    -o /app/bin/agy-cost-board \
+    ./cmd/agy-cost-board
 
 # ==============================================================================
 # Stage 3: Minimal Distroless Production Runtime
@@ -41,7 +41,7 @@ FROM gcr.io/distroless/static-debian12:nonroot
 WORKDIR /
 
 # Copy binary and root CA certificates for Google Cloud API TLS
-COPY --from=go-builder /app/bin/agy-ge-board /agy-ge-board
+COPY --from=go-builder /app/bin/agy-cost-board /agy-cost-board
 COPY --from=go-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 # Cloud Run dynamic port binding
@@ -52,7 +52,7 @@ EXPOSE 8080
 USER nonroot:nonroot
 
 # Default entrypoint allows running CLI subcommands directly (cost, license, doctor, etc.)
-ENTRYPOINT ["/agy-ge-board"]
+ENTRYPOINT ["/agy-cost-board"]
 
 # Default action is to launch the HTTP web server for Cloud Run
 CMD ["serve"]

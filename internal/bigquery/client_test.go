@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/julienbreux/agy-ge-board/internal/bigquery"
-	"github.com/julienbreux/agy-ge-board/internal/domain"
+	"github.com/julienbreux/agy-cost-board/internal/bigquery"
+	"github.com/julienbreux/agy-cost-board/internal/domain"
 )
 
 func TestQueryBuilders(t *testing.T) {
@@ -29,6 +29,20 @@ func TestQueryBuilders(t *testing.T) {
 		defaultQuery := bigquery.BuildTelemetryQuery(table, 0)
 		if !strings.Contains(defaultQuery, "INTERVAL 30 DAY") {
 			t.Errorf("query does not default to 30 days: %s", defaultQuery)
+		}
+	})
+
+	t.Run("BuildTelemetryQueryForField supports custom protobuf payload field", func(t *testing.T) {
+		table := "my-project.antigravity_logs.inference_logs"
+		query := bigquery.BuildTelemetryQueryForField(table, 7, "jsonpayload_v1_inferenceresponselog")
+
+		if !strings.Contains(query, "jsonpayload_v1_inferenceresponselog.metadata.totalTokenCount") {
+			t.Errorf("query does not contain custom payload field: %s", query)
+		}
+
+		fallbackQuery := bigquery.BuildTelemetryQueryForField(table, 7, "")
+		if !strings.Contains(fallbackQuery, "jsonPayload.metadata.totalTokenCount") {
+			t.Errorf("query does not default empty payloadField to jsonPayload: %s", fallbackQuery)
 		}
 	})
 

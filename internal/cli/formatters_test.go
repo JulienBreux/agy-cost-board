@@ -4,17 +4,17 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/julienbreux/agy-ge-board/internal/cli"
+	"github.com/julienbreux/agy-cost-board/internal/cli"
 )
 
 func TestFormattersEdgeCases(t *testing.T) {
 	t.Run("FormatJSON pretty-prints valid struct", func(t *testing.T) {
-		payload := map[string]string{"service": "agy-ge-board", "status": "ok"}
+		payload := map[string]string{"service": "agy-cost-board", "status": "ok"}
 		out, err := cli.FormatJSON(payload)
 		if err != nil {
 			t.Fatalf("unexpected error formatting JSON: %v", err)
 		}
-		if !strings.Contains(out, `"service": "agy-ge-board"`) {
+		if !strings.Contains(out, `"service": "agy-cost-board"`) {
 			t.Errorf("expected json output to contain service, got: %s", out)
 		}
 	})
