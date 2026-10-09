@@ -12,6 +12,10 @@ It pro-rates Google Cloud Billing export charges strictly proportional to each d
 
 Based on the Google Cloud architecture article [**"Per-user cost attribution for Antigravity with BigQuery"**](https://medium.com/google-cloud/per-user-cost-attribution-for-antigravity-with-bigquery-3e98fd997c58).
 
+<p align="center">
+  <img src="docs/assets/dashboard.png" alt="agy-cost-board Web Dashboard" width="100%" />
+</p>
+
 ---
 
 ## Why agy-cost-board?
