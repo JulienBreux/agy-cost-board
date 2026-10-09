@@ -273,3 +273,110 @@ func TestServerWithCustomRunner(t *testing.T) {
 		t.Errorf("expected project custom-test-proj, got %s", report.ProjectID)
 	}
 }
+
+func TestCurrentUserEndpoint(t *testing.T) {
+	router := setupTestServer(t)
+
+	t.Run("GET /api/v1/me extracts identity from X-Goog-Authenticated-User-Email", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/me", nil)
+		req.Header.Set("X-Goog-Authenticated-User-Email", "accounts.google.com:sarah.connor@example.com")
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("expected 200 OK, got %d", rec.Code)
+		}
+		var user domain.CurrentUserIdentity
+		if err := json.NewDecoder(rec.Body).Decode(&user); err != nil {
+			t.Fatalf("decode err: %v", err)
+		}
+		if user.UserID != "sarah.connor@example.com" {
+			t.Errorf("expected user_id sarah.connor@example.com, got %s", user.UserID)
+		}
+		if !user.Authenticated {
+			t.Errorf("expected authenticated true")
+		}
+		if user.Source != "iap" {
+			t.Errorf("expected source iap, got %s", user.Source)
+		}
+	})
+
+	t.Run("GET /api/v1/me falls back to demo user when unauthenticated in demo mode", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/me", nil)
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("expected 200 OK, got %d", rec.Code)
+		}
+		var user domain.CurrentUserIdentity
+		if err := json.NewDecoder(rec.Body).Decode(&user); err != nil {
+			t.Fatalf("decode err: %v", err)
+		}
+		if user.UserID == "" {
+			t.Errorf("expected demo user_id to be populated")
+		}
+		if user.Source != "demo" {
+			t.Errorf("expected source demo, got %s", user.Source)
+		}
+	})
+}
+
+func TestUserActivityEndpoint(t *testing.T) {
+	router := setupTestServer(t)
+
+	t.Run("GET /api/v1/users/{id}/activity returns recent inference events", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/users/alex.turner@example.com/activity?days=30&limit=5", nil)
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("expected 200 OK, got %d (body: %s)", rec.Code, rec.Body.String())
+		}
+		var activity []domain.UserActivityLog
+		if err := json.NewDecoder(rec.Body).Decode(&activity); err != nil {
+			t.Fatalf("decode err: %v", err)
+		}
+		if len(activity) == 0 {
+			t.Errorf("expected non-empty activity for alex.turner@example.com")
+		}
+		if len(activity) > 5 {
+			t.Errorf("expected at most 5 records, got %d", len(activity))
+		}
+		first := activity[0]
+		if first.UserID != "alex.turner@example.com" {
+			t.Errorf("expected user_id alex.turner@example.com, got %s", first.UserID)
+		}
+		if first.TotalTokens <= 0 {
+			t.Errorf("expected total_tokens > 0, got %d", first.TotalTokens)
+		}
+	})
+}
+
+func TestUserDashboardEndpoint(t *testing.T) {
+	router := setupTestServer(t)
+
+	t.Run("GET /api/v1/users/{id}/dashboard returns driving metrics and recommendations", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/users/alex.turner@example.com/dashboard?days=30&budget=250", nil)
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("expected 200 OK, got %d (body: %s)", rec.Code, rec.Body.String())
+		}
+		var driving domain.UserConsumptionDriving
+		if err := json.NewDecoder(rec.Body).Decode(&driving); err != nil {
+			t.Fatalf("decode err: %v", err)
+		}
+		if driving.UserID != "alex.turner@example.com" {
+			t.Errorf("expected user_id alex.turner@example.com, got %s", driving.UserID)
+		}
+		if driving.MonthlyBudget != 250.0 {
+			t.Errorf("expected budget 250.0, got %f", driving.MonthlyBudget)
+		}
+		if len(driving.DailyTrends) == 0 {
+			t.Errorf("expected daily trends")
+		}
+	})
+}
+

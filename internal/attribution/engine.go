@@ -345,3 +345,155 @@ func (e *Engine) GetOverviewMetrics(ctx context.Context, days int) (*domain.Over
 	e.setToCache(cacheKey, overview)
 	return overview, nil
 }
+
+// GetUserActivity returns recent inference telemetry logs and estimated cost for a given user.
+func (e *Engine) GetUserActivity(ctx context.Context, userID string, days int, limit int) ([]domain.UserActivityLog, error) {
+	if limit <= 0 {
+		limit = 50
+	}
+	logs, err := e.provider.FetchTelemetryLogs(ctx, days)
+	if err != nil {
+		return nil, fmt.Errorf("fetch telemetry logs: %w", err)
+	}
+
+	allCosts, _ := e.GetAttributedCosts(ctx, days, "")
+
+	// Calculate model average cost per token
+	type modelCostAgg struct {
+		totalCost   float64
+		totalTokens int64
+	}
+	modelUnitCost := make(map[string]float64)
+	agg := make(map[string]*modelCostAgg)
+	for _, c := range allCosts {
+		if _, ok := agg[c.Model]; !ok {
+			agg[c.Model] = &modelCostAgg{}
+		}
+		agg[c.Model].totalCost += c.AllocatedCost
+		agg[c.Model].totalTokens += c.UserTokens
+	}
+	for m, a := range agg {
+		if a.totalTokens > 0 {
+			modelUnitCost[m] = a.totalCost / float64(a.totalTokens)
+		}
+	}
+
+	userLogs := make([]domain.TelemetryLog, 0)
+	for _, l := range logs {
+		if l.UserID == userID {
+			userLogs = append(userLogs, l)
+		}
+	}
+
+	// Sort descending by timestamp (newest first)
+	slices.SortFunc(userLogs, func(a, b domain.TelemetryLog) int {
+		if a.Timestamp.Equal(b.Timestamp) {
+			return 0
+		}
+		if a.Timestamp.After(b.Timestamp) {
+			return -1
+		}
+		return 1
+	})
+
+	if len(userLogs) > limit {
+		userLogs = userLogs[:limit]
+	}
+
+	result := make([]domain.UserActivityLog, 0, len(userLogs))
+	for _, l := range userLogs {
+		rate := modelUnitCost[l.Model]
+		cost := float64(l.TotalTokens) * rate
+		cost = math.Round(cost*10000) / 10000
+
+		result = append(result, domain.UserActivityLog{
+			Timestamp:        l.Timestamp,
+			UserID:           l.UserID,
+			Model:            l.Model,
+			TotalTokens:      l.TotalTokens,
+			PromptTokens:     l.PromptTokens,
+			CompletionTokens: l.CompletionTokens,
+			EstimatedCost:    cost,
+		})
+	}
+
+	return result, nil
+}
+
+// GetUserConsumptionDriving computes consumption driving analytics, velocity, budget metrics, and recommendations.
+func (e *Engine) GetUserConsumptionDriving(ctx context.Context, userID string, days int, monthlyBudget float64) (*domain.UserConsumptionDriving, error) {
+	if days <= 0 {
+		days = 30
+	}
+	if monthlyBudget <= 0 {
+		monthlyBudget = 150.0
+	}
+
+	summary, err := e.GetUserSummary(ctx, userID, days)
+	if err != nil {
+		return nil, err
+	}
+
+	overview, err := e.GetOverviewMetrics(ctx, days)
+	if err != nil {
+		return nil, err
+	}
+
+	allCosts, err := e.GetAttributedCosts(ctx, days, "")
+	if err != nil {
+		return nil, err
+	}
+
+	userDaily := make(map[string]*domain.PersonalDailyTrend)
+	for _, c := range allCosts {
+		if c.UserID == userID {
+			if _, ok := userDaily[c.UsageDate]; !ok {
+				userDaily[c.UsageDate] = &domain.PersonalDailyTrend{
+					Date:    c.UsageDate,
+					ByModel: make(map[string]float64),
+				}
+			}
+			tr := userDaily[c.UsageDate]
+			tr.TotalCost += c.AllocatedCost
+			tr.TotalTokens += c.UserTokens
+			tr.ByModel[c.Model] += c.AllocatedCost
+		}
+	}
+
+	trends := make([]domain.PersonalDailyTrend, 0, len(userDaily))
+	for _, tr := range userDaily {
+		tr.TotalCost = math.Round(tr.TotalCost*100) / 100
+		trends = append(trends, *tr)
+	}
+	slices.SortFunc(trends, func(a, b domain.PersonalDailyTrend) int {
+		return cmp.Compare(a.Date, b.Date)
+	})
+
+	dailyBurnRate := math.Round((summary.TotalCost/float64(days))*100) / 100
+	weeklyBurnRate := math.Round((dailyBurnRate*7.0)*100) / 100
+
+	var orgShare float64
+	if overview.TotalBilledCost > 0 {
+		orgShare = math.Round((summary.TotalCost/overview.TotalBilledCost)*1000) / 10.0
+	}
+
+	budgetStatus, consumedPct, projectedMonthEnd := domain.CalculateBudgetMetrics(summary.TotalCost, monthlyBudget, days)
+	recommendations := domain.GenerateOptimizationTips(userID, summary.ModelBreakdown, summary.TotalTokens, summary.SeatStatus)
+
+	return &domain.UserConsumptionDriving{
+		UserID:                 userID,
+		Currency:               summary.Currency,
+		TotalSpendInWindow:     math.Round(summary.TotalCost*100) / 100,
+		TotalTokensInWindow:    summary.TotalTokens,
+		DailyBurnRate:          dailyBurnRate,
+		WeeklyBurnRate:         weeklyBurnRate,
+		OrgSpendSharePct:       orgShare,
+		MonthlyBudget:          monthlyBudget,
+		ProjectedMonthEndSpend: projectedMonthEnd,
+		BudgetConsumedPct:      consumedPct,
+		BudgetStatus:           budgetStatus,
+		Recommendations:        recommendations,
+		DailyTrends:            trends,
+	}, nil
+}
+

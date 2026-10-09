@@ -155,3 +155,76 @@ func TestAllocatedUserCostSerialization(t *testing.T) {
 		t.Errorf("expected first column to be user ID, got %s", csvRow[0])
 	}
 }
+
+func TestCalculateBudgetMetrics(t *testing.T) {
+	t.Run("On track status when spend is well below budget", func(t *testing.T) {
+		status, pct, projected := domain.CalculateBudgetMetrics(30.0, 150.0, 10)
+		if status != "on_track" {
+			t.Errorf("expected status on_track, got %s", status)
+		}
+		if pct != 20.0 {
+			t.Errorf("expected pct 20.0, got %f", pct)
+		}
+		if projected <= 0 {
+			t.Errorf("expected projected > 0, got %f", projected)
+		}
+	})
+
+	t.Run("Warning status when spend is high or projected to exceed", func(t *testing.T) {
+		status, pct, _ := domain.CalculateBudgetMetrics(120.0, 150.0, 20)
+		if status != "warning" {
+			t.Errorf("expected status warning, got %s", status)
+		}
+		if pct != 80.0 {
+			t.Errorf("expected pct 80.0, got %f", pct)
+		}
+	})
+
+	t.Run("Exceeded status when spend exceeds monthly budget", func(t *testing.T) {
+		status, pct, _ := domain.CalculateBudgetMetrics(160.0, 150.0, 25)
+		if status != "exceeded" {
+			t.Errorf("expected status exceeded, got %s", status)
+		}
+		if pct != 106.7 {
+			t.Errorf("expected pct 106.7, got %f", pct)
+		}
+	})
+}
+
+func TestGenerateOptimizationTips(t *testing.T) {
+	t.Run("Generates model switching tip when Pro usage is dominant", func(t *testing.T) {
+		modelBreakdown := map[string]domain.ModelCostDetail{
+			"gemini-1.5-pro":   {Tokens: 800000, Cost: 80.0, Share: 0.8},
+			"gemini-1.5-flash": {Tokens: 200000, Cost: 2.0, Share: 0.2},
+		}
+		tips := domain.GenerateOptimizationTips("user@example.com", modelBreakdown, 1000000, domain.SeatStatusActive)
+		if len(tips) == 0 {
+			t.Fatalf("expected optimization tips")
+		}
+		var foundProTip bool
+		for _, tip := range tips {
+			if tip.ID == "model-tier-switch" {
+				foundProTip = true
+				if tip.EstimatedSavingsUSD <= 0 {
+					t.Errorf("expected positive savings estimate, got %f", tip.EstimatedSavingsUSD)
+				}
+			}
+		}
+		if !foundProTip {
+			t.Errorf("expected model-tier-switch recommendation")
+		}
+	})
+
+	t.Run("Generates license tip when user seat is dormant", func(t *testing.T) {
+		tips := domain.GenerateOptimizationTips("user@example.com", nil, 0, domain.SeatStatusDormant)
+		var foundLicenseTip bool
+		for _, tip := range tips {
+			if tip.ID == "dormant-license" {
+				foundLicenseTip = true
+			}
+		}
+		if !foundLicenseTip {
+			t.Errorf("expected dormant-license recommendation")
+		}
+	})
+}

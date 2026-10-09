@@ -125,4 +125,48 @@ func TestAttributionEngine(t *testing.T) {
 			t.Errorf("cache inconsistency: %f vs %f", overview1.TotalBilledCost, overview2.TotalBilledCost)
 		}
 	})
+
+	t.Run("GetUserActivity returns sorted user logs with cost estimates", func(t *testing.T) {
+		logs, err := engine.GetUserActivity(ctx, "alex.turner@example.com", 30, 10)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(logs) == 0 {
+			t.Fatalf("expected logs for alex.turner@example.com")
+		}
+		if len(logs) > 10 {
+			t.Errorf("expected at most 10 logs, got %d", len(logs))
+		}
+		for i := 1; i < len(logs); i++ {
+			if logs[i].Timestamp.After(logs[i-1].Timestamp) {
+				t.Errorf("logs not sorted descending by timestamp: %v after %v", logs[i].Timestamp, logs[i-1].Timestamp)
+			}
+		}
+	})
+
+	t.Run("GetUserConsumptionDriving computes budget, velocity, and daily trends", func(t *testing.T) {
+		driving, err := engine.GetUserConsumptionDriving(ctx, "alex.turner@example.com", 30, 200.0)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if driving.UserID != "alex.turner@example.com" {
+			t.Errorf("expected user alex.turner@example.com, got %s", driving.UserID)
+		}
+		if driving.TotalSpendInWindow <= 0 {
+			t.Errorf("expected total spend > 0, got %f", driving.TotalSpendInWindow)
+		}
+		if driving.DailyBurnRate <= 0 {
+			t.Errorf("expected daily burn rate > 0, got %f", driving.DailyBurnRate)
+		}
+		if driving.MonthlyBudget != 200.0 {
+			t.Errorf("expected monthly budget 200.0, got %f", driving.MonthlyBudget)
+		}
+		if len(driving.DailyTrends) == 0 {
+			t.Errorf("expected daily trends for user")
+		}
+		if len(driving.Recommendations) == 0 {
+			t.Errorf("expected recommendations for user")
+		}
+	})
 }
+

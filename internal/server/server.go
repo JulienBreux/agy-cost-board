@@ -85,10 +85,13 @@ func (s *Server) setupRoutes() {
 
 	// API v1 routes
 	r.Route("/api/v1", func(api chi.Router) {
+		api.Get("/me", s.handleCurrentUser)
 		api.Get("/metrics/overview", s.handleOverviewMetrics)
 		api.Get("/costs/users", s.handleAttributedCosts)
 		api.Get("/licenses/status", s.handleLicenseGovernance)
 		api.Get("/users/{id}", s.handleUserSummary)
+		api.Get("/users/{id}/activity", s.handleUserActivity)
+		api.Get("/users/{id}/dashboard", s.handleUserDashboard)
 		api.Get("/setup/status", s.handleSetupStatus)
 	})
 
@@ -150,6 +153,77 @@ func (s *Server) handleUserSummary(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, summary)
 }
 
+func (s *Server) handleCurrentUser(w http.ResponseWriter, r *http.Request) {
+	userHeader := r.Header.Get("X-Goog-Authenticated-User-Email")
+	if userHeader == "" {
+		userHeader = r.Header.Get("X-Forwarded-Email")
+	}
+
+	identity := domain.CurrentUserIdentity{
+		Authenticated: false,
+		Source:        "none",
+	}
+
+	if userHeader != "" {
+		cleanUser := strings.TrimPrefix(userHeader, "accounts.google.com:")
+		identity.UserID = cleanUser
+		identity.Email = cleanUser
+		identity.Authenticated = true
+		identity.Source = "iap"
+		respondJSON(w, http.StatusOK, identity)
+		return
+	}
+
+	if s.setupCfg.Demo {
+		identity.UserID = "alex.turner@example.com"
+		identity.Email = "alex.turner@example.com"
+		identity.Authenticated = false
+		identity.Source = "demo"
+		respondJSON(w, http.StatusOK, identity)
+		return
+	}
+
+	respondJSON(w, http.StatusOK, identity)
+}
+
+func (s *Server) handleUserActivity(w http.ResponseWriter, r *http.Request) {
+	userID := chi.URLParam(r, "id")
+	if userID == "" {
+		respondError(w, http.StatusBadRequest, "missing user id parameter")
+		return
+	}
+	days := parseIntQuery(r, "days", 30)
+	limit := parseIntQuery(r, "limit", 50)
+
+	activity, err := s.engine.GetUserActivity(r.Context(), userID, days, limit)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondJSON(w, http.StatusOK, activity)
+}
+
+func (s *Server) handleUserDashboard(w http.ResponseWriter, r *http.Request) {
+	userID := chi.URLParam(r, "id")
+	if userID == "" {
+		respondError(w, http.StatusBadRequest, "missing user id parameter")
+		return
+	}
+	days := parseIntQuery(r, "days", 30)
+	budget := parseFloatQuery(r, "budget", 150.0)
+
+	driving, err := s.engine.GetUserConsumptionDriving(r.Context(), userID, days, budget)
+	if err != nil {
+		if errors.Is(err, domain.ErrUserNotFound) {
+			respondError(w, http.StatusNotFound, "user not found in telemetry window")
+			return
+		}
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondJSON(w, http.StatusOK, driving)
+}
+
 func (s *Server) handleSetupStatus(w http.ResponseWriter, r *http.Request) {
 	runner := s.setupRunner
 	if runner == nil {
@@ -195,6 +269,18 @@ func parseIntQuery(r *http.Request, key string, defaultValue int) int {
 		return defaultValue
 	}
 	val, err := strconv.Atoi(valStr)
+	if err != nil || val <= 0 {
+		return defaultValue
+	}
+	return val
+}
+
+func parseFloatQuery(r *http.Request, key string, defaultValue float64) float64 {
+	valStr := r.URL.Query().Get(key)
+	if valStr == "" {
+		return defaultValue
+	}
+	val, err := strconv.ParseFloat(valStr, 64)
 	if err != nil || val <= 0 {
 		return defaultValue
 	}
