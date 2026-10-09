@@ -1,4 +1,4 @@
-.PHONY: all build build-web test cover lint clean run demo
+.PHONY: all build build-web test cover cover-html lint vulncheck fmt tidy clean run demo
 
 BINARY_NAME=agy-cost-board
 CMD_DIR=./cmd/agy-cost-board
@@ -14,7 +14,7 @@ build-web:
 	npm --prefix web run build
 
 build:
-	go build -v -ldflags "$(LDFLAGS)" -o bin/$(BINARY_NAME) $(CMD_DIR)
+	go build -trimpath -v -ldflags "$(LDFLAGS)" -o bin/$(BINARY_NAME) $(CMD_DIR)
 
 test:
 	go test -v -race -coverprofile=coverage.out ./...
@@ -26,7 +26,16 @@ cover-html: test
 	go tool cover -html=coverage.out -o coverage.html
 
 lint:
-	go vet ./...
+	go tool golangci-lint run ./...
+
+vulncheck:
+	go tool govulncheck ./...
+
+fmt:
+	go fmt ./...
+
+tidy:
+	go mod tidy
 
 clean:
 	rm -rf bin/ coverage.out coverage.html web/dist
@@ -36,3 +45,4 @@ run:
 
 demo:
 	go run $(CMD_DIR) cost --demo
+

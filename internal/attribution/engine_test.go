@@ -1,7 +1,6 @@
 package attribution_test
 
 import (
-	"context"
 	"testing"
 	"time"
 
@@ -12,7 +11,7 @@ import (
 func TestAttributionEngine(t *testing.T) {
 	demoProvider := bigquery.NewDemoDataProvider()
 	engine := attribution.NewEngine(demoProvider, 5*time.Minute)
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("GetAttributedCosts computes non-empty proportional allocations", func(t *testing.T) {
 		costs, err := engine.GetAttributedCosts(ctx, 30, "")

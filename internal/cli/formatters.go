@@ -50,23 +50,17 @@ func FormatTable(headers []string, rows [][]string) string {
 
 	numCols := len(headers)
 	for _, r := range rows {
-		if len(r) > numCols {
-			numCols = len(r)
-		}
+		numCols = max(numCols, len(r))
 	}
 
 	colWidths := make([]int, numCols)
 	for i, h := range headers {
-		if len(h) > colWidths[i] {
-			colWidths[i] = len(h)
-		}
+		colWidths[i] = max(colWidths[i], len(h))
 	}
 
 	for _, r := range rows {
 		for i, cell := range r {
-			if len(cell) > colWidths[i] {
-				colWidths[i] = len(cell)
-			}
+			colWidths[i] = max(colWidths[i], len(cell))
 		}
 	}
 
@@ -80,7 +74,7 @@ func FormatTable(headers []string, rows [][]string) string {
 		sb.WriteString("\n")
 
 		// Divider
-		for i := 0; i < numCols; i++ {
+		for i := range numCols {
 			sb.WriteString(strings.Repeat("-", colWidths[i]))
 			sb.WriteString("  ")
 		}
@@ -89,7 +83,7 @@ func FormatTable(headers []string, rows [][]string) string {
 
 	// Data rows
 	for _, r := range rows {
-		for i := 0; i < numCols; i++ {
+		for i := range numCols {
 			cell := ""
 			if i < len(r) {
 				cell = r[i]

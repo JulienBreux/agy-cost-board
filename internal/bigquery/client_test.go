@@ -1,7 +1,6 @@
 package bigquery_test
 
 import (
-	"context"
 	"strings"
 	"testing"
 	"time"
@@ -127,7 +126,7 @@ func TestClientConfigValidation(t *testing.T) {
 }
 
 func TestNewBigQueryClientInvalid(t *testing.T) {
-	ctx := context.Background()
+	ctx := t.Context()
 	cfg := bigquery.ClientConfig{} // missing required fields
 
 	client, err := bigquery.NewBigQueryClient(ctx, cfg)

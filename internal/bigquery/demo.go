@@ -1,8 +1,9 @@
 package bigquery
 
 import (
+	"cmp"
 	"context"
-	"math/rand"
+	"math/rand/v2"
 	"time"
 
 	"github.com/julienbreux/agy-cost-board/internal/domain"
@@ -21,22 +22,18 @@ func NewDemoDataProvider() *DemoDataProvider {
 
 // NewDemoDataProviderWithQuota returns a new DemoDataProvider with the specified seat quota.
 func NewDemoDataProviderWithQuota(quota int) *DemoDataProvider {
-	if quota <= 0 {
-		quota = 12
-	}
 	return &DemoDataProvider{
 		seed:  42,
-		quota: quota,
+		quota: cmp.Or(quota, 12),
 	}
 }
 
 // FetchTelemetryLogs generates synthetic inference logs over the requested day window.
 func (d *DemoDataProvider) FetchTelemetryLogs(ctx context.Context, days int) ([]domain.TelemetryLog, error) {
-	if days <= 0 {
-		days = 30
-	}
+	days = cmp.Or(days, 30)
 
-	rng := rand.New(rand.NewSource(d.seed))
+	// #nosec G404 -- pseudo-random numbers sufficient and deterministic for demo data generator
+	rng := rand.New(rand.NewPCG(uint64(d.seed), 0))
 	users := []string{
 		"alex.turner@example.com",
 		"sophia.chen@example.com",
@@ -65,14 +62,14 @@ func (d *DemoDataProvider) FetchTelemetryLogs(ctx context.Context, days int) ([]
 				continue
 			}
 
-			numCalls := rng.Intn(6) + 1
-			for c := 0; c < numCalls; c++ {
-				model := models[rng.Intn(len(models))]
-				promptTokens := int64(rng.Intn(15000) + 1000)
-				completionTokens := int64(rng.Intn(4000) + 200)
+			numCalls := rng.IntN(6) + 1
+			for range numCalls {
+				model := models[rng.IntN(len(models))]
+				promptTokens := int64(rng.IntN(15000) + 1000)
+				completionTokens := int64(rng.IntN(4000) + 200)
 
 				logs = append(logs, domain.TelemetryLog{
-					Timestamp:        dayTime.Add(time.Duration(rng.Intn(24*3600)) * time.Second),
+					Timestamp:        dayTime.Add(time.Duration(rng.IntN(24*3600)) * time.Second),
 					ProjectID:        "prj-antigravity-prod",
 					UserID:           u,
 					Model:            model,
@@ -89,13 +86,12 @@ func (d *DemoDataProvider) FetchTelemetryLogs(ctx context.Context, days int) ([]
 
 // FetchBilledCosts generates synthetic billing export items corresponding to the window.
 func (d *DemoDataProvider) FetchBilledCosts(ctx context.Context, days int) ([]domain.BilledCost, error) {
-	if days <= 0 {
-		days = 30
-	}
+	days = cmp.Or(days, 30)
 
-	rng := rand.New(rand.NewSource(d.seed + 100))
+	// #nosec G404 -- pseudo-random numbers sufficient and deterministic for demo data generator
+	rng := rand.New(rand.NewPCG(uint64(d.seed+100), 0))
 	skus := []struct {
-		desc    string
+		desc     string
 		baseCost float64
 	}{
 		{"Gemini 1.5 Pro Inference - Net Invoiced", 28.50},
@@ -126,10 +122,7 @@ func (d *DemoDataProvider) FetchBilledCosts(ctx context.Context, days int) ([]do
 
 // FetchLicenseSeats returns synthetic assigned license seats and the total quota.
 func (d *DemoDataProvider) FetchLicenseSeats(ctx context.Context, windowDays int) ([]domain.LicenseSeat, int, error) {
-	quota := d.quota
-	if quota <= 0 {
-		quota = 12
-	}
+	quota := cmp.Or(d.quota, 12)
 	now := time.Now().UTC()
 
 	seats := []domain.LicenseSeat{

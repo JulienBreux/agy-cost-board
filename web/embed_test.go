@@ -18,7 +18,7 @@ func TestEmbeddedWebFS(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to open embedded index.html: %v", err)
 	}
-	defer indexFile.Close()
+	t.Cleanup(func() { _ = indexFile.Close() })
 
 	content, err := io.ReadAll(indexFile)
 	if err != nil {

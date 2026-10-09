@@ -4,11 +4,12 @@ import "testing"
 
 func TestMainExecution(t *testing.T) {
 	orig := runCLI
-	defer func() { runCLI = orig }()
+	t.Cleanup(func() { runCLI = orig })
 
 	called := false
-	runCLI = func() {
+	runCLI = func() error {
 		called = true
+		return nil
 	}
 
 	main()

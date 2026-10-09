@@ -1,0 +1,58 @@
+run:
+  timeout: 5m
+  tests: true
+
+linters:
+  enable:
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - revive
+    - gosec
+    - misspell
+    - gocritic
+    - copyloopvar
+    - intrange
+    - usestdlibvars
+    - perfsprint
+    - unconvert
+
+linters-settings:
+  govet:
+    enable-all: true
+    disable:
+      - fieldalignment
+      - shadow
+  gosec:
+    excludes:
+      - G101
+      - G115
+  revive:
+    rules:
+      - name: blank-imports
+        disabled: false
+      - name: context-as-argument
+        disabled: false
+      - name: error-return
+        disabled: false
+      - name: error-strings
+        disabled: false
+      - name: error-naming
+        disabled: false
+      - name: if-return
+        disabled: false
+      - name: var-naming
+        disabled: false
+
+issues:
+  exclude-dirs:
+    - web
+    - dist
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gosec
+        - errcheck

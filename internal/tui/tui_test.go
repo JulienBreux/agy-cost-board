@@ -1,7 +1,6 @@
 package tui_test
 
 import (
-	"context"
 	"strings"
 	"testing"
 	"time"
@@ -13,12 +12,13 @@ import (
 )
 
 func setupTestModel(t *testing.T) tui.Model {
+	t.Helper()
 	provider := bigquery.NewDemoDataProvider()
 	engine := attribution.NewEngine(provider, 5*time.Minute)
 	model := tui.NewModel(engine, 30)
 
 	// Trigger initial load command synchronously for testing
-	ctx := context.Background()
+	ctx := t.Context()
 	costs, err := engine.GetAttributedCosts(ctx, 30, "")
 	if err != nil {
 		t.Fatalf("failed to fetch demo costs: %v", err)

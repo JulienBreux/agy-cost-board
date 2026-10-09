@@ -144,7 +144,7 @@ func TestEndToEndHTTPServerFlows(t *testing.T) {
 
 	srv := server.NewServer(engine, staticFS)
 	ts := httptest.NewServer(srv.Router())
-	defer ts.Close()
+	t.Cleanup(ts.Close)
 
 	client := ts.Client()
 

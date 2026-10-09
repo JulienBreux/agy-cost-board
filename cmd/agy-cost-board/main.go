@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+
 	"github.com/julienbreux/agy-cost-board/internal/cli"
 )
 
@@ -16,6 +18,8 @@ func main() {
 	cli.Version = Version
 	cli.Commit = Commit
 	cli.BuildDate = BuildDate
-	runCLI()
+	if err := runCLI(); err != nil {
+		os.Exit(1)
+	}
 }
 

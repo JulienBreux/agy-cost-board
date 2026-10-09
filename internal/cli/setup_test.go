@@ -2,6 +2,7 @@ package cli_test
 
 import (
 	"bytes"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -105,7 +106,7 @@ func TestSetupCommand(t *testing.T) {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		if _, err := os.Stat(cfgFile); os.IsNotExist(err) {
+		if _, err := os.Stat(cfgFile); errors.Is(err, os.ErrNotExist) {
 			t.Fatalf("expected config file %s to be created", cfgFile)
 		}
 

@@ -1,6 +1,7 @@
 package setup
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"os/exec"
@@ -15,15 +16,9 @@ type ProvisionPlan struct {
 
 // GenerateProvisionPlan creates the sequence of CLI commands to configure BigQuery and Cloud Logging.
 func GenerateProvisionPlan(projectID, datasetID, sinkName string) ProvisionPlan {
-	if datasetID == "" {
-		datasetID = "antigravity_telemetry"
-	}
-	if sinkName == "" {
-		sinkName = "agy-inference-sink"
-	}
-	if projectID == "" {
-		projectID = "YOUR_PROJECT_ID"
-	}
+	datasetID = cmp.Or(datasetID, "antigravity_telemetry")
+	sinkName = cmp.Or(sinkName, "agy-inference-sink")
+	projectID = cmp.Or(projectID, "YOUR_PROJECT_ID")
 
 	cmd1 := fmt.Sprintf("bq mk --dataset --description \"Antigravity Telemetry Dataset\" %s:%s", projectID, datasetID)
 	desc1 := fmt.Sprintf("Create BigQuery destination dataset '%s' in project '%s'", datasetID, projectID)
@@ -46,7 +41,7 @@ func (p ProvisionPlan) Execute(ctx context.Context, dryRun bool) ([]string, erro
 
 	for i, cmdStr := range p.Commands {
 		if dryRun {
-			results[i] = fmt.Sprintf("[DRY-RUN] %s", cmdStr)
+			results[i] = "[DRY-RUN] " + cmdStr
 			continue
 		}
 
@@ -55,6 +50,7 @@ func (p ProvisionPlan) Execute(ctx context.Context, dryRun bool) ([]string, erro
 			continue
 		}
 
+		// #nosec G204 -- provision commands are pre-defined by the provisioner
 		cmd := exec.CommandContext(ctx, parts[0], parts[1:]...)
 		output, err := cmd.CombinedOutput()
 		if err != nil {

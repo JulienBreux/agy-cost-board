@@ -1,6 +1,7 @@
 package setup
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"os"
@@ -87,13 +88,7 @@ func CheckADC(ctx context.Context, cfg Config) domain.CheckResult {
 
 	if cfg.ProjectID == "" {
 		// Attempt to read from GCP env vars
-		envProj := os.Getenv("GOOGLE_CLOUD_PROJECT")
-		if envProj == "" {
-			envProj = os.Getenv("GCP_PROJECT")
-		}
-		if envProj != "" {
-			cfg.ProjectID = envProj
-		}
+		cfg.ProjectID = cmp.Or(os.Getenv("GOOGLE_CLOUD_PROJECT"), os.Getenv("GCP_PROJECT"))
 	}
 
 	if cfg.ProjectID == "" {
@@ -115,7 +110,7 @@ func CheckADC(ctx context.Context, cfg Config) domain.CheckResult {
 				ID:                  id,
 				Name:                name,
 				Status:              domain.StatusError,
-				Message:             fmt.Sprintf("GOOGLE_APPLICATION_CREDENTIALS file not found: %s", credFile),
+				Message:             "GOOGLE_APPLICATION_CREDENTIALS file not found: " + credFile,
 				Duration:            time.Since(start),
 				RemediationCommand: "gcloud auth application-default login",
 			}
@@ -126,7 +121,7 @@ func CheckADC(ctx context.Context, cfg Config) domain.CheckResult {
 		ID:          id,
 		Name:        name,
 		Status:      domain.StatusOK,
-		Message:     fmt.Sprintf("Active GCP project bound: %s", cfg.ProjectID),
+		Message:     "Active GCP project bound: " + cfg.ProjectID,
 		Duration:    time.Since(start),
 		Details:     map[string]any{"project": cfg.ProjectID},
 	}
@@ -176,18 +171,9 @@ func CheckTelemetrySink(ctx context.Context, cfg Config) domain.CheckResult {
 	name := "BigQuery Telemetry Sink"
 
 	if cfg.TelemetryTable == "" {
-		sinkName := cfg.SinkName
-		if sinkName == "" {
-			sinkName = "agy-inference-sink"
-		}
-		dataset := cfg.DatasetName
-		if dataset == "" {
-			dataset = "antigravity_telemetry"
-		}
-		proj := cfg.ProjectID
-		if proj == "" {
-			proj = "YOUR_PROJECT_ID"
-		}
+		sinkName := cmp.Or(cfg.SinkName, "agy-inference-sink")
+		dataset := cmp.Or(cfg.DatasetName, "antigravity_telemetry")
+		proj := cmp.Or(cfg.ProjectID, "YOUR_PROJECT_ID")
 
 		cmd := fmt.Sprintf(
 			"gcloud logging sinks create %s bigquery.googleapis.com/projects/%s/datasets/%s --log-filter='jsonPayload.log_type=\"InferenceResponseLog\"' --use-partitioned-tables",
@@ -209,7 +195,7 @@ func CheckTelemetrySink(ctx context.Context, cfg Config) domain.CheckResult {
 			ID:          id,
 			Name:        name,
 			Status:      domain.StatusOK,
-			Message:     fmt.Sprintf("Logging sink destination table verified: %s", cfg.TelemetryTable),
+			Message:     "Logging sink destination table verified: " + cfg.TelemetryTable,
 			Duration:    time.Since(start),
 			Details:     map[string]any{"telemetry_table": cfg.TelemetryTable},
 		}
@@ -241,7 +227,7 @@ func CheckTelemetrySink(ctx context.Context, cfg Config) domain.CheckResult {
 			Status:              domain.StatusWarning,
 			Message:             fmt.Sprintf("Table metadata check failed: %v", err),
 			Duration:            time.Since(start),
-			RemediationCommand: fmt.Sprintf("Verify sink destination table exists: %s", cfg.TelemetryTable),
+			RemediationCommand: "Verify sink destination table exists: " + cfg.TelemetryTable,
 		}
 	}
 
@@ -277,7 +263,7 @@ func CheckBillingExport(ctx context.Context, cfg Config) domain.CheckResult {
 			ID:          id,
 			Name:        name,
 			Status:      domain.StatusOK,
-			Message:     fmt.Sprintf("Billing export table verified: %s", cfg.BillingTable),
+			Message:     "Billing export table verified: " + cfg.BillingTable,
 			Duration:    time.Since(start),
 			Details:     map[string]any{"billing_table": cfg.BillingTable},
 		}
@@ -316,7 +302,7 @@ func CheckBillingExport(ctx context.Context, cfg Config) domain.CheckResult {
 		ID:          id,
 		Name:        name,
 		Status:      domain.StatusOK,
-		Message:     fmt.Sprintf("Billing export table verified: %s", cfg.BillingTable),
+		Message:     "Billing export table verified: " + cfg.BillingTable,
 		Duration:    time.Since(start),
 		Details:     map[string]any{"table": cfg.BillingTable},
 	}

@@ -1,7 +1,6 @@
 package bigquery_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/julienbreux/agy-cost-board/internal/bigquery"
@@ -10,7 +9,7 @@ import (
 
 func TestDemoDataProvider(t *testing.T) {
 	provider := bigquery.NewDemoDataProvider()
-	ctx := context.Background()
+	ctx := t.Context()
 
 	t.Run("FetchTelemetryLogs generates logs for requested window", func(t *testing.T) {
 		logs, err := provider.FetchTelemetryLogs(ctx, 30)

@@ -16,7 +16,8 @@ import (
 	"github.com/julienbreux/agy-cost-board/internal/setup"
 )
 
-func setupTestServer() http.Handler {
+func setupTestServer(t *testing.T) http.Handler {
+	t.Helper()
 	provider := bigquery.NewDemoDataProvider()
 	engine := attribution.NewEngine(provider, 5*time.Minute)
 
@@ -34,7 +35,7 @@ func setupTestServer() http.Handler {
 }
 
 func TestAPIEndpoints(t *testing.T) {
-	router := setupTestServer()
+	router := setupTestServer(t)
 
 	t.Run("GET /healthz returns status 200 OK", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/healthz", nil)

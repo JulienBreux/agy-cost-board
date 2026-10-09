@@ -64,11 +64,12 @@ func (r *DiagnosticReport) AddCheck(c CheckResult) {
 
 // EvaluateOverallStatus evaluates the worst status among all checks.
 func (r *DiagnosticReport) EvaluateOverallStatus() {
-	if r.ErrorCount > 0 {
+	switch {
+	case r.ErrorCount > 0:
 		r.OverallStatus = StatusError
-	} else if r.WarningCount > 0 {
+	case r.WarningCount > 0:
 		r.OverallStatus = StatusWarning
-	} else {
+	default:
 		r.OverallStatus = StatusOK
 	}
 }

@@ -2,7 +2,7 @@ package setup_test
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"strings"
 	"testing"
 
@@ -17,7 +17,7 @@ func TestADCChecker(t *testing.T) {
 		cfg := setup.Config{
 			ProjectID: "",
 		}
-		res := setup.CheckADC(context.Background(), cfg)
+		res := setup.CheckADC(t.Context(), cfg)
 		if res.Status != domain.StatusWarning {
 			t.Errorf("expected StatusWarning, got %s", res.Status)
 		}
@@ -34,7 +34,7 @@ func TestADCChecker(t *testing.T) {
 		t.Setenv("GCP_PROJECT", "")
 		t.Setenv("GOOGLE_APPLICATION_CREDENTIALS", "")
 		cfg := setup.Config{ProjectID: "", Demo: false}
-		res := setup.CheckADC(context.Background(), cfg)
+		res := setup.CheckADC(t.Context(), cfg)
 		if res.Status != domain.StatusOK {
 			t.Errorf("expected StatusOK, got %s", res.Status)
 		}
@@ -45,7 +45,7 @@ func TestADCChecker(t *testing.T) {
 		t.Setenv("GCP_PROJECT", "env-project-2")
 		t.Setenv("GOOGLE_APPLICATION_CREDENTIALS", "")
 		cfg := setup.Config{ProjectID: "", Demo: false}
-		res := setup.CheckADC(context.Background(), cfg)
+		res := setup.CheckADC(t.Context(), cfg)
 		if res.Status != domain.StatusOK {
 			t.Errorf("expected StatusOK, got %s", res.Status)
 		}
@@ -56,7 +56,7 @@ func TestADCChecker(t *testing.T) {
 			ProjectID: "my-live-project",
 			Demo:      false,
 		}
-		res := setup.CheckADC(context.Background(), cfg)
+		res := setup.CheckADC(t.Context(), cfg)
 		if res.Status != domain.StatusOK {
 			t.Errorf("expected StatusOK, got %s", res.Status)
 		}
@@ -68,7 +68,7 @@ func TestADCChecker(t *testing.T) {
 			ProjectID: "my-live-project",
 			Demo:      false,
 		}
-		res := setup.CheckADC(context.Background(), cfg)
+		res := setup.CheckADC(t.Context(), cfg)
 		if res.Status != domain.StatusError {
 			t.Errorf("expected StatusError, got %s", res.Status)
 		}
@@ -78,7 +78,7 @@ func TestADCChecker(t *testing.T) {
 func TestCheckIAM(t *testing.T) {
 	t.Run("returns warning when ProjectID is empty", func(t *testing.T) {
 		cfg := setup.Config{ProjectID: "", Demo: false}
-		res := setup.CheckIAM(context.Background(), cfg)
+		res := setup.CheckIAM(t.Context(), cfg)
 		if res.Status != domain.StatusWarning {
 			t.Errorf("expected StatusWarning, got %s", res.Status)
 		}
@@ -86,7 +86,7 @@ func TestCheckIAM(t *testing.T) {
 
 	t.Run("returns OK in demo mode", func(t *testing.T) {
 		cfg := setup.Config{ProjectID: "demo-proj", Demo: true}
-		res := setup.CheckIAM(context.Background(), cfg)
+		res := setup.CheckIAM(t.Context(), cfg)
 		if res.Status != domain.StatusOK {
 			t.Errorf("expected StatusOK, got %s", res.Status)
 		}
@@ -94,7 +94,7 @@ func TestCheckIAM(t *testing.T) {
 
 	t.Run("returns OK in live mode with ProjectID", func(t *testing.T) {
 		cfg := setup.Config{ProjectID: "live-proj", Demo: false}
-		res := setup.CheckIAM(context.Background(), cfg)
+		res := setup.CheckIAM(t.Context(), cfg)
 		if res.Status != domain.StatusOK {
 			t.Errorf("expected StatusOK, got %s", res.Status)
 		}
@@ -109,7 +109,7 @@ func TestTelemetrySinkChecker(t *testing.T) {
 			SinkName:       "my-custom-sink",
 			DatasetName:    "my_custom_dataset",
 		}
-		res := setup.CheckTelemetrySink(context.Background(), cfg)
+		res := setup.CheckTelemetrySink(t.Context(), cfg)
 		if res.Status != domain.StatusError {
 			t.Errorf("expected StatusError, got %s", res.Status)
 		}
@@ -124,7 +124,7 @@ func TestTelemetrySinkChecker(t *testing.T) {
 			TelemetryTable: "invalid_table_format",
 			Demo:           false,
 		}
-		res := setup.CheckTelemetrySink(context.Background(), cfg)
+		res := setup.CheckTelemetrySink(t.Context(), cfg)
 		if res.Status != domain.StatusError {
 			t.Errorf("expected StatusError for invalid table format, got %s", res.Status)
 		}
@@ -136,7 +136,7 @@ func TestTelemetrySinkChecker(t *testing.T) {
 			TelemetryTable: "test-project.antigravity.inference_logs",
 			Demo:           true,
 		}
-		res := setup.CheckTelemetrySink(context.Background(), cfg)
+		res := setup.CheckTelemetrySink(t.Context(), cfg)
 		if res.Status != domain.StatusOK {
 			t.Errorf("expected StatusOK in demo mode, got %s", res.Status)
 		}
@@ -149,7 +149,7 @@ func TestBillingExportChecker(t *testing.T) {
 			ProjectID:    "test-project",
 			BillingTable: "",
 		}
-		res := setup.CheckBillingExport(context.Background(), cfg)
+		res := setup.CheckBillingExport(t.Context(), cfg)
 		if res.Status != domain.StatusError {
 			t.Errorf("expected StatusError for missing billing table, got %s", res.Status)
 		}
@@ -164,7 +164,7 @@ func TestBillingExportChecker(t *testing.T) {
 			BillingTable: "invalid_format",
 			Demo:         false,
 		}
-		res := setup.CheckBillingExport(context.Background(), cfg)
+		res := setup.CheckBillingExport(t.Context(), cfg)
 		if res.Status != domain.StatusError {
 			t.Errorf("expected StatusError for invalid format, got %s", res.Status)
 		}
@@ -176,7 +176,7 @@ func TestBillingExportChecker(t *testing.T) {
 			BillingTable: "test-project.billing.gcp_billing_export_v1_000",
 			Demo:         true,
 		}
-		res := setup.CheckBillingExport(context.Background(), cfg)
+		res := setup.CheckBillingExport(t.Context(), cfg)
 		if res.Status != domain.StatusOK {
 			t.Errorf("expected StatusOK in demo mode, got %s", res.Status)
 		}
@@ -189,7 +189,7 @@ func TestTelemetryPipelineChecker(t *testing.T) {
 			ProjectID:      "test-project",
 			TelemetryTable: "",
 		}
-		res := setup.CheckTelemetryPipeline(context.Background(), cfg)
+		res := setup.CheckTelemetryPipeline(t.Context(), cfg)
 		if res.Status != domain.StatusWarning {
 			t.Errorf("expected StatusWarning, got %s", res.Status)
 		}
@@ -201,7 +201,7 @@ func TestTelemetryPipelineChecker(t *testing.T) {
 			TelemetryTable: "single_part",
 			Demo:           false,
 		}
-		res := setup.CheckTelemetryPipeline(context.Background(), cfg)
+		res := setup.CheckTelemetryPipeline(t.Context(), cfg)
 		if res.Status != domain.StatusWarning {
 			t.Errorf("expected StatusWarning for invalid table, got %s", res.Status)
 		}
@@ -213,7 +213,7 @@ func TestTelemetryPipelineChecker(t *testing.T) {
 			TelemetryTable: "test-project.antigravity.logs",
 			Demo:           true,
 		}
-		res := setup.CheckTelemetryPipeline(context.Background(), cfg)
+		res := setup.CheckTelemetryPipeline(t.Context(), cfg)
 		if res.Status != domain.StatusOK {
 			t.Errorf("expected StatusOK in demo mode, got %s", res.Status)
 		}
@@ -233,7 +233,7 @@ func TestDiagnosticRunner(t *testing.T) {
 			Demo:           true,
 		}
 
-		report := runner.RunAll(context.Background(), cfg)
+		report := runner.RunAll(t.Context(), cfg)
 		if report == nil {
 			t.Fatalf("expected non-nil report")
 		}
@@ -280,7 +280,7 @@ func TestTelemetrySinkChecker_Inspector(t *testing.T) {
 				},
 			},
 		}
-		res := setup.CheckTelemetrySink(context.Background(), cfg)
+		res := setup.CheckTelemetrySink(t.Context(), cfg)
 		if res.Status != domain.StatusOK {
 			t.Errorf("expected StatusOK, got %s", res.Status)
 		}
@@ -293,11 +293,11 @@ func TestTelemetrySinkChecker_Inspector(t *testing.T) {
 			Demo:           false,
 			Inspector: &mockInspector{
 				checkTableFn: func(ctx context.Context, p, d, table string) (int64, error) {
-					return 0, fmt.Errorf("dataset not found")
+					return 0, errors.New("dataset not found")
 				},
 			},
 		}
-		res := setup.CheckTelemetrySink(context.Background(), cfg)
+		res := setup.CheckTelemetrySink(t.Context(), cfg)
 		if res.Status != domain.StatusWarning {
 			t.Errorf("expected StatusWarning, got %s", res.Status)
 		}
@@ -316,7 +316,7 @@ func TestBillingExportChecker_Inspector(t *testing.T) {
 				},
 			},
 		}
-		res := setup.CheckBillingExport(context.Background(), cfg)
+		res := setup.CheckBillingExport(t.Context(), cfg)
 		if res.Status != domain.StatusOK {
 			t.Errorf("expected StatusOK, got %s", res.Status)
 		}
@@ -329,11 +329,11 @@ func TestBillingExportChecker_Inspector(t *testing.T) {
 			Demo:         false,
 			Inspector: &mockInspector{
 				checkTableFn: func(ctx context.Context, p, d, table string) (int64, error) {
-					return 0, fmt.Errorf("billing dataset permission denied")
+					return 0, errors.New("billing dataset permission denied")
 				},
 			},
 		}
-		res := setup.CheckBillingExport(context.Background(), cfg)
+		res := setup.CheckBillingExport(t.Context(), cfg)
 		if res.Status != domain.StatusWarning {
 			t.Errorf("expected StatusWarning, got %s", res.Status)
 		}
@@ -352,7 +352,7 @@ func TestTelemetryPipelineChecker_Inspector(t *testing.T) {
 				},
 			},
 		}
-		res := setup.CheckTelemetryPipeline(context.Background(), cfg)
+		res := setup.CheckTelemetryPipeline(t.Context(), cfg)
 		if res.Status != domain.StatusOK {
 			t.Errorf("expected StatusOK, got %s", res.Status)
 		}
@@ -369,7 +369,7 @@ func TestTelemetryPipelineChecker_Inspector(t *testing.T) {
 				},
 			},
 		}
-		res := setup.CheckTelemetryPipeline(context.Background(), cfg)
+		res := setup.CheckTelemetryPipeline(t.Context(), cfg)
 		if res.Status != domain.StatusWarning {
 			t.Errorf("expected StatusWarning for 0 logs, got %s", res.Status)
 		}
@@ -382,11 +382,11 @@ func TestTelemetryPipelineChecker_Inspector(t *testing.T) {
 			Demo:           false,
 			Inspector: &mockInspector{
 				queryCountFn: func(ctx context.Context, p, q string) (int64, error) {
-					return 0, fmt.Errorf("query syntax error")
+					return 0, errors.New("query syntax error")
 				},
 			},
 		}
-		res := setup.CheckTelemetryPipeline(context.Background(), cfg)
+		res := setup.CheckTelemetryPipeline(t.Context(), cfg)
 		if res.Status != domain.StatusWarning {
 			t.Errorf("expected StatusWarning on query failure, got %s", res.Status)
 		}

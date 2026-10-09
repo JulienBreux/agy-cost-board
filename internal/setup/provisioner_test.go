@@ -1,7 +1,6 @@
 package setup_test
 
 import (
-	"context"
 	"strings"
 	"testing"
 
@@ -41,7 +40,7 @@ func TestProvisionPlanGenerator(t *testing.T) {
 
 	t.Run("dry-run execution returns command strings without calling shell", func(t *testing.T) {
 		plan := setup.GenerateProvisionPlan("test-project", "ds", "sink")
-		outputs, err := plan.Execute(context.Background(), true)
+		outputs, err := plan.Execute(t.Context(), true)
 		if err != nil {
 			t.Fatalf("unexpected error on dry run: %v", err)
 		}
@@ -62,7 +61,7 @@ func TestProvisionPlanGenerator(t *testing.T) {
 				"echo provision-test-ok",
 			},
 		}
-		outputs, err := plan.Execute(context.Background(), false)
+		outputs, err := plan.Execute(t.Context(), false)
 		if err != nil {
 			t.Fatalf("unexpected error running echo command: %v", err)
 		}
@@ -76,7 +75,7 @@ func TestProvisionPlanGenerator(t *testing.T) {
 		failPlan := setup.ProvisionPlan{
 			Commands: []string{"non_existent_binary_for_test_12345"},
 		}
-		_, err = failPlan.Execute(context.Background(), false)
+		_, err = failPlan.Execute(t.Context(), false)
 		if err == nil {
 			t.Error("expected error for non-existent binary, got nil")
 		}

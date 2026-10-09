@@ -1,10 +1,11 @@
 package attribution
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"math"
-	"sort"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -147,11 +148,11 @@ func (e *Engine) GetAttributedCosts(ctx context.Context, days int, modelFilter s
 	}
 
 	// Sort results by date descending, then allocated cost descending
-	sort.Slice(results, func(i, j int) bool {
-		if results[i].UsageDate != results[j].UsageDate {
-			return results[i].UsageDate > results[j].UsageDate
+	slices.SortFunc(results, func(a, b domain.AllocatedUserCost) int {
+		if a.UsageDate != b.UsageDate {
+			return cmp.Compare(b.UsageDate, a.UsageDate)
 		}
-		return results[i].AllocatedCost > results[j].AllocatedCost
+		return cmp.Compare(b.AllocatedCost, a.AllocatedCost)
 	})
 
 	e.setToCache(cacheKey, results)
@@ -318,7 +319,7 @@ func (e *Engine) GetOverviewMetrics(ctx context.Context, days int) (*domain.Over
 	overview.ActiveUsersCount = len(activeUsers)
 
 	// Format daily trends
-	trendList := make([]domain.DailySpendTrend, 0)
+	trendList := make([]domain.DailySpendTrend, 0, len(dailyAgg))
 	for d, tr := range dailyAgg {
 		tr.ActiveUsers = len(dailyUsers[d])
 		tr.TotalCost = math.Round(tr.TotalCost*100) / 100
@@ -327,8 +328,8 @@ func (e *Engine) GetOverviewMetrics(ctx context.Context, days int) (*domain.Over
 		trendList = append(trendList, *tr)
 	}
 
-	sort.Slice(trendList, func(i, j int) bool {
-		return trendList[i].Date < trendList[j].Date
+	slices.SortFunc(trendList, func(a, b domain.DailySpendTrend) int {
+		return cmp.Compare(a.Date, b.Date)
 	})
 	overview.DailyTrends = trendList
 

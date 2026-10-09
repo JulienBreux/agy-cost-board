@@ -62,7 +62,6 @@ func (s *Server) setupRoutes() {
 
 	// Standard middlewares
 	r.Use(middleware.RequestID)
-	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 

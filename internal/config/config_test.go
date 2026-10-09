@@ -146,3 +146,93 @@ func TestResolveIntSetting(t *testing.T) {
 		}
 	})
 }
+
+func TestViperConfigFeatures(t *testing.T) {
+	t.Run("loading json configuration file", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		jsonPath := filepath.Join(tmpDir, ".agy-cost-board.json")
+		jsonContent := `{
+  "project_id": "json-project",
+  "telemetry_table": "json-project.telemetry.inference_logs",
+  "billing_table": "json-project.billing.gcp_billing_export_v1_000",
+  "sink_name": "json-sink",
+  "dataset": "json_telemetry",
+  "seat_quota": 48,
+  "demo": false,
+  "port": 9090,
+  "host": "127.0.0.1"
+}`
+		if err := os.WriteFile(jsonPath, []byte(jsonContent), 0644); err != nil {
+			t.Fatalf("failed to write json config: %v", err)
+		}
+
+		cfg, err := config.Load(jsonPath)
+		if err != nil {
+			t.Fatalf("failed to load json config: %v", err)
+		}
+
+		if cfg.ProjectID != "json-project" {
+			t.Errorf("expected json-project, got %s", cfg.ProjectID)
+		}
+		if cfg.SeatQuota != 48 {
+			t.Errorf("expected seat quota 48, got %d", cfg.SeatQuota)
+		}
+		if cfg.Port != 9090 {
+			t.Errorf("expected port 9090, got %d", cfg.Port)
+		}
+		if cfg.Host != "127.0.0.1" {
+			t.Errorf("expected host 127.0.0.1, got %s", cfg.Host)
+		}
+	})
+
+	t.Run("environment variable override with AGY_COST_BOARD_ prefix", func(t *testing.T) {
+		t.Setenv("AGY_COST_BOARD_PROJECT", "env-prefixed-project")
+		t.Setenv("AGY_COST_BOARD_SEAT_QUOTA", "77")
+		t.Setenv("AGY_COST_BOARD_PORT", "9999")
+
+		cfg, err := config.Load(filepath.Join(t.TempDir(), "nonexistent.yaml"))
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if cfg.ProjectID != "env-prefixed-project" {
+			t.Errorf("expected env-prefixed-project, got %s", cfg.ProjectID)
+		}
+		if cfg.SeatQuota != 77 {
+			t.Errorf("expected seat quota 77, got %d", cfg.SeatQuota)
+		}
+		if cfg.Port != 9999 {
+			t.Errorf("expected port 9999, got %d", cfg.Port)
+		}
+	})
+
+	t.Run("legacy environment variable fallback", func(t *testing.T) {
+		t.Setenv("GCP_PROJECT", "legacy-gcp-project")
+		t.Setenv("TELEMETRY_TABLE", "legacy.ds.telemetry")
+		t.Setenv("BILLING_TABLE", "legacy.billing.export")
+		t.Setenv("SEAT_QUOTA", "52")
+		t.Setenv("PORT", "7777")
+
+		cfg, err := config.Load(filepath.Join(t.TempDir(), "nonexistent.yaml"))
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		if cfg.ProjectID != "legacy-gcp-project" {
+			t.Errorf("expected legacy-gcp-project, got %s", cfg.ProjectID)
+		}
+		if cfg.TelemetryTable != "legacy.ds.telemetry" {
+			t.Errorf("expected legacy.ds.telemetry, got %s", cfg.TelemetryTable)
+		}
+		if cfg.BillingTable != "legacy.billing.export" {
+			t.Errorf("expected legacy.billing.export, got %s", cfg.BillingTable)
+		}
+		if cfg.SeatQuota != 52 {
+			t.Errorf("expected seat quota 52, got %d", cfg.SeatQuota)
+		}
+		if cfg.Port != 7777 {
+			t.Errorf("expected port 7777, got %d", cfg.Port)
+		}
+	})
+}
+

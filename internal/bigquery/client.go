@@ -1,6 +1,7 @@
 package bigquery
 
 import (
+	"cmp"
 	"context"
 	"errors"
 	"fmt"
@@ -46,9 +47,7 @@ func BuildTelemetryQueryForField(table string, days int, payloadField string) st
 	if days <= 0 {
 		days = 30
 	}
-	if payloadField == "" {
-		payloadField = "jsonPayload"
-	}
+	payloadField = cmp.Or(payloadField, "jsonPayload")
 	return fmt.Sprintf(`SELECT
   timestamp,
   labels.user_id AS user_id,
@@ -103,7 +102,7 @@ func NewBigQueryClient(ctx context.Context, cfg ClientConfig) (*BigQueryClient, 
 
 	var opts []option.ClientOption
 	if cfg.CredentialsFile != "" {
-		opts = append(opts, option.WithCredentialsFile(cfg.CredentialsFile))
+		opts = append(opts, option.WithAuthCredentialsFile(option.ServiceAccount, cfg.CredentialsFile))
 	}
 
 	bqClient, err := bigquery.NewClient(ctx, cfg.ProjectID, opts...)
@@ -186,7 +185,7 @@ func DeriveLicenseSeats(logs []domain.TelemetryLog, windowDays int, configuredQu
 		}
 	}
 
-	var seats []domain.LicenseSeat
+	seats := make([]domain.LicenseSeat, 0, len(userMap))
 	for _, seat := range userMap {
 		seat.Status = domain.ClassifySeatStatus(seat.TotalTokensInWindow, seat.LastActivity, windowDays)
 		seats = append(seats, *seat)
@@ -207,13 +206,16 @@ func (c *BigQueryClient) DetectPayloadField(ctx context.Context) string {
 	if c == nil || c.client == nil {
 		return "jsonPayload"
 	}
-	parts := strings.Split(c.config.TelemetryTable, ".")
-	if len(parts) >= 3 {
-		md, err := c.client.DatasetInProject(parts[0], parts[1]).Table(parts[2]).Metadata(ctx)
-		if err == nil && md != nil {
-			for _, f := range md.Schema {
-				if strings.EqualFold(f.Name, "jsonpayload_v1_inferenceresponselog") {
-					return "jsonpayload_v1_inferenceresponselog"
+	project, rest, ok1 := strings.Cut(c.config.TelemetryTable, ".")
+	if ok1 {
+		dataset, table, ok2 := strings.Cut(rest, ".")
+		if ok2 {
+			md, err := c.client.DatasetInProject(project, dataset).Table(table).Metadata(ctx)
+			if err == nil && md != nil {
+				for _, f := range md.Schema {
+					if strings.EqualFold(f.Name, "jsonpayload_v1_inferenceresponselog") {
+						return "jsonpayload_v1_inferenceresponselog"
+					}
 				}
 			}
 		}

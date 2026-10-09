@@ -1,9 +1,12 @@
 package tui
 
 import (
+	"cmp"
 	"context"
+	"errors"
 	"fmt"
-	"sort"
+	"slices"
+	"strconv"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -121,7 +124,7 @@ type DataLoadedMsg struct {
 func (m Model) Init() tea.Cmd {
 	return func() tea.Msg {
 		if m.Engine == nil {
-			return DataLoadedMsg{Err: fmt.Errorf("no attribution engine configured")}
+			return DataLoadedMsg{Err: errors.New("no attribution engine configured")}
 		}
 		ctx := context.Background()
 		costs, err := m.Engine.GetAttributedCosts(ctx, m.Days, "")
@@ -238,16 +241,16 @@ func (m *Model) sortCosts() {
 	}
 	switch m.SortMode {
 	case SortByCostDesc:
-		sort.Slice(m.Costs, func(i, j int) bool {
-			return m.Costs[i].AllocatedCost > m.Costs[j].AllocatedCost
+		slices.SortFunc(m.Costs, func(a, b domain.AllocatedUserCost) int {
+			return cmp.Compare(b.AllocatedCost, a.AllocatedCost)
 		})
 	case SortByTokensDesc:
-		sort.Slice(m.Costs, func(i, j int) bool {
-			return m.Costs[i].UserTokens > m.Costs[j].UserTokens
+		slices.SortFunc(m.Costs, func(a, b domain.AllocatedUserCost) int {
+			return cmp.Compare(b.UserTokens, a.UserTokens)
 		})
 	case SortByUserAsc:
-		sort.Slice(m.Costs, func(i, j int) bool {
-			return m.Costs[i].UserID < m.Costs[j].UserID
+		slices.SortFunc(m.Costs, func(a, b domain.AllocatedUserCost) int {
+			return cmp.Compare(a.UserID, b.UserID)
 		})
 	}
 }
@@ -275,10 +278,10 @@ func (m Model) View() string {
 
 	// KPI Cards
 	if m.Overview != nil {
-		card1 := cardStyle.Render(fmt.Sprintf("TOTAL BILLED\n%s", cardValueStyle.Render(fmt.Sprintf("$%.2f", m.Overview.TotalBilledCost))))
-		card2 := cardStyle.Render(fmt.Sprintf("TOTAL TOKENS\n%s", cardValueStyle.Render(fmt.Sprintf("%d", m.Overview.TotalTokens))))
-		card3 := cardStyle.Render(fmt.Sprintf("ACTIVE USERS\n%s", cardValueStyle.Render(fmt.Sprintf("%d", m.Overview.ActiveUsersCount))))
-		card4 := cardStyle.Render(fmt.Sprintf("POTENTIAL SAVINGS\n%s", cardWarnValueStyle.Render(fmt.Sprintf("$%.2f/mo", m.Overview.EstimatedMonthlySavings))))
+		card1 := cardStyle.Render("TOTAL BILLED\n" + cardValueStyle.Render(fmt.Sprintf("$%.2f", m.Overview.TotalBilledCost)))
+		card2 := cardStyle.Render("TOTAL TOKENS\n" + cardValueStyle.Render(strconv.FormatInt(m.Overview.TotalTokens, 10)))
+		card3 := cardStyle.Render("ACTIVE USERS\n" + cardValueStyle.Render(strconv.Itoa(m.Overview.ActiveUsersCount)))
+		card4 := cardStyle.Render("POTENTIAL SAVINGS\n" + cardWarnValueStyle.Render(fmt.Sprintf("$%.2f/mo", m.Overview.EstimatedMonthlySavings)))
 		sb.WriteString(lipgloss.JoinHorizontal(lipgloss.Top, card1, card2, card3, card4))
 		sb.WriteString("\n\n")
 	}
@@ -314,10 +317,7 @@ func (m Model) renderCostsView() string {
 	if m.Cursor >= maxRows {
 		start = m.Cursor - maxRows + 1
 	}
-	end := start + maxRows
-	if end > len(m.Costs) {
-		end = len(m.Costs)
-	}
+	end := min(start+maxRows, len(m.Costs))
 
 	for i := start; i < end; i++ {
 		c := m.Costs[i]

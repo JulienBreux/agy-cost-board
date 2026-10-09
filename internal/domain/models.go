@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"strconv"
 	"time"
 )
 
@@ -56,7 +57,7 @@ func (a AllocatedUserCost) ToCSVRow() []string {
 		a.UserID,
 		a.Model,
 		a.UsageDate,
-		fmt.Sprintf("%d", a.UserTokens),
+		strconv.FormatInt(a.UserTokens, 10),
 		fmt.Sprintf("%.4f", a.TokenShare),
 		fmt.Sprintf("%.4f", a.AllocatedCost),
 		a.Currency,

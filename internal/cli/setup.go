@@ -8,6 +8,7 @@ import (
 	"github.com/julienbreux/agy-cost-board/internal/domain"
 	"github.com/julienbreux/agy-cost-board/internal/setup"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 var (
@@ -18,20 +19,56 @@ var (
 	flagSetupDataset string
 )
 
-func newSetupCommand() *cobra.Command {
+func newSetupCommand(v *viper.Viper) *cobra.Command {
 	setupCmd := &cobra.Command{
 		Use:   "setup",
 		Short: "Verify GCP prerequisites and optionally provision BigQuery & Logging sinks",
+		Args:  cobra.NoArgs,
 		Long: `setup validates the Google Cloud Application Default Credentials, BigQuery datasets,
 Cloud Logging sinks, and billing export prerequisites needed for agy-cost-board to compute AI cost attribution.
 Use --create or --dry-run to generate or provision the required telemetry sink.
 Use --save to persist the configuration locally to .agy-cost-board.yaml for subsequent commands.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
+			appCfg := config.FromContext(ctx)
+
+			projID := flagProjectID
+			telemetryTbl := flagTelemetryTable
+			billingTbl := flagBillingTable
+			seatQuota := flagSeatQuota
+			demo := flagDemo
+			format := flagFormat
+			sinkName := flagSetupSink
+			datasetName := flagSetupDataset
+
+			if appCfg != nil {
+				if appCfg.ProjectID != "" {
+					projID = appCfg.ProjectID
+				}
+				if appCfg.TelemetryTable != "" {
+					telemetryTbl = appCfg.TelemetryTable
+				}
+				if appCfg.BillingTable != "" {
+					billingTbl = appCfg.BillingTable
+				}
+				if appCfg.SeatQuota > 0 {
+					seatQuota = appCfg.SeatQuota
+				}
+				demo = appCfg.Demo
+				if appCfg.Format != "" {
+					format = appCfg.Format
+				}
+				if !cmd.Flags().Changed("sink-name") && appCfg.SinkName != "" {
+					sinkName = appCfg.SinkName
+				}
+				if !cmd.Flags().Changed("dataset") && appCfg.DatasetName != "" {
+					datasetName = appCfg.DatasetName
+				}
+			}
 
 			// 1. Provisioning plan if requested (--create or --dry-run)
 			if flagSetupCreate || flagSetupDryRun {
-				plan := setup.GenerateProvisionPlan(flagProjectID, flagSetupDataset, flagSetupSink)
+				plan := setup.GenerateProvisionPlan(projID, datasetName, sinkName)
 				out, err := plan.Execute(ctx, flagSetupDryRun)
 				if err != nil {
 					return fmt.Errorf("resource provisioning error: %w", err)
@@ -43,10 +80,7 @@ Use --save to persist the configuration locally to .agy-cost-board.yaml for subs
 			}
 
 			// 2. Build configuration for diagnostics
-			projID := flagProjectID
-			telemetryTbl := flagTelemetryTable
-			billingTbl := flagBillingTable
-			if flagDemo {
+			if demo {
 				if projID == "" {
 					projID = "demo-project"
 				}
@@ -62,10 +96,10 @@ Use --save to persist the configuration locally to .agy-cost-board.yaml for subs
 				ProjectID:      projID,
 				TelemetryTable: telemetryTbl,
 				BillingTable:   billingTbl,
-				SinkName:       flagSetupSink,
-				DatasetName:    flagSetupDataset,
-				SeatQuota:      flagSeatQuota,
-				Demo:           flagDemo,
+				SinkName:       sinkName,
+				DatasetName:    datasetName,
+				SeatQuota:      seatQuota,
+				Demo:           demo,
 			}
 
 			// 3. Run all diagnostic checks
@@ -73,7 +107,7 @@ Use --save to persist the configuration locally to .agy-cost-board.yaml for subs
 			report := runner.RunAll(ctx, cfg)
 
 			// 4. Output rendering
-			switch strings.ToLower(flagFormat) {
+			switch strings.ToLower(format) {
 			case "json":
 				out, err := FormatJSON(report)
 				if err != nil {
@@ -110,12 +144,13 @@ Use --save to persist the configuration locally to .agy-cost-board.yaml for subs
 				if savePath == "" {
 					savePath = config.DefaultConfigFileName
 				}
-				fileCfg := &config.FileConfig{
-					ProjectID:      flagProjectID,
-					TelemetryTable: flagTelemetryTable,
-					BillingTable:   flagBillingTable,
-					SinkName:       flagSetupSink,
-					SeatQuota:      flagSeatQuota,
+				fileCfg := &config.Config{
+					ProjectID:      projID,
+					TelemetryTable: telemetryTbl,
+					BillingTable:   billingTbl,
+					SinkName:       sinkName,
+					DatasetName:    datasetName,
+					SeatQuota:      seatQuota,
 				}
 				if err := config.Save(savePath, fileCfg); err != nil {
 					return fmt.Errorf("failed to save config to %s: %w", savePath, err)
@@ -132,6 +167,11 @@ Use --save to persist the configuration locally to .agy-cost-board.yaml for subs
 	setupCmd.Flags().BoolVar(&flagSetupDryRun, "dry-run", false, "Simulate provisioning and print CLI commands")
 	setupCmd.Flags().StringVar(&flagSetupSink, "sink-name", "agy-inference-sink", "Cloud Logging sink name")
 	setupCmd.Flags().StringVar(&flagSetupDataset, "dataset", "antigravity_telemetry", "BigQuery telemetry dataset")
+
+	if v != nil {
+		_ = v.BindPFlag("sink_name", setupCmd.Flags().Lookup("sink-name"))
+		_ = v.BindPFlag("dataset", setupCmd.Flags().Lookup("dataset"))
+	}
 
 	return setupCmd
 }
