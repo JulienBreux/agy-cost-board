@@ -10,9 +10,9 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Backend APIs & Telemetry Endpoints' (Protocol in workflow.md) [1dac6a7]
 
 ## Phase 2: Frontend Data Client & Identity Selection (TDD)
-- [ ] Task: API Client & Identity Persistence
-    - [ ] Write unit tests for personal activity fetching, identity resolution, and localStorage sync
-    - [ ] Implement `fetchUserActivity`, `fetchCurrentUser`, and `fetchUserBudgets` in `web/src/api.ts`
+- [x] Task: API Client & Identity Persistence [32b7bee]
+    - [x] Write unit tests for personal activity fetching, identity resolution, and localStorage sync
+    - [x] Implement `fetchUserActivity`, `fetchCurrentUser`, and `fetchUserBudgets` in `web/src/api.ts`
 - [ ] Task: Searchable User Selector Component
     - [ ] Write component tests for `UserSelector` with debounced search and keyboard selection
     - [ ] Implement `UserSelector` component with persistence and clear empty states
