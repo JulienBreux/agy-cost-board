@@ -5,9 +5,10 @@ import { UserSummary } from '../api';
 interface UserModalProps {
   user: UserSummary | null;
   onClose: () => void;
+  onOpenDashboard?: (userId: string) => void;
 }
 
-export const UserModal: React.FC<UserModalProps> = ({ user, onClose }) => {
+export const UserModal: React.FC<UserModalProps> = ({ user, onClose, onOpenDashboard }) => {
   if (!user) return null;
 
   return (
@@ -111,7 +112,17 @@ export const UserModal: React.FC<UserModalProps> = ({ user, onClose }) => {
         </div>
 
         {/* Footer */}
-        <div className="p-4 bg-[#181c26] border-t border-[#222836] flex justify-end">
+        <div className="p-4 bg-[#181c26] border-t border-[#222836] flex items-center justify-between">
+          {onOpenDashboard ? (
+            <button
+              onClick={() => onOpenDashboard(user.user_id)}
+              className="px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-semibold flex items-center space-x-1.5 transition-colors"
+            >
+              <span>Open Personal Dashboard →</span>
+            </button>
+          ) : (
+            <div />
+          )}
           <button
             onClick={onClose}
             className="px-4 py-2 rounded-lg bg-google-blue hover:bg-google-blue/90 text-white text-xs font-semibold shadow transition-colors"

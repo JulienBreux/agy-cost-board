@@ -1,9 +1,9 @@
 import React from 'react';
-import { Layers, DollarSign, ShieldCheck, Zap, Activity } from 'lucide-react';
+import { Layers, DollarSign, ShieldCheck, Zap, Activity, User } from 'lucide-react';
 
 interface NavbarProps {
-  activeTab: 'overview' | 'costs' | 'licenses' | 'setup';
-  setActiveTab: (tab: 'overview' | 'costs' | 'licenses' | 'setup') => void;
+  activeTab: 'overview' | 'costs' | 'licenses' | 'setup' | 'my-consumption';
+  setActiveTab: (tab: 'overview' | 'costs' | 'licenses' | 'setup' | 'my-consumption') => void;
   days: number;
   setDays: (days: number) => void;
 }
@@ -45,6 +45,18 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               <Layers className="h-4 w-4" />
               <span>Overview</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('my-consumption')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-xs sm:text-sm font-medium transition-colors ${
+                activeTab === 'my-consumption'
+                  ? 'bg-[#1e2330] text-emerald-400 border border-emerald-500/30 shadow-sm shadow-emerald-500/10'
+                  : 'text-google-gray-400 hover:text-white hover:bg-[#1a1e27]'
+              }`}
+            >
+              <User className="h-4 w-4" />
+              <span>My Consumption</span>
             </button>
 
             <button

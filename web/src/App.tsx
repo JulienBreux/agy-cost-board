@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   fetchOverview,
   fetchAttributedCosts,
@@ -18,10 +18,29 @@ import { CostTable } from './components/CostTable';
 import { LicenseTable } from './components/LicenseTable';
 import { SetupHealthView } from './components/SetupHealthView';
 import { UserModal } from './components/UserModal';
+import { UserDashboardView } from './components/UserDashboardView';
 import { RefreshCw, AlertTriangle } from 'lucide-react';
 
 export function App() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'costs' | 'licenses' | 'setup'>('overview');
+  const [activeTab, setActiveTab] = useState<
+    'overview' | 'costs' | 'licenses' | 'setup' | 'my-consumption'
+  >(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get('tab');
+    if (
+      tabParam === 'my-consumption' ||
+      tabParam === 'costs' ||
+      tabParam === 'licenses' ||
+      tabParam === 'setup'
+    ) {
+      return tabParam;
+    }
+    return 'overview';
+  });
+  const [dashboardUserId, setDashboardUserId] = useState<string>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('user') || '';
+  });
   const [days, setDays] = useState<number>(30);
 
   const [overview, setOverview] = useState<OverviewMetrics | null>(null);
@@ -80,6 +99,39 @@ export function App() {
     }
   }, [activeTab]);
 
+  // Synchronize URL query params (?tab=...&user=...)
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      if (activeTab === 'overview') {
+        params.delete('tab');
+      } else {
+        params.set('tab', activeTab);
+      }
+      if (activeTab === 'my-consumption' && dashboardUserId) {
+        params.set('user', dashboardUserId);
+      } else {
+        params.delete('user');
+      }
+      const newQuery = params.toString();
+      const newUrl = window.location.pathname + (newQuery ? '?' + newQuery : '');
+      window.history.replaceState(null, '', newUrl);
+    } catch {
+      // Ignore URL sync errors in environments without history API
+    }
+  }, [activeTab, dashboardUserId]);
+
+  const availableUsers = useMemo(() => {
+    const set = new Set<string>();
+    costs.forEach((c) => {
+      if (c.user_id) set.add(c.user_id);
+    });
+    governance?.dormant_users?.forEach((u) => {
+      if (u.user_id) set.add(u.user_id);
+    });
+    return Array.from(set).sort();
+  }, [costs, governance]);
+
   const handleSelectUser = async (userId: string) => {
     try {
       const summary = await fetchUserSummary(userId, days);
@@ -116,11 +168,21 @@ export function App() {
         )}
 
         {/* Loading Spinner for attribution data */}
-        {activeTab !== 'setup' && loading && !overview && (
+        {activeTab !== 'setup' && activeTab !== 'my-consumption' && loading && !overview && (
           <div className="py-24 flex flex-col items-center justify-center space-y-3">
             <RefreshCw className="h-8 w-8 text-google-blue animate-spin" />
             <span className="text-sm text-google-gray-400 font-medium">Reconciling BigQuery Telemetry & Billing...</span>
           </div>
+        )}
+
+        {/* Tab: My Personal Consumption & Driving */}
+        {activeTab === 'my-consumption' && (
+          <UserDashboardView
+            days={days}
+            availableUsers={availableUsers}
+            initialUserId={dashboardUserId}
+            onUserChange={setDashboardUserId}
+          />
         )}
 
         {/* Setup & Health Tab */}
@@ -133,7 +195,7 @@ export function App() {
         )}
 
         {/* Dashboard Content (Overview, Costs, Licenses) */}
-        {activeTab !== 'setup' && overview && (
+        {activeTab !== 'setup' && activeTab !== 'my-consumption' && overview && (
           <>
             {/* Top KPIs */}
             <KPICards metrics={overview} />
@@ -192,7 +254,15 @@ export function App() {
       </main>
 
       {/* Developer Detail Drilldown Modal */}
-      <UserModal user={selectedUser} onClose={() => setSelectedUser(null)} />
+      <UserModal
+        user={selectedUser}
+        onClose={() => setSelectedUser(null)}
+        onOpenDashboard={(userId) => {
+          setSelectedUser(null);
+          setDashboardUserId(userId);
+          setActiveTab('my-consumption');
+        }}
+      />
 
       {/* Footer */}
       <footer className="border-t border-[#1e2330] py-6 text-center text-xs text-google-gray-500">
