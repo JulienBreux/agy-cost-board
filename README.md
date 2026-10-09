@@ -1,6 +1,6 @@
 # agy-cost-board
 
-[![Go Version](https://img.shields.io/badge/Go-1.24+-00ADD8?style=flat&logo=go)](https://go.dev/)
+[![Go Version](https://img.shields.io/badge/Go-1.27+-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![CI](https://github.com/JulienBreux/agy-cost-board/actions/workflows/ci.yml/badge.svg)](https://github.com/JulienBreux/agy-cost-board/actions/workflows/ci.yml)
 [![Release](https://github.com/JulienBreux/agy-cost-board/actions/workflows/release.yml/badge.svg)](https://github.com/JulienBreux/agy-cost-board/actions/workflows/release.yml)
@@ -93,7 +93,7 @@ Evaluate and test all features instantly with `--demo`. Built-in deterministic s
 ## Quick Start (60 Seconds)
 
 ### 1. Build or Download
-Compile the standalone static binary (requires Go 1.24+ and Node 22+):
+Compile the standalone static binary (requires Go 1.27+ and Node 22+):
 ```bash
 git clone https://github.com/JulienBreux/agy-cost-board.git
 cd agy-cost-board

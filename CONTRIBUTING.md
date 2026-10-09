@@ -34,7 +34,7 @@ For significant architectural changes or new attribution formulas:
 ## Development Environment Setup
 
 ### Prerequisites
-- **Go**: Version 1.24 or newer ([Download Go](https://go.dev/dl/)).
+- **Go**: Version 1.27 or newer ([Download Go](https://go.dev/dl/)).
 - **Node.js**: Version 22 or newer & npm ([Download Node.js](https://nodejs.org/)).
 - **Make**: Standard build automation tool.
 - *(Optional)* Google Cloud SDK (`gcloud`) with active BigQuery credentials.
