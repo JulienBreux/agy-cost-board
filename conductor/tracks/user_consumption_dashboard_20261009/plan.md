@@ -16,7 +16,7 @@
 - [x] Task: Searchable User Selector Component [af02613]
     - [x] Write component tests for `UserSelector` with debounced search and keyboard selection
     - [x] Implement `UserSelector` component with persistence and clear empty states
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Frontend Data Client & Identity Selection' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Frontend Data Client & Identity Selection' (Protocol in workflow.md) [af02613]
 
 ## Phase 3: Personal Consumption & Driving UI Components (TDD)
 - [ ] Task: Personal KPI Cards & Budget Progress Gauge
