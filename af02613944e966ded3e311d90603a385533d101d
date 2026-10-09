@@ -1,0 +1,2 @@
+Task: Searchable User Selector Component
+Summary: Created UserSelector component allowing searching and selecting any developer email with '(You)' badge for authenticated user, quick reset button, and full Vitest test suite.
