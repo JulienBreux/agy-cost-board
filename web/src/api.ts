@@ -115,3 +115,135 @@ export const fetchSetupStatus = async (): Promise<DiagnosticReport> => {
   return res.json();
 };
 
+export interface CurrentUserIdentity {
+  email: string;
+  displayName: string;
+  authenticated: boolean;
+  source: string;
+}
+
+export interface UserActivityLog {
+  timestamp: string;
+  user_id: string;
+  model: string;
+  input_tokens: number;
+  output_tokens: number;
+  total_tokens: number;
+  estimated_cost: number;
+  currency: string;
+}
+
+export interface PersonalDailyTrend {
+  date: string;
+  cost: number;
+  total_tokens: number;
+  models?: Record<string, number>;
+}
+
+export interface OptimizationTip {
+  type: string;
+  title: string;
+  description: string;
+  potential_savings_monthly: number;
+  severity: 'info' | 'warning' | 'critical';
+}
+
+export interface UserBudgetMetrics {
+  threshold: number;
+  current_spend: number;
+  utilization_percent: number;
+  projected_month_end_spend: number;
+  projected_overage: number;
+  on_track: boolean;
+}
+
+export interface UserConsumptionKPIs {
+  mtd_spend: number;
+  daily_burn_rate: number;
+  weekly_burn_rate: number;
+  total_user_tokens: number;
+  org_spend_share_percent: number;
+}
+
+export interface UserConsumptionDriving {
+  user_id: string;
+  window_days: number;
+  currency: string;
+  kpis: UserConsumptionKPIs;
+  budget: UserBudgetMetrics;
+  daily_trend: PersonalDailyTrend[];
+  model_distribution: Record<string, ModelDetail>;
+  optimization_tips: OptimizationTip[];
+}
+
+export const fetchCurrentUser = async (): Promise<CurrentUserIdentity> => {
+  const res = await fetch('/api/v1/me');
+  if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch current user identity`);
+  return res.json();
+};
+
+export const fetchUserActivity = async (
+  userId: string,
+  days = 30,
+  limit = 20
+): Promise<UserActivityLog[]> => {
+  const res = await fetch(
+    `/api/v1/users/${encodeURIComponent(userId)}/activity?days=${days}&limit=${limit}`
+  );
+  if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch user activity logs`);
+  return res.json();
+};
+
+export const fetchUserDashboard = async (
+  userId: string,
+  days = 30,
+  monthlyBudget = 100
+): Promise<UserConsumptionDriving> => {
+  const res = await fetch(
+    `/api/v1/users/${encodeURIComponent(userId)}/dashboard?days=${days}&monthlyBudget=${monthlyBudget}`
+  );
+  if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch user consumption dashboard`);
+  return res.json();
+};
+
+const STORAGE_KEY_SELECTED_USER = 'agy_dashboard_selected_user';
+const STORAGE_KEY_USER_BUDGET_PREFIX = 'agy_dashboard_user_budget_';
+
+export const getSelectedUser = (): string | null => {
+  try {
+    return localStorage.getItem(STORAGE_KEY_SELECTED_USER);
+  } catch {
+    return null;
+  }
+};
+
+export const setSelectedUser = (userId: string): void => {
+  try {
+    localStorage.setItem(STORAGE_KEY_SELECTED_USER, userId);
+  } catch {
+    // ignore
+  }
+};
+
+export const getUserBudget = (userId: string, defaultBudget = 100): number => {
+  try {
+    const val = localStorage.getItem(`${STORAGE_KEY_USER_BUDGET_PREFIX}${userId}`);
+    if (val !== null) {
+      const parsed = parseFloat(val);
+      if (!isNaN(parsed) && parsed > 0) return parsed;
+    }
+  } catch {
+    // ignore
+  }
+  return defaultBudget;
+};
+
+export const setUserBudget = (userId: string, budget: number): void => {
+  try {
+    localStorage.setItem(`${STORAGE_KEY_USER_BUDGET_PREFIX}${userId}`, budget.toString());
+  } catch {
+    // ignore
+  }
+};
+
+
