@@ -22,9 +22,9 @@
 - [x] Task: Personal KPI Cards & Budget Progress Gauge [f7724d2]
     - [x] Write component tests for `PersonalKPICards` and `BudgetProgressBar`
     - [x] Implement `PersonalKPICards` (MTD spend, daily/weekly burn rate, org share) and `BudgetProgressBar` with projection alerts
-- [ ] Task: Spend Trajectory & Model Distribution Charts
-    - [ ] Write component tests for `PersonalCostChart` and `TokenDistributionChart`
-    - [ ] Implement Recharts visualizations for user daily spend by model and token type breakdowns
+- [x] Task: Spend Trajectory & Model Distribution Charts [ff0f386]
+    - [x] Write component tests for `PersonalCostChart`
+    - [x] Implement lightweight SVG visualization for user daily spend and model breakdown
 - [ ] Task: Actionable Optimization Insights Card
     - [ ] Write component tests for `OptimizationCard` with model switching and caching tips
     - [ ] Implement `OptimizationCard` surfacing actionable recommendations and estimated savings
