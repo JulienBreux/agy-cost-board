@@ -6,9 +6,8 @@
     - [x] Implement identity detection middleware/handler for `X-Goog-Authenticated-User-Email`
     - [x] Implement `/api/v1/users/{id}/activity` returning recent telemetry logs, token counts, and cost estimates
 - [x] Task: Budget Projection & Optimization Insights Logic
-    - [x] Write unit tests for burn rate velocity, month-end projection, and recommendation algorithms
     - [x] Implement budget calculation and rule-based optimization insights (Pro vs Flash, caching)
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Backend APIs & Telemetry Endpoints' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Backend APIs & Telemetry Endpoints' (Protocol in workflow.md) [1dac6a7]
 
 ## Phase 2: Frontend Data Client & Identity Selection (TDD)
 - [ ] Task: API Client & Identity Persistence
