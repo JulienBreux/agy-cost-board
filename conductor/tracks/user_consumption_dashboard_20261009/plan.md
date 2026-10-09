@@ -25,9 +25,9 @@
 - [x] Task: Spend Trajectory & Model Distribution Charts [ff0f386]
     - [x] Write component tests for `PersonalCostChart`
     - [x] Implement lightweight SVG visualization for user daily spend and model breakdown
-- [ ] Task: Actionable Optimization Insights Card
-    - [ ] Write component tests for `OptimizationCard` with model switching and caching tips
-    - [ ] Implement `OptimizationCard` surfacing actionable recommendations and estimated savings
+- [x] Task: Actionable Optimization Insights Card [cc33f72]
+    - [x] Write component tests for `OptimizationCard` with model switching and caching tips
+    - [x] Implement `OptimizationCard` surfacing actionable recommendations and estimated savings
 - [ ] Task: Recent Activity Log & Live Sync Indicator
     - [ ] Write component tests for `RecentActivityTable` and `LiveSyncBadge`
     - [ ] Implement live telemetry activity table with model/date filtering and real-time pulse badge
