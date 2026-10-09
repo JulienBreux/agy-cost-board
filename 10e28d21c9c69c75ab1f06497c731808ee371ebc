@@ -1,0 +1,2 @@
+Task: Navigation Bar & App Assembly
+Summary: Implemented UserDashboardView assembling all personal driving components, added "My Consumption" tab to Navbar, integrated URL query synchronization (?tab=my-consumption&user=...), wired UserModal deep linking directly to personal consumption view, and verified with Vitest integration suite.
