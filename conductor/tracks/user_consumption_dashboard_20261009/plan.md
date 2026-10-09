@@ -19,9 +19,9 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Frontend Data Client & Identity Selection' (Protocol in workflow.md) [af02613]
 
 ## Phase 3: Personal Consumption & Driving UI Components (TDD)
-- [ ] Task: Personal KPI Cards & Budget Progress Gauge
-    - [ ] Write component tests for `PersonalKPICards` and `BudgetProgressBar`
-    - [ ] Implement `PersonalKPICards` (MTD spend, daily/weekly burn rate, org share) and `BudgetProgressBar` with projection alerts
+- [x] Task: Personal KPI Cards & Budget Progress Gauge [f7724d2]
+    - [x] Write component tests for `PersonalKPICards` and `BudgetProgressBar`
+    - [x] Implement `PersonalKPICards` (MTD spend, daily/weekly burn rate, org share) and `BudgetProgressBar` with projection alerts
 - [ ] Task: Spend Trajectory & Model Distribution Charts
     - [ ] Write component tests for `PersonalCostChart` and `TokenDistributionChart`
     - [ ] Implement Recharts visualizations for user daily spend by model and token type breakdowns
