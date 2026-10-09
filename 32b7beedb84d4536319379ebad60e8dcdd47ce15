@@ -1,0 +1,2 @@
+Task: API Client & Identity Persistence
+Summary: Added TypeScript interfaces for personal consumption dashboard, API client functions (fetchCurrentUser, fetchUserActivity, fetchUserDashboard), and localStorage persistence helpers with full test coverage via Vitest.
