@@ -1,0 +1,31 @@
+{
+  "$schema": "https://raw.githubusercontent.com/GoogleCloudPlatform/cloud-run-button/master/schema.json",
+  "name": "agy-cost-board",
+  "description": "Per-user AI cost attribution and seat management dashboard for Google Antigravity & Gemini Enterprise",
+  "env": {
+    "PROJECT_ID": {
+      "description": "Google Cloud Project ID hosting BigQuery telemetry and billing tables",
+      "required": false
+    },
+    "AGY_COST_BOARD_DEMO": {
+      "description": "Enable demo mode with simulated cost and telemetry data (true/false)",
+      "value": "false",
+      "required": false
+    },
+    "AGY_COST_BOARD_TELEMETRY_TABLE": {
+      "description": "BigQuery telemetry table path (project.dataset.table)",
+      "required": false
+    },
+    "AGY_COST_BOARD_BILLING_TABLE": {
+      "description": "BigQuery billing export table path (project.dataset.table)",
+      "required": false
+    }
+  },
+  "options": {
+    "allow-unauthenticated": false,
+    "port": 8080,
+    "memory": "512Mi",
+    "cpu": "1"
+  },
+  "hooks": {}
+}
