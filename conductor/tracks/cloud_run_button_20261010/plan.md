@@ -13,8 +13,8 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Cloud Run Button Configuration (`app.json` + Unit Tests)' (Protocol in workflow.md) [10c9617]
 
 ## Phase 2: Documentation & One-Click Deployment Guide (`README.md`)
-- [ ] Task: Automated README Cloud Run Button Validation Test (TDD Red)
-    - [ ] Add test asserting `README.md` contains the official Cloud Run badge and target URL
+- [x] Task: Automated README Cloud Run Button Validation Test (TDD Red) [9bc43f3]
+    - [x] Add test asserting `README.md` contains the official Cloud Run badge and target URL
 - [ ] Task: Update `README.md` with Badge & Deployment Guide (TDD Green)
     - [ ] Add `[![Run on Google Cloud](https://deploy.cloud.run/button.svg)](https://deploy.cloud.run)` to top badge row
     - [ ] Add dedicated section "Deploy to Cloud Run in One Click" detailing prerequisites, button action, parameters, and IAM access instructions
