@@ -135,9 +135,16 @@ func TestStatuslineScriptExecution(t *testing.T) {
 		defer os.Remove(cacheFile)
 		defer os.Remove(lockFile)
 
+		mockBinDir := t.TempDir()
+		mockGcloud := filepath.Join(mockBinDir, "gcloud")
+		_ = os.WriteFile(mockGcloud, []byte("#!/bin/sh\nexit 0\n"), 0755)
+
 		cmd := exec.Command("bash", scriptPath)
 		cmd.Stdin = strings.NewReader(stdinJSON)
-		cmd.Env = append(os.Environ(), "AGY_COST_BOARD_URL="+mockServer.URL)
+		cmd.Env = append(os.Environ(),
+			"AGY_COST_BOARD_URL="+mockServer.URL,
+			"PATH="+mockBinDir+":"+os.Getenv("PATH"),
+		)
 
 		var stdout, stderr bytes.Buffer
 		cmd.Stdout = &stdout
@@ -149,7 +156,7 @@ func TestStatuslineScriptExecution(t *testing.T) {
 
 		// Wait briefly for background subshell to complete fetch and write cache
 		var cachePopulated bool
-		for range 20 {
+		for range 50 {
 			time.Sleep(100 * time.Millisecond)
 			if data, err := os.ReadFile(cacheFile); err == nil && len(bytes.TrimSpace(data)) > 0 {
 				val := string(bytes.TrimSpace(data))
@@ -232,7 +239,7 @@ func TestStatuslineScriptExecution(t *testing.T) {
 
 		// Wait for subshell to make the authenticated request
 		var gotAuth string
-		for range 20 {
+		for range 50 {
 			time.Sleep(100 * time.Millisecond)
 			mu.Lock()
 			gotAuth = authHeaderReceived

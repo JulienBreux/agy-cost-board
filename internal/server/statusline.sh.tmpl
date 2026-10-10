@@ -175,6 +175,18 @@ resolve_cost_user() {
   echo "${USER:-}"
 }
 
+get_file_mtime() {
+  local target="$1"
+  local mtime
+  # Linux GNU stat (-c %Y) first, macOS/BSD stat (-f %m) second, date -r third
+  mtime=$(stat -c "%Y" "$target" 2>/dev/null || stat -f "%m" "$target" 2>/dev/null || date -r "$target" +%s 2>/dev/null || echo 0)
+  if [[ "$mtime" =~ ^[0-9]+$ ]]; then
+    echo "$mtime"
+  else
+    echo 0
+  fi
+}
+
 if [ "$DISABLED" != "true" ]; then
   COST_USER="$(resolve_cost_user)"
   if [ -n "$COST_USER" ]; then
@@ -187,7 +199,7 @@ if [ "$DISABLED" != "true" ]; then
     CACHED_VALUE=""
 
     if [ -f "$CACHE_FILE" ]; then
-      CACHE_MOD_TIME=$(stat -f "%m" "$CACHE_FILE" 2>/dev/null || stat -c "%Y" "$CACHE_FILE" 2>/dev/null || echo 0)
+      CACHE_MOD_TIME="$(get_file_mtime "$CACHE_FILE")"
       AGE=$(( CURRENT_TIME - CACHE_MOD_TIME ))
       if [ "$AGE" -lt "$CACHE_TTL" ]; then
         CACHE_EXPIRED=false
@@ -199,7 +211,7 @@ if [ "$DISABLED" != "true" ]; then
     if [ "$CACHE_EXPIRED" = "true" ]; then
       LOCK_STALE=true
       if [ -f "$LOCK_FILE" ]; then
-        LOCK_TIME=$(stat -f "%m" "$LOCK_FILE" 2>/dev/null || stat -c "%Y" "$LOCK_FILE" 2>/dev/null || echo 0)
+        LOCK_TIME="$(get_file_mtime "$LOCK_FILE")"
         LOCK_AGE=$(( CURRENT_TIME - LOCK_TIME ))
         if [ "$LOCK_AGE" -lt 15 ]; then
           LOCK_STALE=false
@@ -209,7 +221,10 @@ if [ "$DISABLED" != "true" ]; then
       if [ "$LOCK_STALE" = "true" ]; then
         touch "$LOCK_FILE" 2>/dev/null || true
         (
-          ID_TOKEN="$(gcloud auth print-identity-token 2>/dev/null || true)"
+          ID_TOKEN=""
+          if command -v gcloud >/dev/null 2>&1; then
+            ID_TOKEN="$(gcloud auth print-identity-token 2>/dev/null || true)"
+          fi
           CLEAN_BOARD_URL="${BOARD_URL%/}"
           API_URL="${CLEAN_BOARD_URL}/api/v1/users/${COST_USER}?days=${DAYS}"
 
