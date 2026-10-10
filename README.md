@@ -168,7 +168,7 @@ Once configured in `.agy-cost-board.yaml` (or via environment variables):
 | `setup`        | Diagnose GCP requirements and optionally provision datasets/sinks | `agy-cost-board setup --project=my-prj --save` |
 | `cost`         | Display proportional per-developer AI spend attribution           | `agy-cost-board cost --days=30 --format=json`  |
 | `license`      | Analyze Gemini Enterprise seat utilization and dormant licenses   | `agy-cost-board license --days=30`             |
-| `user <email>` | Drill down into an individual developer's token history and spend | `agy-cost-board user alex@google.com`          |
+| `user <email>` | Drill down into an individual developer's token history and spend | `agy-cost-board user julienbreux@google.com`   |
 | `doctor`       | Fast connectivity and configuration sanity check                  | `agy-cost-board doctor`                        |
 | `tui`          | Launch interactive full-screen terminal dashboard                 | `agy-cost-board tui`                           |
 | `serve`        | Start web dashboard HTTP server with embedded React SPA           | `agy-cost-board serve --port=8080`             |
@@ -179,14 +179,14 @@ Once configured in `.agy-cost-board.yaml` (or via environment variables):
 
 The built-in HTTP server exposes clean JSON APIs consumed by the embedded frontend and third-party monitoring:
 
-| Method | Endpoint                             | Description                                                      |
-| ------ | ------------------------------------ | ---------------------------------------------------------------- |
-| `GET`  | `/healthz`                           | Liveness and readiness probe for Cloud Run / Kubernetes          |
-| `GET`  | `/api/v1/metrics/overview?days=30`   | High-level FinOps KPIs, total spend, tokens, and daily trends    |
-| `GET`  | `/api/v1/costs/users?days=30&model=` | Attributed cost records per developer and model                  |
-| `GET`  | `/api/v1/licenses/status?days=30`    | Seat quota, active/dormant status, and estimated monthly savings |
-| `GET`  | `/api/v1/users/{id}?days=30`         | Developer drilldown, historical spend, and model breakdown       |
-| `GET`  | `/api/v1/setup/status`               | Real-time 5-point GCP telemetry diagnostic status                |
+| Method | Endpoint                               | Description                                                       |
+| ------ | -------------------------------------- | ----------------------------------------------------------------- |
+| `GET`  | `/healthz`                             | Liveness and readiness probe for Cloud Run / Kubernetes           |
+| `GET`  | `/api/v1/metrics/overview?days=30`     | High-level FinOps KPIs, total spend, tokens, and daily trends     |
+| `GET`  | `/api/v1/costs/users?days=30&model=`   | Attributed cost records per developer and model                   |
+| `GET`  | `/api/v1/licenses/status?days=30`      | Seat quota, active/dormant status, and estimated monthly savings  |
+| `GET`  | `/api/v1/users/{id}?days=30`           | Developer drilldown, historical spend, and model breakdown        |
+| `GET`  | `/api/v1/setup/status`                 | Real-time 5-point GCP telemetry diagnostic status                 |
 | `GET`  | `/statusline.sh?user=&days=30&ttl=300` | Dynamic Antigravity CLI statusline script with user spend display |
 
 ---
@@ -200,38 +200,45 @@ Display individual developer AI spend directly in the Antigravity CLI status bar
 Download and configure the script directly from your deployed `agy-cost-board` instance:
 
 ```bash
-curl -sS https://<YOUR_AGY_COST_BOARD_URL>/statusline.sh -o ~/.config/antigravity/statusline.sh && chmod +x ~/.config/antigravity/statusline.sh
+curl -sS https://<YOUR_AGY_COST_BOARD_URL>/statusline.sh -o ~/.gemini/antigravity-cli/statusline.sh && chmod +x ~/.gemini/antigravity-cli/statusline.sh
 ```
 
 ### Antigravity Configuration
 
-To activate the statusline script in Antigravity, add or update the `statusline` setting in `~/.config/antigravity/config.json`:
+To activate the statusline script in Antigravity, add or update the `statusline` setting in `~/.gemini/antigravity-cli/settings.json`:
 
 ```json
 {
-  "statusline": "~/.config/antigravity/statusline.sh"
+  "statusline": "~/.gemini/antigravity-cli/statusline.sh"
 }
 ```
 
 Or configure the environment variable in your shell profile (`~/.zshrc` or `~/.bashrc`):
 
 ```bash
-export AGY_STATUSLINE="$HOME/.config/antigravity/statusline.sh"
+export AGY_STATUSLINE="$HOME/.gemini/antigravity-cli/statusline.sh"
 ```
+
+<p align="center">
+  <img src="docs/assets/statusline.png" alt="Antigravity CLI Status Bar with Cost Attribution" width="100%" />
+  <br />
+  <em><b>Antigravity CLI Status Bar:</b> Live developer spend (<code>· cost $18</code>) displayed seamlessly at the end of the statusline.</em>
+</p>
+
 
 ### Download Customization (Query Parameters)
 
 When downloading the script via `curl`, you can customize default settings:
 
-| Parameter | Default | Description |
-| --------- | ------- | ----------- |
-| `user`    | *(auto)* | Pre-bake your email address into the script (e.g., `?user=alex@google.com`) |
-| `days`    | `30`    | Lookback window in days for spend aggregation (e.g., `?days=14`) |
-| `ttl`     | `300`   | Local spend cache time-to-live in seconds (e.g., `?ttl=600` for 10 minutes) |
+| Parameter | Default  | Description                                                                        |
+| --------- | -------- | ---------------------------------------------------------------------------------- |
+| `user`    | *(auto)* | Pre-bake your email address into the script (e.g., `?user=julienbreux@google.com`) |
+| `days`    | `30`     | Lookback window in days for spend aggregation (e.g., `?days=14`)                   |
+| `ttl`     | `300`    | Local spend cache time-to-live in seconds (e.g., `?ttl=600` for 10 minutes)        |
 
 Example:
 ```bash
-curl -sS "https://<YOUR_AGY_COST_BOARD_URL>/statusline.sh?user=alex@google.com&days=30&ttl=300" -o ~/.config/antigravity/statusline.sh && chmod +x ~/.config/antigravity/statusline.sh
+curl -sS "https://<YOUR_AGY_COST_BOARD_URL>/statusline.sh?user=julienbreux@google.com&days=30&ttl=300" -o ~/.gemini/antigravity-cli/statusline.sh && chmod +x ~/.gemini/antigravity-cli/statusline.sh
 ```
 
 ### User Resolution Hierarchy
@@ -247,13 +254,13 @@ When executing, the script resolves the developer's user identity in the followi
 
 Developers can override runtime behavior without redownloading the script:
 
-| Environment Variable | Default | Description |
-| -------------------- | ------- | ----------- |
-| `AGY_COST_USER`      | *(detected)* | Force a specific developer email or identity |
-| `AGY_COST_SERVER`    | *(baked URL)*| Override the `agy-cost-board` server base URL |
-| `AGY_COST_DAYS`      | `30`         | Number of days for spend calculation |
-| `AGY_COST_CACHE_TTL` | `300`        | Local cache TTL in seconds |
-| `AGY_COST_DISABLED`  | `false`      | Set to `true` or `1` to disable the cost suffix |
+| Environment Variable | Default       | Description                                     |
+| -------------------- | ------------- | ----------------------------------------------- |
+| `AGY_COST_USER`      | *(detected)*  | Force a specific developer email or identity    |
+| `AGY_COST_SERVER`    | *(baked URL)* | Override the `agy-cost-board` server base URL   |
+| `AGY_COST_DAYS`      | `30`          | Number of days for spend calculation            |
+| `AGY_COST_CACHE_TTL` | `300`         | Local cache TTL in seconds                      |
+| `AGY_COST_DISABLED`  | `false`       | Set to `true` or `1` to disable the cost suffix |
 
 ### Cloud Run IAM & Security
 
