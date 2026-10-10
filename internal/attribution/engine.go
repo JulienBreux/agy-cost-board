@@ -312,12 +312,14 @@ func (e *Engine) GetOverviewMetrics(ctx context.Context, days int) (*domain.Over
 
 		if _, ok := dailyAgg[c.UsageDate]; !ok {
 			dailyAgg[c.UsageDate] = &domain.DailySpendTrend{
-				Date: c.UsageDate,
+				Date:    c.UsageDate,
+				ByModel: make(map[string]float64),
 			}
 			dailyUsers[c.UsageDate] = make(map[string]bool)
 		}
 		dailyAgg[c.UsageDate].TotalCost += c.AllocatedCost
 		dailyAgg[c.UsageDate].TotalTokens += c.UserTokens
+		dailyAgg[c.UsageDate].ByModel[c.Model] += c.AllocatedCost
 		dailyUsers[c.UsageDate][c.UserID] = true
 
 		d := overview.ModelBreakdown[c.Model]
@@ -335,6 +337,9 @@ func (e *Engine) GetOverviewMetrics(ctx context.Context, days int) (*domain.Over
 		tr.TotalCost = math.Round(tr.TotalCost*100) / 100
 		tr.Cost = tr.TotalCost
 		tr.Tokens = tr.TotalTokens
+		for m, cost := range tr.ByModel {
+			tr.ByModel[m] = math.Round(cost*100) / 100
+		}
 		trendList = append(trendList, *tr)
 	}
 

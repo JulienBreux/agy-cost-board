@@ -206,6 +206,7 @@ export function App() {
                 <CostChart
                   trends={overview.daily_trends}
                   modelBreakdown={overview.model_breakdown}
+                  currency={overview.currency}
                 />
                 <div>
                   <div className="flex items-center justify-between mb-3">

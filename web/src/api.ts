@@ -5,6 +5,7 @@ export interface DailyTrend {
   tokens?: number;
   total_tokens?: number;
   active_users?: number;
+  by_model?: Record<string, number>;
 }
 
 export interface ModelDetail {
