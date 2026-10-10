@@ -7,3 +7,16 @@ Summary of changes:
 - Successfully passed unit tests in internal/config/cloudrun_button_test.go
 
 Why: Supplies required deployment manifest for https://deploy.cloud.run one-click provisioning.
+
+Verification Checkpoint Report: Phase 1: Cloud Run Button Configuration (app.json + Unit Tests)
+
+Automated Tests:
+- Command: go test -v -count=1 ./internal/config -run TestCloudRunButtonAppJsonSpecification
+- Result: Passed (100% assertions verified)
+
+Manual Verification:
+- Validated app.json exists at root with valid JSON schema
+- Validated allow-unauthenticated=false, port=8080, memory=512Mi, cpu=1
+- Validated environment variables (PROJECT_ID, AGY_COST_BOARD_DEMO, AGY_COST_BOARD_TELEMETRY_TABLE, AGY_COST_BOARD_BILLING_TABLE)
+
+User Confirmation: Explicitly approved via interactive checkpoint.
