@@ -205,18 +205,18 @@ export const UserDashboardView: FC<UserDashboardViewProps> = ({
             onUpdateBudget={handleUpdateBudget}
           />
 
-          {/* Visualizations Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <PersonalCostChart
-              trends={dashboardData.daily_trend}
-              modelDistribution={dashboardData.model_distribution}
-              currency={dashboardData.currency}
-            />
-            <OptimizationCard
-              tips={dashboardData.optimization_tips}
-              currency={dashboardData.currency}
-            />
-          </div>
+          {/* Spend Trajectory & Model Distribution */}
+          <PersonalCostChart
+            trends={dashboardData.daily_trend}
+            modelDistribution={dashboardData.model_distribution}
+            currency={dashboardData.currency}
+          />
+
+          {/* Optimization Insights */}
+          <OptimizationCard
+            tips={dashboardData.optimization_tips}
+            currency={dashboardData.currency}
+          />
 
           {/* Recent Live Activity Stream */}
           <RecentActivityTable
