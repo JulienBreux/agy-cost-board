@@ -17,7 +17,7 @@
 
 ---
 
-- [ ] **Track: Implement Cloud Run One-Click Deploy Button**
+- [x] **Track: Implement Cloud Run One-Click Deploy Button**
   *Link: [./tracks/cloud_run_button_20261010/index.md](./tracks/cloud_run_button_20261010/index.md)*
 
 
