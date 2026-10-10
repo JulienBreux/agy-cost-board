@@ -105,6 +105,66 @@ describe('User Personal Consumption API & Persistence', () => {
       expect(result).toEqual(mockDashboard);
       expect(fetch).toHaveBeenCalledWith('/api/v1/users/alex.turner%40example.com/dashboard?days=30&monthlyBudget=100');
     });
+
+    it('normalizes flat backend response into rich UserConsumptionDriving format', async () => {
+      const flatBackendResponse = {
+        user_id: 'dev.intern@example.com',
+        currency: 'USD',
+        total_spend_in_window: 126.94,
+        total_tokens_in_window: 320656,
+        daily_burn_rate: 4.23,
+        weekly_burn_rate: 29.61,
+        org_spend_share_pct: 5.3,
+        monthly_budget: 100,
+        projected_month_end_spend: 126.94,
+        budget_consumed_pct: 126.9,
+        budget_status: 'exceeded',
+        recommendations: [
+          {
+            id: 'optimal-usage',
+            title: 'Healthy Consumption Profile',
+            description: 'Your usage is balanced.',
+            severity: 'success',
+            estimated_savings_usd: 0,
+          },
+        ],
+        daily_trends: [
+          {
+            date: '2026-09-10',
+            total_cost: 20.89,
+            total_tokens: 50056,
+            by_model: {
+              'gemini-1.5-flash': 6.88,
+              'gemini-1.5-pro': 14.01,
+            },
+          },
+        ],
+      };
+
+      vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+        ok: true,
+        json: async () => flatBackendResponse,
+      } as Response);
+
+      const result = await fetchUserDashboard('dev.intern@example.com', 30, 100);
+      expect(result.user_id).toBe('dev.intern@example.com');
+      expect(result.kpis.mtd_spend).toBe(126.94);
+      expect(result.kpis.daily_burn_rate).toBe(4.23);
+      expect(result.kpis.weekly_burn_rate).toBe(29.61);
+      expect(result.kpis.total_user_tokens).toBe(320656);
+      expect(result.kpis.org_spend_share_percent).toBe(5.3);
+
+      expect(result.budget.threshold).toBe(100);
+      expect(result.budget.current_spend).toBe(126.94);
+      expect(result.budget.utilization_percent).toBe(126.9);
+      expect(result.budget.on_track).toBe(false);
+      expect(result.budget.projected_overage).toBeCloseTo(26.94);
+
+      expect(result.daily_trend).toHaveLength(1);
+      expect(result.daily_trend[0].cost).toBe(20.89);
+      expect(result.optimization_tips).toHaveLength(1);
+      expect(result.model_distribution['gemini-1.5-flash']).toBeDefined();
+    });
   });
 
   describe('Identity & Budget LocalStorage Persistence', () => {

@@ -35,7 +35,7 @@ export const PersonalCostChart: React.FC<PersonalCostChartProps> = ({
 }) => {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
-  const currencySymbol = currency === 'EUR' ? '€' : '$';
+  const currencySymbol = currency === 'EUR' ? '€' : currency === 'USD' ? '$' : currency;
   const safeTrends = Array.isArray(trends) ? trends : [];
   const safeDistribution = modelDistribution && typeof modelDistribution === 'object' ? modelDistribution : {};
 
@@ -62,11 +62,11 @@ export const PersonalCostChart: React.FC<PersonalCostChartProps> = ({
                 <div className="flex items-baseline justify-end space-x-2">
                   <span className="text-xs text-google-gray-400 font-mono">{hoveredItem.date || 'Today'}</span>
                   <span className="text-sm font-bold text-google-blue font-mono">
-                    {currencySymbol}{hoveredItem.cost.toFixed(2)}
+                    {currencySymbol}{(hoveredItem.cost || 0).toFixed(2)}
                   </span>
                 </div>
                 <div className="text-[10px] text-google-gray-500 font-mono">
-                  {hoveredItem.total_tokens.toLocaleString()} tokens
+                  {(hoveredItem.total_tokens || 0).toLocaleString()} tokens
                 </div>
               </div>
             ) : (
@@ -76,11 +76,11 @@ export const PersonalCostChart: React.FC<PersonalCostChartProps> = ({
                     {safeTrends.length} {safeTrends.length === 1 ? 'day' : 'days'}
                   </span>
                   <span className="text-sm font-bold text-white font-mono">
-                    {currencySymbol}{totalPeriodCost.toFixed(2)}
+                    {currencySymbol}{(totalPeriodCost || 0).toFixed(2)}
                   </span>
                 </div>
                 <div className="text-[10px] text-google-gray-500 font-mono">
-                  {totalPeriodTokens.toLocaleString()} tokens
+                  {(totalPeriodTokens || 0).toLocaleString()} tokens
                 </div>
               </div>
             )}

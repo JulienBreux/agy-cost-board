@@ -3,12 +3,19 @@ import { DollarSign, Flame, Cpu, PieChart } from 'lucide-react';
 import { UserConsumptionKPIs } from '../api';
 
 interface PersonalKPICardsProps {
-  kpis: UserConsumptionKPIs;
+  kpis?: UserConsumptionKPIs;
   currency?: string;
 }
 
 export const PersonalKPICards: React.FC<PersonalKPICardsProps> = ({ kpis, currency = 'USD' }) => {
-  const currencySymbol = currency === 'EUR' ? '€' : '$';
+  const safeKpis = kpis || {
+    mtd_spend: 0,
+    daily_burn_rate: 0,
+    weekly_burn_rate: 0,
+    total_user_tokens: 0,
+    org_spend_share_percent: 0,
+  };
+  const currencySymbol = currency === 'EUR' ? '€' : currency === 'USD' ? '$' : currency;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -25,11 +32,11 @@ export const PersonalKPICards: React.FC<PersonalKPICardsProps> = ({ kpis, curren
         <div className="mt-3">
           <div className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
             {currencySymbol}
-            {kpis.mtd_spend.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {(safeKpis.mtd_spend || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
           <div className="mt-1 flex items-center text-xs text-google-gray-400">
             <span>
-              {currencySymbol}{kpis.daily_burn_rate.toFixed(2)}/day average velocity
+              {currencySymbol}{(safeKpis.daily_burn_rate || 0).toFixed(2)}/day average velocity
             </span>
           </div>
         </div>
@@ -48,7 +55,7 @@ export const PersonalKPICards: React.FC<PersonalKPICardsProps> = ({ kpis, curren
         <div className="mt-3">
           <div className="text-2xl sm:text-3xl font-bold text-amber-400 tracking-tight">
             {currencySymbol}
-            {kpis.weekly_burn_rate.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {(safeKpis.weekly_burn_rate || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
           <div className="mt-1 flex items-center text-xs text-google-gray-400">
             <span>Last 7 days run rate</span>
@@ -68,10 +75,10 @@ export const PersonalKPICards: React.FC<PersonalKPICardsProps> = ({ kpis, curren
         </div>
         <div className="mt-3">
           <div className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-            {(kpis.total_user_tokens / 1_000_000).toFixed(2)}M
+            {((safeKpis.total_user_tokens || 0) / 1_000_000).toFixed(2)}M
           </div>
           <div className="mt-1 flex items-center text-xs text-google-gray-400">
-            <span>{kpis.total_user_tokens.toLocaleString()} tokens total</span>
+            <span>{(safeKpis.total_user_tokens || 0).toLocaleString()} tokens total</span>
           </div>
         </div>
       </div>
@@ -88,7 +95,7 @@ export const PersonalKPICards: React.FC<PersonalKPICardsProps> = ({ kpis, curren
         </div>
         <div className="mt-3">
           <div className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-            {kpis.org_spend_share_percent.toFixed(1)}%
+            {(safeKpis.org_spend_share_percent || 0).toFixed(1)}%
           </div>
           <div className="mt-1 flex items-center text-xs text-google-gray-400">
             <span>Share of company AI spend</span>

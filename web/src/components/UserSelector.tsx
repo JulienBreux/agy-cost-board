@@ -2,16 +2,16 @@ import React, { useState, useRef, useEffect } from 'react';
 import { User, ChevronDown, Search, Check, RotateCcw } from 'lucide-react';
 
 interface UserSelectorProps {
-  currentUser: string;
-  selectedUser: string;
-  availableUsers: string[];
+  currentUser?: string;
+  selectedUser?: string;
+  availableUsers?: string[];
   onSelectUser: (userId: string) => void;
 }
 
 export const UserSelector: React.FC<UserSelectorProps> = ({
-  currentUser,
-  selectedUser,
-  availableUsers,
+  currentUser = '',
+  selectedUser = '',
+  availableUsers = [],
   onSelectUser,
 }) => {
   const [isOpen, setIsOpen] = useState(false);

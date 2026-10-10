@@ -27,4 +27,16 @@ describe('PersonalKPICards Component', () => {
     expect(screen.getByText('Org Spend Share')).toBeInTheDocument();
     expect(screen.getByText('4.8%')).toBeInTheDocument();
   });
+
+  it('renders safely without throwing when kpis is undefined', () => {
+    render(<PersonalKPICards kpis={undefined as any} currency="USD" />);
+
+    expect(screen.getByText('Month-to-Date Spend')).toBeInTheDocument();
+    expect(screen.getAllByText('$0.00')).toHaveLength(2);
+    expect(screen.getByText('Weekly Burn Rate')).toBeInTheDocument();
+    expect(screen.getByText('Personal Inference Tokens')).toBeInTheDocument();
+    expect(screen.getByText('0.00M')).toBeInTheDocument();
+    expect(screen.getByText('Org Spend Share')).toBeInTheDocument();
+    expect(screen.getByText('0.0%')).toBeInTheDocument();
+  });
 });

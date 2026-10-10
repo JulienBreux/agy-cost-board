@@ -2,30 +2,32 @@ import { FC, useState, useMemo } from 'react';
 import type { UserActivityLog } from '../api';
 
 interface RecentActivityTableProps {
-  logs: UserActivityLog[];
+  logs?: UserActivityLog[];
   currency?: string;
   isLoading?: boolean;
 }
 
 export const RecentActivityTable: FC<RecentActivityTableProps> = ({
-  logs,
+  logs = [],
   currency = '$',
   isLoading = false,
 }) => {
   const [selectedModel, setSelectedModel] = useState<string>('all');
+  const safeLogs = Array.isArray(logs) ? logs : [];
+  const currencySymbol = currency === 'EUR' ? '€' : currency === 'USD' ? '$' : currency;
 
   const models = useMemo(() => {
     const set = new Set<string>();
-    logs.forEach((log) => {
+    safeLogs.forEach((log) => {
       if (log.model) set.add(log.model);
     });
     return Array.from(set).sort();
-  }, [logs]);
+  }, [safeLogs]);
 
   const filteredLogs = useMemo(() => {
-    if (selectedModel === 'all') return logs;
-    return logs.filter((log) => log.model === selectedModel);
-  }, [logs, selectedModel]);
+    if (selectedModel === 'all') return safeLogs;
+    return safeLogs.filter((log) => log.model === selectedModel);
+  }, [safeLogs, selectedModel]);
 
   const formatTimestamp = (iso: string) => {
     try {
@@ -126,16 +128,16 @@ export const RecentActivityTable: FC<RecentActivityTableProps> = ({
                     </span>
                   </td>
                   <td className="py-2.5 px-3 text-right text-gray-400">
-                    {log.input_tokens.toLocaleString()}
+                    {(log.input_tokens ?? 0).toLocaleString()}
                   </td>
                   <td className="py-2.5 px-3 text-right text-gray-400">
-                    {log.output_tokens.toLocaleString()}
+                    {(log.output_tokens ?? 0).toLocaleString()}
                   </td>
                   <td className="py-2.5 px-3 text-right font-semibold text-gray-200">
-                    {log.total_tokens.toLocaleString()}
+                    {(log.total_tokens ?? 0).toLocaleString()}
                   </td>
                   <td className="py-2.5 px-3 text-right font-semibold text-emerald-400 whitespace-nowrap">
-                    {currency}{log.estimated_cost.toFixed(4)}
+                    {currencySymbol}{(log.estimated_cost ?? 0).toFixed(4)}
                   </td>
                 </tr>
               ))}
