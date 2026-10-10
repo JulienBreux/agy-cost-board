@@ -1,0 +1,9 @@
+Task: Update README.md with Badge & Deployment Guide (TDD Green)
+
+Summary of changes:
+- Added official Cloud Run Button badge to top header badge row: [![Run on Google Cloud](https://deploy.cloud.run/button.svg)](https://deploy.cloud.run)
+- Added dedicated 'Deploy to Cloud Run in One Click' section with prerequisites checklist, app.json environment parameter guide, and IAM authentication access instructions (gcloud run services proxy)
+- Updated manual gcloud deployment instructions to reflect secure defaults (no-allow-unauthenticated)
+- Validated with automated test TestReadmeCloudRunButtonIntegration (TDD Green phase)
+
+Why: Provides clear, actionable user documentation for one-click Cloud Run deployment.
