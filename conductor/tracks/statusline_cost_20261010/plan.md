@@ -20,12 +20,12 @@
     - [ ] Validate simulated stdin JSON input from `agy` CLI
     - [ ] Assert output string contains ` · cost $...` at the end of the statusline
     - [ ] Validate cache file creation in `/tmp/` and background async refresh behavior
-- [ ] Task: Implement Statusline Script Logic & Cost Formatting (TDD Green)
-    - [ ] Integrate user spend resolution logic calling `/api/v1/users/{id}?days={days}`
-    - [ ] Implement user detection hierarchy (`AGY_COST_USER` -> query param -> `gcloud` -> `git` -> `$USER`)
-    - [ ] Implement zero-latency local caching in `/tmp/` with configurable `AGY_COST_CACHE_TTL`
-    - [ ] Implement Cloud Run IAM authentication header support (`gcloud auth print-identity-token`)
-    - [ ] Verify script execution tests pass
+- [x] 0a2c07f Task: Implement Statusline Script Logic & Cost Formatting (TDD Green)
+    - [x] Integrate user spend resolution logic calling `/api/v1/users/{id}?days={days}`
+    - [x] Implement user detection hierarchy (`AGY_COST_USER` -> query param -> `gcloud` -> `git` -> `$USER`)
+    - [x] Implement zero-latency local caching in `/tmp/` with configurable `AGY_COST_CACHE_TTL`
+    - [x] Implement Cloud Run IAM authentication header support (`gcloud auth print-identity-token`)
+    - [x] Verify script execution tests pass
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Statusline Script Logic, Cost Attribution & Caching' (Protocol in workflow.md)
 
 ## Phase 3: Documentation & End-to-End Validation
