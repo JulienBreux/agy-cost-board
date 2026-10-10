@@ -200,106 +200,13 @@ export const PersonalCostChart: React.FC<PersonalCostChartProps> = ({
             </div>
           </div>
 
-          {/* Dynamic Summary / Hover Metrics Banner */}
-          <div className="bg-[#0f1115] border border-[#222836] rounded-lg px-4 py-2.5 mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 min-h-[52px]">
-            {hoveredItem ? (
-              <>
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 rounded-full bg-google-blue animate-pulse" />
-                  <span className="text-xs font-mono font-medium text-google-gray-300">
-                    {hoveredItem.date || 'Today'}
-                  </span>
-                </div>
-
-                <div className="flex items-center space-x-4">
-                  <div className="text-right">
-                    <span className="text-xs text-google-gray-400 mr-2">Spend:</span>
-                    <span className="text-sm font-bold text-google-blue font-mono">
-                      {currencySymbol}{(hoveredItem.cost || 0).toFixed(2)}
-                    </span>
-                  </div>
-                  <div className="text-right border-l border-[#222836] pl-4">
-                    <span className="text-xs text-google-gray-400 mr-2">Tokens:</span>
-                    <span className="text-xs font-semibold text-white font-mono">
-                      {(hoveredItem.total_tokens || 0).toLocaleString()} tokens
-                    </span>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 rounded-full bg-google-green" />
-                  <span className="text-xs text-google-gray-400">
-                    Window Total ({safeTrends.length} {safeTrends.length === 1 ? 'day' : 'days'}):
-                  </span>
-                  <span className="text-sm font-bold text-white font-mono">
-                    {currencySymbol}{(totalPeriodCost || 0).toFixed(2)}
-                  </span>
-                </div>
-
-                <div className="flex items-center space-x-4 text-xs font-mono text-google-gray-400">
-                  <div>
-                    Avg:{' '}
-                    <span className="text-white font-semibold">
-                      {currencySymbol}
-                      {(safeTrends.length > 0 ? totalPeriodCost / safeTrends.length : 0).toFixed(2)}
-                      /day
-                    </span>
-                  </div>
-                  <div className="border-l border-[#222836] pl-4">
-                    Tokens:{' '}
-                    <span className="text-white font-semibold">
-                      {(totalPeriodTokens || 0).toLocaleString()} tokens
-                    </span>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Model Repartition Pill Bar for Selected Day (if hovered) */}
-          {hoveredItem && (hoveredItem.by_model || hoveredItem.models) &&
-            Object.keys(hoveredItem.by_model || hoveredItem.models || {}).length > 0 && (
-              <div className="flex flex-wrap items-center gap-2 mb-3 px-1">
-                <span className="text-[10px] text-google-gray-500 uppercase tracking-wider font-semibold mr-1">
-                  Day Repartition:
-                </span>
-                {Object.entries(hoveredItem.by_model || hoveredItem.models || {}).map(([model, cost]) => {
-                  const dayCost = hoveredItem.cost || 0;
-                  const pct = dayCost > 0 ? (cost / dayCost) * 100 : 0;
-                  const mColor = getModelColor(model);
-                  const isFocused = focusedModel === model;
-
-                  return (
-                    <button
-                      key={model}
-                      onClick={() => setFocusedModel(isFocused ? null : model)}
-                      onMouseEnter={() => setFocusedModel(model)}
-                      onMouseLeave={() => setFocusedModel(null)}
-                      className={`inline-flex items-center space-x-1.5 px-2 py-0.5 rounded-full text-[11px] border transition-all ${
-                        isFocused
-                          ? 'bg-[#1e2330] border-white/40 text-white shadow-sm'
-                          : 'bg-[#14171f] border-[#222836] text-google-gray-300 hover:border-google-gray-500'
-                      }`}
-                    >
-                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: mColor }} />
-                      <span className="font-medium truncate max-w-[120px]">{model}</span>
-                      <span className="font-mono text-white font-semibold">{currencySymbol}{cost.toFixed(2)}</span>
-                      <span className="text-[10px] text-google-gray-500">({pct.toFixed(0)}%)</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-
           {/* Bar Chart Rendering */}
           {safeTrends.length === 0 ? (
-            <div className="h-52 w-full flex items-center justify-center text-xs text-google-gray-500">
+            <div className="h-56 w-full flex items-center justify-center text-xs text-google-gray-500">
               No daily spend recorded in this period.
             </div>
           ) : (
-            <div className="h-52 w-full flex items-end space-x-1 sm:space-x-1.5 pt-4">
+            <div className="h-56 w-full flex items-end space-x-1 sm:space-x-1.5 pt-4">
               {safeTrends.map((t, idx) => {
                 const dayVal = metricMode === 'cost' ? (t.cost || 0) : (t.total_tokens || 0);
                 const heightPct = Math.min(Math.max((dayVal / maxVal) * 100, 4), 100);
@@ -380,6 +287,102 @@ export const PersonalCostChart: React.FC<PersonalCostChartProps> = ({
             )}
           </div>
         )}
+
+        {/* Bottom Info Banner: Summary / Hovered Day Details & Repartition */}
+        <div className="mt-4 bg-[#0f1115] border border-[#222836] rounded-lg px-4 py-3 min-h-[60px] flex flex-col justify-center">
+          {hoveredItem ? (
+            <div className="space-y-2">
+              {/* Row 1: Date, Spend, Tokens */}
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 rounded-full bg-google-blue animate-pulse flex-shrink-0" />
+                  <span className="text-xs font-mono font-medium text-google-gray-300">
+                    {hoveredItem.date || 'Today'}
+                  </span>
+                </div>
+
+                <div className="flex items-center space-x-4">
+                  <div className="text-right">
+                    <span className="text-xs text-google-gray-400 mr-2">Spend:</span>
+                    <span className="text-sm font-bold text-google-blue font-mono">
+                      {currencySymbol}{(hoveredItem.cost || 0).toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="text-right border-l border-[#222836] pl-4">
+                    <span className="text-xs text-google-gray-400 mr-2">Tokens:</span>
+                    <span className="text-xs font-semibold text-white font-mono">
+                      {(hoveredItem.total_tokens || 0).toLocaleString()} tokens
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Row 2: Day Repartition Pills */}
+              {hoveredItem && (hoveredItem.by_model || hoveredItem.models) &&
+                Object.keys(hoveredItem.by_model || hoveredItem.models || {}).length > 0 && (
+                  <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-[#222836]">
+                    <span className="text-[10px] text-google-gray-500 uppercase tracking-wider font-semibold mr-1">
+                      Day Repartition:
+                    </span>
+                    {Object.entries(hoveredItem.by_model || hoveredItem.models || {}).map(([model, cost]) => {
+                      const dayCost = hoveredItem.cost || 0;
+                      const pct = dayCost > 0 ? (cost / dayCost) * 100 : 0;
+                      const mColor = getModelColor(model);
+                      const isFocused = focusedModel === model;
+
+                      return (
+                        <button
+                          key={model}
+                          onClick={() => setFocusedModel(isFocused ? null : model)}
+                          onMouseEnter={() => setFocusedModel(model)}
+                          onMouseLeave={() => setFocusedModel(null)}
+                          className={`inline-flex items-center space-x-1.5 px-2 py-0.5 rounded-full text-[11px] border transition-all ${
+                            isFocused
+                              ? 'bg-[#1e2330] border-white/40 text-white shadow-sm'
+                              : 'bg-[#14171f] border-[#222836] text-google-gray-300 hover:border-google-gray-500'
+                          }`}
+                        >
+                          <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: mColor }} />
+                          <span className="font-medium truncate max-w-[120px]">{model}</span>
+                          <span className="font-mono text-white font-semibold">{currencySymbol}{cost.toFixed(2)}</span>
+                          <span className="text-[10px] text-google-gray-500">({pct.toFixed(0)}%)</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+            </div>
+          ) : (
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div className="flex items-center space-x-3">
+                <div className="w-2 h-2 rounded-full bg-google-green flex-shrink-0" />
+                <span className="text-xs text-google-gray-400">
+                  Window Total ({safeTrends.length} {safeTrends.length === 1 ? 'day' : 'days'}):
+                </span>
+                <span className="text-sm font-bold text-white font-mono">
+                  {currencySymbol}{(totalPeriodCost || 0).toFixed(2)}
+                </span>
+              </div>
+
+              <div className="flex items-center space-x-4 text-xs font-mono text-google-gray-400">
+                <div>
+                  Avg:{' '}
+                  <span className="text-white font-semibold">
+                    {currencySymbol}
+                    {(safeTrends.length > 0 ? totalPeriodCost / safeTrends.length : 0).toFixed(2)}
+                    /day
+                  </span>
+                </div>
+                <div className="border-l border-[#222836] pl-4">
+                  Tokens:{' '}
+                  <span className="text-white font-semibold">
+                    {(totalPeriodTokens || 0).toLocaleString()} tokens
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Model Distribution & Donut Card */}

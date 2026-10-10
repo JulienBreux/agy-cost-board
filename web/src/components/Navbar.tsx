@@ -29,7 +29,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span className="font-bold text-white tracking-tight text-base sm:text-lg">Usage and Spend</span>
               </div>
               <p className="text-[11px] text-google-gray-500 hidden sm:block">
-                Gemini platform
+                Gemini platform &amp; Antigravity
               </p>
             </div>
           </div>
