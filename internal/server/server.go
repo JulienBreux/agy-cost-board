@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io/fs"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -133,8 +134,16 @@ func (s *Server) handleLicenseGovernance(w http.ResponseWriter, r *http.Request)
 	respondJSON(w, http.StatusOK, gov)
 }
 
+func extractUserID(r *http.Request) string {
+	raw := chi.URLParam(r, "id")
+	if unescaped, err := url.PathUnescape(raw); err == nil && unescaped != "" {
+		return unescaped
+	}
+	return raw
+}
+
 func (s *Server) handleUserSummary(w http.ResponseWriter, r *http.Request) {
-	userID := chi.URLParam(r, "id")
+	userID := extractUserID(r)
 	if userID == "" {
 		respondError(w, http.StatusBadRequest, "missing user id parameter")
 		return
@@ -187,7 +196,7 @@ func (s *Server) handleCurrentUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleUserActivity(w http.ResponseWriter, r *http.Request) {
-	userID := chi.URLParam(r, "id")
+	userID := extractUserID(r)
 	if userID == "" {
 		respondError(w, http.StatusBadRequest, "missing user id parameter")
 		return
@@ -204,13 +213,16 @@ func (s *Server) handleUserActivity(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleUserDashboard(w http.ResponseWriter, r *http.Request) {
-	userID := chi.URLParam(r, "id")
+	userID := extractUserID(r)
 	if userID == "" {
 		respondError(w, http.StatusBadRequest, "missing user id parameter")
 		return
 	}
 	days := parseIntQuery(r, "days", 30)
-	budget := parseFloatQuery(r, "budget", 150.0)
+	budget := parseFloatQuery(r, "budget", 0)
+	if budget <= 0 {
+		budget = parseFloatQuery(r, "monthlyBudget", 150.0)
+	}
 
 	driving, err := s.engine.GetUserConsumptionDriving(r.Context(), userID, days, budget)
 	if err != nil {

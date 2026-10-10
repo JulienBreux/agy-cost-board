@@ -378,5 +378,25 @@ func TestUserDashboardEndpoint(t *testing.T) {
 			t.Errorf("expected daily trends")
 		}
 	})
+
+	t.Run("GET /api/v1/users/{id}/dashboard with URL-encoded dev.intern%40example.com and monthlyBudget", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/users/dev.intern%40example.com/dashboard?days=30&monthlyBudget=100", nil)
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("expected 200 OK, got %d (body: %s)", rec.Code, rec.Body.String())
+		}
+		var driving domain.UserConsumptionDriving
+		if err := json.NewDecoder(rec.Body).Decode(&driving); err != nil {
+			t.Fatalf("decode err: %v", err)
+		}
+		if driving.UserID != "dev.intern@example.com" {
+			t.Errorf("expected user_id dev.intern@example.com, got %s", driving.UserID)
+		}
+		if driving.MonthlyBudget != 100.0 {
+			t.Errorf("expected budget 100.0, got %f", driving.MonthlyBudget)
+		}
+	})
 }
 

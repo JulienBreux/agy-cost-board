@@ -207,8 +207,18 @@ func (e *Engine) GetUserSummary(ctx context.Context, userID string, days int) (*
 		summary.ModelBreakdown[m] = d
 	}
 
-	// If user was never active and has 0 tokens/costs, return ErrUserNotFound
+	// If user has no inference activity in the window, check if they exist in license seats
 	if latestActivity.IsZero() && summary.TotalTokens == 0 {
+		seats, _, err := e.provider.FetchLicenseSeats(ctx, days)
+		if err == nil {
+			for _, s := range seats {
+				if s.UserID == userID {
+					summary.SeatStatus = s.Status
+					summary.LastActive = s.LastActivity
+					return summary, nil
+				}
+			}
+		}
 		return nil, domain.ErrUserNotFound
 	}
 

@@ -21,13 +21,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
-          cache-dependency-path: web/package-lock.json
 
       - name: Build Web Assets
         run: |
           cd web
-          npm ci --prefer-offline --no-audit --progress=false || npm install --no-audit --progress=false
+          npm install --no-audit --progress=false
           npm run build
           cd ..
 
@@ -57,13 +55,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
-          cache-dependency-path: web/package-lock.json
 
       - name: Build Web Assets
         run: |
           cd web
-          npm ci --prefer-offline --no-audit --progress=false || npm install --no-audit --progress=false
+          npm install --no-audit --progress=false
           npm run build
           cd ..
 

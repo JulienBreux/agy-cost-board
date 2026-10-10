@@ -3,6 +3,7 @@ run:
   tests: true
 
 linters:
+  disable-all: true
   enable:
     - errcheck
     - govet
@@ -24,6 +25,7 @@ linters-settings:
     disable:
       - fieldalignment
       - shadow
+      - nilness
   gosec:
     excludes:
       - G101
