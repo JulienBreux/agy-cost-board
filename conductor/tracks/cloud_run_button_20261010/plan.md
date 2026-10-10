@@ -1,11 +1,11 @@
 # Implementation Plan: Cloud Run One-Click Deploy Button
 
 ## Phase 1: Cloud Run Button Configuration (`app.json` + Unit Tests)
-- [ ] Task: Unit Tests for Cloud Run Button Configuration (TDD Red)
-    - [ ] Create test in `internal/config` or `tests/` validating `app.json` exists at repo root
-    - [ ] Assert valid JSON syntax, required top-level attributes (`name`, `description`, `options`, `env`)
-    - [ ] Assert option constraints: `allow-unauthenticated: false`, `port: 8080`, `memory: "512Mi"`, `cpu: "1"`
-    - [ ] Assert environment variable mappings match configuration expectations
+- [x] Task: Unit Tests for Cloud Run Button Configuration (TDD Red) [19a22a7]
+    - [x] Create test in `internal/config` or `tests/` validating `app.json` exists at repo root
+    - [x] Assert valid JSON syntax, required top-level attributes (`name`, `description`, `options`, `env`)
+    - [x] Assert option constraints: `allow-unauthenticated: false`, `port: 8080`, `memory: "512Mi"`, `cpu: "1"`
+    - [x] Assert environment variable mappings match configuration expectations
 - [ ] Task: Implement `app.json` Specification (TDD Green)
     - [ ] Create `app.json` at repository root compliant with Cloud Run Button tech specification
     - [ ] Configure `name`, `options`, and environment parameters (`PROJECT_ID`, `AGY_COST_BOARD_DEMO`, etc.)
