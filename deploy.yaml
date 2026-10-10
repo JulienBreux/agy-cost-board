@@ -1,0 +1,75 @@
+# Google Cloud Run Declarative Service Specification
+# Knative Serving v1 API Specification: https://cloud.google.com/run/docs/reference/yaml
+#
+# Inspired by the Cloud Run Button configuration (app.json) to enable GitOps,
+# CI/CD pipelines, and declarative service management.
+#
+# Deploy or update this service using the gcloud CLI:
+#   gcloud run services replace deploy.yaml --region=us-central1
+#
+# To substitute PROJECT_ID and deploy in one line:
+#   sed 's/PROJECT_ID/'"$(gcloud config get-value project)"'/g' deploy.yaml | gcloud run services replace - --region=us-central1
+#
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: agy-cost-board
+  labels:
+    cloud.googleapis.com/location: us-central1
+    app.kubernetes.io/name: agy-cost-board
+    app.kubernetes.io/part-of: agy-cost-board
+  annotations:
+    # Allow incoming traffic from the internet; IAM authentication is enforced by default
+    run.googleapis.com/ingress: all
+spec:
+  template:
+    metadata:
+      annotations:
+        # Scale to zero when idle to minimize costs; scale up to 10 instances under load
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "10"
+        # Enable startup CPU boost for instant cold-start container initialization
+        run.googleapis.com/startup-cpu-boost: "true"
+        # CPU is allocated during request processing
+        run.googleapis.com/cpu-throttling: "true"
+    spec:
+      containerConcurrency: 80
+      timeoutSeconds: 300
+      # Dedicated runtime service account with BigQuery Data Viewer and Job User roles
+      # serviceAccountName: agy-cost-board-sa@PROJECT_ID.iam.gserviceaccount.com
+      containers:
+        - name: agy-cost-board
+          # Replace PROJECT_ID with your Google Cloud project ID, or use Artifact Registry:
+          # image: us-docker.pkg.dev/PROJECT_ID/agy-cost-board/agy-cost-board:latest
+          image: gcr.io/PROJECT_ID/agy-cost-board:latest
+          ports:
+            - name: http1
+              containerPort: 8080
+          resources:
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          env:
+            - name: PROJECT_ID
+              value: "PROJECT_ID"
+            - name: AGY_COST_BOARD_DEMO
+              value: "false"
+            - name: AGY_COST_BOARD_TELEMETRY_TABLE
+              value: ""
+            - name: AGY_COST_BOARD_BILLING_TABLE
+              value: ""
+          startupProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 0
+            periodSeconds: 5
+            failureThreshold: 3
+            timeoutSeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            periodSeconds: 15
+            failureThreshold: 3
+            timeoutSeconds: 2

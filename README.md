@@ -281,6 +281,19 @@ The service is deployed with **IAM authentication required** (`allow-unauthentic
   ```
 - **Browser Access with IAM / IAP:** Grant individual users or groups the **Cloud Run Invoker** (`roles/run.invoker`) role in Cloud IAM or place the service behind Google Cloud Identity-Aware Proxy (IAP).
 
+### Declarative Deployment via `deploy.yaml`
+
+Inspired by the Cloud Run Button configuration (`app.json`), `deploy.yaml` provides a Knative-compatible declarative Service manifest (`serving.knative.dev/v1`) for GitOps, IaC, and continuous delivery:
+
+```bash
+# 1. Substitute your GCP project ID and deploy declaratively
+sed 's/PROJECT_ID/'"$(gcloud config get-value project)"'/g' deploy.yaml | \
+  gcloud run services replace - --region=us-central1
+
+# 2. Or apply deploy.yaml directly once configured
+gcloud run services replace deploy.yaml --region=us-central1
+```
+
 ---
 
 ### Manual Deployment via gcloud

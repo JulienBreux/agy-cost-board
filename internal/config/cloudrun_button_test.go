@@ -138,5 +138,10 @@ func TestReadmeCloudRunButtonIntegration(t *testing.T) {
 	if !strings.Contains(content, "gcloud run services proxy") {
 		t.Errorf("expected README.md to document IAM authenticated access via 'gcloud run services proxy'")
 	}
+
+	// 4. Documents declarative deployment via deploy.yaml
+	if !strings.Contains(content, "deploy.yaml") {
+		t.Errorf("expected README.md to document declarative deployment via 'deploy.yaml'")
+	}
 }
 
