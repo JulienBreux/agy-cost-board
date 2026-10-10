@@ -1,7 +1,7 @@
 # Implementation Plan: Antigravity CLI Statusline Spend Integration
 
 ## Phase 1: Statusline Template & HTTP Endpoint Serving
-- [ ] Task: Unit & HTTP Tests for `/statusline.sh` Endpoint (TDD Red)
+- [x] a890e6a Task: Unit & HTTP Tests for `/statusline.sh` Endpoint (TDD Red)
     - [ ] Create tests in `internal/server/statusline_test.go` requesting `GET /statusline.sh`
     - [ ] Assert status 200 OK and `Content-Type: text/x-shellscript; charset=utf-8`
     - [ ] Assert template substitution of server base URL (`Host`, `X-Forwarded-Proto`, or `X-Forwarded-Host`)
