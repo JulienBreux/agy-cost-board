@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -113,3 +114,31 @@ func TestCloudRunButtonAppJsonSpecification(t *testing.T) {
 		}
 	}
 }
+
+func TestReadmeCloudRunButtonIntegration(t *testing.T) {
+	rootDir := findRepoRoot(t)
+	readmePath := filepath.Join(rootDir, "README.md")
+
+	data, err := os.ReadFile(readmePath)
+	if err != nil {
+		t.Fatalf("failed to read README.md: %v", err)
+	}
+	content := string(data)
+
+	// 1. Badge row contains official Cloud Run Button badge and link
+	expectedBadgeMarkdown := "[![Run on Google Cloud](https://deploy.cloud.run/button.svg)](https://deploy.cloud.run)"
+	if !strings.Contains(content, expectedBadgeMarkdown) {
+		t.Errorf("expected README.md to contain Cloud Run Button badge: %s", expectedBadgeMarkdown)
+	}
+
+	// 2. Dedicated Cloud Run One-Click Deployment section
+	if !strings.Contains(content, "Deploy to Cloud Run in One Click") {
+		t.Errorf("expected README.md to contain 'Deploy to Cloud Run in One Click' section")
+	}
+
+	// 3. Mentions IAM authentication security and proxy invocation
+	if !strings.Contains(content, "gcloud run services proxy") {
+		t.Errorf("expected README.md to document IAM authenticated access via 'gcloud run services proxy'")
+	}
+}
+
