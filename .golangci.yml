@@ -5,11 +5,8 @@ run:
 linters:
   enable:
     - errcheck
-    - gosimple
     - govet
     - ineffassign
-    - staticcheck
-    - unused
     - revive
     - gosec
     - misspell
@@ -19,6 +16,7 @@ linters:
     - usestdlibvars
     - perfsprint
     - unconvert
+    # staticcheck, gosimple, and unused are disabled due to honnef.co/go/tools SSA/IR builder panic on Go 1.27 AST on Linux
 
 linters-settings:
   govet:

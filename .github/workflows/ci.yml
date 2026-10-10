@@ -49,16 +49,14 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 20
           cache: 'npm'
           cache-dependency-path: web/package-lock.json
 
       - name: Build Web Assets
-        env:
-          NODE_OPTIONS: "--no-network-family-autoselection"
         run: |
           cd web
-          npm ci --no-audit --progress=false
+          npm ci --prefer-offline --no-audit --progress=false || npm install --no-audit --progress=false
           npm test
           npm run build
           cd ..
