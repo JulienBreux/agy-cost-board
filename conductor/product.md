@@ -39,3 +39,9 @@ The main goal is to track the allocation of Gemini Enterprise licenses for a pro
 - **Authentication:** Native support for Google Cloud Application Default Credentials (ADC) and Workload Identity Federation.
 - **SQL / Infrastructure Automation:** Pre-packaged SQL views and DDL/sinks setup helpers.
 - **Mock / Demo Fixture Mode:** Built-in synthetic datasets allowing instant offline local testing and UI demonstration without GCP billing credentials.
+
+### 6. Antigravity CLI Statusline Spend Telemetry
+- Dynamically generates and serves a customized, fail-open Antigravity CLI statusline script (`/statusline.sh`).
+- Shows developer spend (` · cost $123`) in the terminal status bar with zero terminal latency.
+- Features subshell asynchronous background refresh, local file caching with configurable TTL, stampede lock prevention, and automatic Cloud Run IAM Bearer token authentication.
+

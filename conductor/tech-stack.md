@@ -30,3 +30,6 @@
 - **Container Build:** Multi-stage Dockerfile (Stage 1: Node.js frontend build; Stage 2: Go compiler; Stage 3: `gcr.io/distroless/static` or Alpine minimal runtime).
 - **Deployment Target:** Google Cloud Run (stateless, scale-to-zero, HTTPS termination, IAM authenticated).
 - **One-Click Deployment:** Cloud Run Button integration (`app.json`) enabling browser-based provisioning via `https://deploy.cloud.run` with configurable environment variables and secure-by-default IAM authentication.
+
+## 7. Developer Tooling & Integrations
+- **Antigravity CLI Statusline:** Dynamic POSIX/bash 3.2+ compatible statusline script served via `GET /statusline.sh`, with zero-latency `/tmp` caching, background asynchronous subshell refresh, stampede locking, and Cloud Run IAM Bearer token authentication.
