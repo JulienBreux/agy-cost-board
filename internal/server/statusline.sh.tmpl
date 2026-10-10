@@ -209,16 +209,16 @@ if [ "$DISABLED" != "true" ]; then
       if [ "$LOCK_STALE" = "true" ]; then
         touch "$LOCK_FILE" 2>/dev/null || true
         (
-          AUTH_HEADER=()
           ID_TOKEN="$(gcloud auth print-identity-token 2>/dev/null || true)"
-          if [ -n "$ID_TOKEN" ]; then
-            AUTH_HEADER=(-H "Authorization: Bearer $ID_TOKEN")
-          fi
-
           CLEAN_BOARD_URL="${BOARD_URL%/}"
           API_URL="${CLEAN_BOARD_URL}/api/v1/users/${COST_USER}?days=${DAYS}"
 
-          RESP="$(curl -sS --max-time 3 "${AUTH_HEADER[@]}" "$API_URL" 2>/dev/null || true)"
+          if [ -n "$ID_TOKEN" ]; then
+            RESP="$(curl -sS --max-time 3 -H "Authorization: Bearer $ID_TOKEN" "$API_URL" 2>/dev/null || true)"
+          else
+            RESP="$(curl -sS --max-time 3 "$API_URL" 2>/dev/null || true)"
+          fi
+
           if [ -n "$RESP" ]; then
             TOTAL_COST="$(printf "%s" "$RESP" | jq -r 'if .total_cost == null then "--" else (.total_cost | round | tostring) end' 2>/dev/null || true)"
             if [ -n "$TOTAL_COST" ] && [ "$TOTAL_COST" != "null" ]; then

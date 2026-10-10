@@ -163,4 +163,105 @@ func TestStatuslineScriptExecution(t *testing.T) {
 			t.Errorf("expected background fetch to populate cache file %s with '123'", cacheFile)
 		}
 	})
+
+	t.Run("Script respects AGY_COST_USER override over DEFAULT_USER", func(t *testing.T) {
+		cacheBob := "/tmp/agy_cost_bob_example_com.cache"
+		_ = os.WriteFile(cacheBob, []byte("456\n"), 0644)
+		defer os.Remove(cacheBob)
+
+		cmd := exec.Command("bash", scriptPath)
+		cmd.Stdin = strings.NewReader(stdinJSON)
+		cmd.Env = append(os.Environ(),
+			"AGY_COST_BOARD_URL="+mockServer.URL,
+			"AGY_COST_USER=bob@example.com",
+		)
+
+		var stdout bytes.Buffer
+		cmd.Stdout = &stdout
+
+		if err := cmd.Run(); err != nil {
+			t.Fatalf("script execution failed: %v", err)
+		}
+
+		outStr := stdout.String()
+		if !strings.Contains(outStr, "$456") {
+			t.Errorf("expected output to contain '$456' for AGY_COST_USER, got: %q", outStr)
+		}
+	})
+
+	t.Run("Script attaches IAM Bearer token from gcloud auth print-identity-token", func(t *testing.T) {
+		var authHeaderReceived string
+		authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			authHeaderReceived = r.Header.Get("Authorization")
+			w.Header().Set("Content-Type", "application/json")
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
+				"user_id":    "alice@example.com",
+				"total_cost": 50.0,
+				"currency":   "USD",
+			})
+		}))
+		defer authServer.Close()
+
+		mockBinDir := t.TempDir()
+		mockGcloud := filepath.Join(mockBinDir, "gcloud")
+		_ = os.WriteFile(mockGcloud, []byte("#!/bin/sh\nif [ \"$1\" = \"auth\" ]; then echo \"mock-iam-token-xyz\"; fi\n"), 0755)
+
+		cacheFile := "/tmp/agy_cost_alice_example_com.cache"
+		lockFile := "/tmp/agy_cost_alice_example_com.lock"
+		_ = os.Remove(cacheFile)
+		_ = os.Remove(lockFile)
+		defer os.Remove(cacheFile)
+		defer os.Remove(lockFile)
+
+		cmd := exec.Command("bash", scriptPath)
+		cmd.Stdin = strings.NewReader(stdinJSON)
+		cmd.Env = append(os.Environ(),
+			"AGY_COST_BOARD_URL="+authServer.URL,
+			"PATH="+mockBinDir+":"+os.Getenv("PATH"),
+		)
+
+		if err := cmd.Run(); err != nil {
+			t.Fatalf("script execution failed: %v", err)
+		}
+
+		// Wait for subshell to make the authenticated request
+		for i := 0; i < 20; i++ {
+			time.Sleep(100 * time.Millisecond)
+			if authHeaderReceived != "" {
+				break
+			}
+		}
+
+		if authHeaderReceived != "Bearer mock-iam-token-xyz" {
+			t.Errorf("expected Authorization 'Bearer mock-iam-token-xyz', got %q", authHeaderReceived)
+		}
+	})
+
+	t.Run("Script handles server error gracefully and fails open", func(t *testing.T) {
+		errorServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			http.Error(w, "not found", http.StatusNotFound)
+		}))
+		defer errorServer.Close()
+
+		cacheFile := "/tmp/agy_cost_unknown_example_com.cache"
+		lockFile := "/tmp/agy_cost_unknown_example_com.lock"
+		_ = os.Remove(cacheFile)
+		_ = os.Remove(lockFile)
+		defer os.Remove(cacheFile)
+		defer os.Remove(lockFile)
+
+		cmd := exec.Command("bash", scriptPath)
+		cmd.Stdin = strings.NewReader(stdinJSON)
+		cmd.Env = append(os.Environ(),
+			"AGY_COST_BOARD_URL="+errorServer.URL,
+			"AGY_COST_USER=unknown@example.com",
+		)
+
+		var stdout bytes.Buffer
+		cmd.Stdout = &stdout
+
+		if err := cmd.Run(); err != nil {
+			t.Fatalf("script should fail-open without error, got: %v", err)
+		}
+	})
 }
