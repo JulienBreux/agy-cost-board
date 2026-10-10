@@ -6,10 +6,10 @@
     - [x] Assert valid JSON syntax, required top-level attributes (`name`, `description`, `options`, `env`)
     - [x] Assert option constraints: `allow-unauthenticated: false`, `port: 8080`, `memory: "512Mi"`, `cpu: "1"`
     - [x] Assert environment variable mappings match configuration expectations
-- [ ] Task: Implement `app.json` Specification (TDD Green)
-    - [ ] Create `app.json` at repository root compliant with Cloud Run Button tech specification
-    - [ ] Configure `name`, `options`, and environment parameters (`PROJECT_ID`, `AGY_COST_BOARD_DEMO`, etc.)
-    - [ ] Run unit tests to verify green status
+- [x] Task: Implement `app.json` Specification (TDD Green) [10c9617]
+    - [x] Create `app.json` at repository root compliant with Cloud Run Button tech specification
+    - [x] Configure `name`, `options`, and environment parameters (`PROJECT_ID`, `AGY_COST_BOARD_DEMO`, etc.)
+    - [x] Run unit tests to verify green status
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Cloud Run Button Configuration (`app.json` + Unit Tests)' (Protocol in workflow.md)
 
 ## Phase 2: Documentation & One-Click Deployment Guide (`README.md`)
