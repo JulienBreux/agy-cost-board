@@ -1,0 +1,4 @@
+Task: Implement Statusline Script Template & Handler (TDD Green)
+Summary: Implemented GET /statusline.sh endpoint serving a dynamically rendered statusline.sh script. Embedded template statusline.sh.tmpl into internal/server, created statusline.go with request host/proto detection (supporting X-Forwarded-Proto and X-Forwarded-Host) and query param substitution (?user=, ?days=, ?ttl=), registered route in server.go.
+Files: internal/server/server.go, internal/server/statusline.go, internal/server/statusline.sh.tmpl
+Why: Enable developers to curl or wget /statusline.sh directly from any deployment host with auto-injected server URL and optional pre-configured user.
