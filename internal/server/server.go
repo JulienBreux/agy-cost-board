@@ -17,6 +17,13 @@ import (
 	"github.com/julienbreux/agy-cost-board/internal/setup"
 )
 
+// VersionInfo contains build and release metadata.
+type VersionInfo struct {
+	Version   string `json:"version"`
+	Commit    string `json:"commit,omitempty"`
+	BuildDate string `json:"build_date,omitempty"`
+}
+
 // Server encapsulates the HTTP router, middleware, and dependency engine.
 type Server struct {
 	engine      *attribution.Engine
@@ -24,6 +31,7 @@ type Server struct {
 	router      *chi.Mux
 	setupCfg    setup.Config
 	setupRunner setup.Runner
+	versionInfo VersionInfo
 }
 
 // NewServer initializes the Chi router with middleware, API routes, and embedded SPA handler.
@@ -47,10 +55,23 @@ func NewServerWithSetup(engine *attribution.Engine, staticFS fs.FS, cfg setup.Co
 		router:      chi.NewRouter(),
 		setupCfg:    cfg,
 		setupRunner: runner,
+		versionInfo: VersionInfo{
+			Version: "v0.4.0",
+		},
 	}
 
 	s.setupRoutes()
 	return s
+}
+
+// SetVersionInfo sets the application build version metadata.
+func (s *Server) SetVersionInfo(v VersionInfo) {
+	s.versionInfo = v
+}
+
+// VersionInfo returns the application build version metadata.
+func (s *Server) VersionInfo() VersionInfo {
+	return s.versionInfo
 }
 
 // Router returns the underlying Chi router.
@@ -78,14 +99,21 @@ func (s *Server) setupRoutes() {
 
 	// Health check for Cloud Run and Kubernetes probes
 	r.Get("/healthz", func(w http.ResponseWriter, r *http.Request) {
-		respondJSON(w, http.StatusOK, map[string]string{
+		res := map[string]string{
 			"status":  "ok",
 			"service": "agy-cost-board",
-		})
+		}
+		if s.versionInfo.Version != "" {
+			res["version"] = s.versionInfo.Version
+		}
+		respondJSON(w, http.StatusOK, res)
 	})
 
 	// API v1 routes
 	r.Route("/api/v1", func(api chi.Router) {
+		api.Get("/version", func(w http.ResponseWriter, r *http.Request) {
+			respondJSON(w, http.StatusOK, s.versionInfo)
+		})
 		api.Get("/me", s.handleCurrentUser)
 		api.Get("/metrics/overview", s.handleOverviewMetrics)
 		api.Get("/costs/users", s.handleAttributedCosts)

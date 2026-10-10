@@ -80,6 +80,11 @@ func newServeCommand(v *viper.Viper) *cobra.Command {
 				Demo:           demo || projectID == "",
 			}
 			srv := server.NewServerWithSetup(engine, staticFS, setupCfg, nil)
+			srv.SetVersionInfo(server.VersionInfo{
+				Version:   Version,
+				Commit:    Commit,
+				BuildDate: BuildDate,
+			})
 			addr := fmt.Sprintf("%s:%d", host, port)
 
 			httpServer := &http.Server{

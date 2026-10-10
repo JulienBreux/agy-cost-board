@@ -116,6 +116,18 @@ export const fetchSetupStatus = async (): Promise<DiagnosticReport> => {
   return res.json();
 };
 
+export interface AppVersionInfo {
+  version: string;
+  commit?: string;
+  build_date?: string;
+}
+
+export const fetchVersion = async (): Promise<AppVersionInfo> => {
+  const res = await fetch('/api/v1/version');
+  if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch version`);
+  return res.json();
+};
+
 export interface CurrentUserIdentity {
   email: string;
   displayName: string;

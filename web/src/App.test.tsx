@@ -80,6 +80,11 @@ describe('App Component Navigation', () => {
         vi.spyOn(api, 'fetchCurrentUser').mockResolvedValue(mockCurrentUser);
         vi.spyOn(api, 'fetchUserDashboard').mockResolvedValue(mockDashboard);
         vi.spyOn(api, 'fetchUserActivity').mockResolvedValue([]);
+        vi.spyOn(api, 'fetchVersion').mockResolvedValue({
+            version: 'v0.4.0-dirty',
+            commit: 'a3fefe9',
+            build_date: '2026-10-10T19:40:54Z'
+        });
         vi.spyOn(api, 'fetchSetupStatus').mockResolvedValue({
             project_id: 'test-project',
             timestamp: '2026-10-09T00:00:00Z',
@@ -141,4 +146,13 @@ describe('App Component Navigation', () => {
             expect(screen.getByText('Month-to-Date Spend')).toBeInTheDocument();
         });
     });
+
+    it('fetches and renders the dynamic version in the footer', async () => {
+        render(<App />);
+
+        await waitFor(() => {
+            expect(screen.getByText('v0.4.0-dirty')).toBeInTheDocument();
+        });
+    });
 });
+

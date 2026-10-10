@@ -44,6 +44,25 @@ describe('User Personal Consumption API & Persistence', () => {
         });
     });
 
+    describe('fetchVersion', () => {
+        it('fetches version info from /api/v1/version', async () => {
+            const mockVersion = {
+                version: 'v0.4.0-dirty',
+                commit: 'a3fefe9',
+                build_date: '2026-10-10T19:40:54Z',
+            };
+
+            vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+                ok: true,
+                json: async () => mockVersion,
+            } as Response);
+
+            const result = await (await import('./api')).fetchVersion();
+            expect(result).toEqual(mockVersion);
+            expect(fetch).toHaveBeenCalledWith('/api/v1/version');
+        });
+    });
+
     describe('fetchUserActivity', () => {
         it('fetches user activity logs with query params', async () => {
             const mockActivity = [

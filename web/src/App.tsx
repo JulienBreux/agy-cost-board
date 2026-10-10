@@ -5,6 +5,7 @@ import {
   fetchLicenseGovernance,
   fetchUserSummary,
   fetchSetupStatus,
+  fetchVersion,
   OverviewMetrics,
   AllocatedUserCost,
   LicenseGovernance,
@@ -19,6 +20,7 @@ import { LicenseTable } from './components/LicenseTable';
 import { SetupHealthView } from './components/SetupHealthView';
 import { UserModal } from './components/UserModal';
 import { UserDashboardView } from './components/UserDashboardView';
+import { Footer } from './components/Footer';
 import { ThemeProvider } from './context/ThemeContext';
 import { RefreshCw, AlertTriangle } from 'lucide-react';
 
@@ -43,6 +45,7 @@ export function App() {
     return params.get('user') || '';
   });
   const [days, setDays] = useState<number>(30);
+  const [appVersion, setAppVersion] = useState<string>('v0.4.0');
 
   const [overview, setOverview] = useState<OverviewMetrics | null>(null);
   const [costs, setCosts] = useState<AllocatedUserCost[]>([]);
@@ -93,6 +96,18 @@ export function App() {
     loadData();
     loadSetup();
   }, [days]);
+
+  useEffect(() => {
+    fetchVersion()
+      .then((info) => {
+        if (info?.version) {
+          setAppVersion(info.version);
+        }
+      })
+      .catch((err: unknown) => {
+        console.debug('Failed to load application version:', err);
+      });
+  }, []);
 
   useEffect(() => {
     if (activeTab === 'setup' && !setupReport) {
@@ -268,19 +283,7 @@ export function App() {
       />
 
       {/* Footer */}
-      <footer className="border-t border-[#1e2330] py-6 text-center text-xs text-google-gray-500">
-        <p>
-          With &lt;3 by{' '}
-          <a
-            href="https://github.com/julienbreux"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-google-gray-400 hover:text-white transition-colors underline underline-offset-2"
-          >
-            Julien Breux
-          </a>
-        </p>
-      </footer>
+      <Footer version={appVersion} />
     </div>
   </ThemeProvider>
   );
