@@ -79,6 +79,7 @@ describe('UserDashboardView', () => {
             expect(screen.getByText('testuser@google.com')).toBeInTheDocument();
             expect(screen.getByText('Month-to-Date Spend')).toBeInTheDocument();
             expect(screen.getByText('Monthly Budget & Quota Driving')).toBeInTheDocument();
+            expect(screen.getByText('Antigravity CLI Status Bar Integration')).toBeInTheDocument();
             expect(screen.getByText('Daily Spend Trajectory')).toBeInTheDocument();
             expect(screen.getByText('Optimization Insights')).toBeInTheDocument();
             expect(screen.getByText('Recent Activity')).toBeInTheDocument();

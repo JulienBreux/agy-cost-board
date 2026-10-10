@@ -14,6 +14,7 @@ import { BudgetProgressBar } from './BudgetProgressBar';
 import { PersonalCostChart } from './PersonalCostChart';
 import { OptimizationCard } from './OptimizationCard';
 import { RecentActivityTable } from './RecentActivityTable';
+import { StatuslineHelpBox } from './StatuslineHelpBox';
 import { RefreshCw, AlertTriangle } from 'lucide-react';
 
 interface UserDashboardViewProps {
@@ -203,6 +204,14 @@ export const UserDashboardView: FC<UserDashboardViewProps> = ({
                         budget={dashboardData.budget}
                         currency={dashboardData.currency}
                         onUpdateBudget={handleUpdateBudget}
+                    />
+
+                    {/* Antigravity CLI Statusline Spend Help Box */}
+                    <StatuslineHelpBox
+                        userId={selectedUserId}
+                        days={days}
+                        currentSpend={dashboardData.kpis.mtd_spend}
+                        currency={dashboardData.currency}
                     />
 
                     {/* Spend Trajectory & Model Distribution */}
