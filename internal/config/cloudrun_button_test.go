@@ -28,7 +28,7 @@ type CloudRunOptionsSpec struct {
 	AllowUnauthenticated bool   `json:"allow-unauthenticated"`
 	Port                 int    `json:"port"`
 	Memory               string `json:"memory"`
-	Cpu                  string `json:"cpu"`
+	CPU                  string `json:"cpu"`
 }
 
 func findRepoRoot(t *testing.T) string {
@@ -52,10 +52,10 @@ func findRepoRoot(t *testing.T) string {
 
 func TestCloudRunButtonAppJsonSpecification(t *testing.T) {
 	rootDir := findRepoRoot(t)
-	appJsonPath := filepath.Join(rootDir, "app.json")
+	appJSONPath := filepath.Join(rootDir, "app.json")
 
 	// 1. File existence
-	data, err := os.ReadFile(appJsonPath)
+	data, err := os.ReadFile(appJSONPath)
 	if err != nil {
 		t.Fatalf("app.json does not exist at repo root: %v", err)
 	}
@@ -84,8 +84,8 @@ func TestCloudRunButtonAppJsonSpecification(t *testing.T) {
 	if spec.Options.Memory != "512Mi" {
 		t.Errorf("expected memory to be '512Mi', got '%s'", spec.Options.Memory)
 	}
-	if spec.Options.Cpu != "1" {
-		t.Errorf("expected cpu to be '1', got '%s'", spec.Options.Cpu)
+	if spec.Options.CPU != "1" {
+		t.Errorf("expected cpu to be '1', got '%s'", spec.Options.CPU)
 	}
 
 	// 5. Environment Variables
