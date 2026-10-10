@@ -20,12 +20,12 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Build Web Assets
         run: |
           cd web
-          npm install --no-audit --progress=false
+          npm ci
           npm run build
           cd ..
 
@@ -54,12 +54,12 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Build Web Assets
         run: |
           cd web
-          npm install --no-audit --progress=false
+          npm ci
           npm run build
           cd ..
 
