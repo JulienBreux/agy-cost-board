@@ -22,7 +22,7 @@
 
 ---
 
-- [ ] **Track: Antigravity CLI Statusline Spend Integration**
+- [~] **Track: Antigravity CLI Statusline Spend Integration**
   *Link: [./tracks/statusline_cost_20261010/index.md](./tracks/statusline_cost_20261010/index.md)*
 
 
