@@ -221,11 +221,12 @@ func CalculateBudgetMetrics(spend float64, budget float64, days int) (status str
 	dailyBurn := spend / float64(days)
 	projectedMonthEnd = math.Round((dailyBurn*30.0)*100) / 100
 
-	if consumedPct >= 100.0 {
+	switch {
+	case consumedPct >= 100.0:
 		status = "exceeded"
-	} else if consumedPct >= 75.0 || projectedMonthEnd > budget {
+	case consumedPct >= 75.0 || projectedMonthEnd > budget:
 		status = "warning"
-	} else {
+	default:
 		status = "on_track"
 	}
 

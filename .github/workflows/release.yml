@@ -25,9 +25,11 @@ jobs:
           cache-dependency-path: web/package-lock.json
 
       - name: Build Web Assets
+        env:
+          NODE_OPTIONS: "--no-network-family-autoselection"
         run: |
           cd web
-          npm ci
+          npm ci --no-audit --progress=false
           npm run build
           cd ..
 
@@ -61,9 +63,11 @@ jobs:
           cache-dependency-path: web/package-lock.json
 
       - name: Build Web Assets
+        env:
+          NODE_OPTIONS: "--no-network-family-autoselection"
         run: |
           cd web
-          npm ci
+          npm ci --no-audit --progress=false
           npm run build
           cd ..
 
