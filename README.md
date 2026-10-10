@@ -14,7 +14,15 @@ It pro-rates Google Cloud Billing export charges strictly proportional to each d
 Based on the Google Cloud architecture article [**"Per-user cost attribution for Antigravity with BigQuery"**](https://medium.com/google-cloud/per-user-cost-attribution-for-antigravity-with-bigquery-3e98fd997c58).
 
 <p align="center">
-  <img src="docs/assets/dashboard.png" alt="agy-cost-board Web Dashboard" width="100%" />
+  <img src="docs/assets/overview.png" alt="agy-cost-board FinOps Overview Dashboard" width="100%" />
+  <br />
+  <em><b>Executive FinOps Overview:</b> Daily reconciled spend, foundation model repartition, and seat governance KPIs.</em>
+</p>
+
+<p align="center">
+  <img src="docs/assets/consumption.png" alt="agy-cost-board Developer Self-Service Dashboard" width="100%" />
+  <br />
+  <em><b>Developer Self-Service ("My Consumption"):</b> Personal burn rate, monthly budget tracking, quota overage risk alerts, and model breakdown.</em>
 </p>
 
 ---
@@ -84,7 +92,13 @@ Written in Go with zero CGO dependencies. The frontend (React 19, Tailwind CSS, 
 ### ⚡ Triple-Mode Interface: CLI, Interactive TUI, and Web
 - **CLI Commands:** Terminal-ready formatted tables, clean JSON for automation, or CSV for FinOps reporting (`cost`, `license`, `user`, `doctor`).
 - **Interactive TUI:** Keyboard-driven terminal dashboard powered by Bubbletea and Lipgloss (`agy-cost-board tui`).
-- **Modern Web Dashboard:** Full-featured web interface with dark mode, interactive cost charts, seat governance tables, and real-time setup diagnostics (`agy-cost-board serve`).
+- **Modern Web Dashboard:** Full-featured web interface with dark mode, interactive cost charts, seat governance tables, real-time setup diagnostics, and individual developer self-service consumption views (`agy-cost-board serve`).
+
+### 👤 Developer Self-Service: "My Consumption" Dashboard
+Give engineers direct visibility and autonomy over their AI usage. The **My Consumption** tab provides:
+- **Personal FinOps KPIs:** Real-time month-to-date spend, 7-day burn rate velocity, personal token count, and share of total company AI spend.
+- **Budget Thresholds & Overage Guards:** Set custom monthly budgets with active progress meters and proactive overage risk alerts.
+- **Personal Spend Trajectory:** Historical daily model breakdowns with stacked bar and aggregate visualizations.
 
 ### 🧪 100% Offline Synthetic Demo Lab
 Evaluate and test all features instantly with `--demo`. Built-in deterministic simulation generates 30 days of realistic multi-user and multi-model data without touching Google Cloud or requiring network access.
