@@ -1,0 +1,9 @@
+Task: Implement app.json Specification (TDD Green)
+
+Summary of changes:
+- Created app.json at repository root adhering to official Cloud Run Button specification
+- Configured options: allow-unauthenticated=false (IAM authentication requirement), port=8080, memory=512Mi, cpu=1
+- Configured environment variable schemas: PROJECT_ID, AGY_COST_BOARD_DEMO (default: false), AGY_COST_BOARD_TELEMETRY_TABLE, and AGY_COST_BOARD_BILLING_TABLE
+- Successfully passed unit tests in internal/config/cloudrun_button_test.go
+
+Why: Supplies required deployment manifest for https://deploy.cloud.run one-click provisioning.
