@@ -6,11 +6,11 @@
     - [ ] Assert status 200 OK and `Content-Type: text/x-shellscript; charset=utf-8`
     - [ ] Assert template substitution of server base URL (`Host`, `X-Forwarded-Proto`, or `X-Forwarded-Host`)
     - [ ] Assert template substitution of query parameters (`?user=...`, `?days=...`, `?ttl=...`)
-- [ ] Task: Implement Statusline Script Template & Handler (TDD Green)
-    - [ ] Embed the base `statusline.sh` template into `internal/server`
-    - [ ] Implement `handleStatuslineScript` in `internal/server/server.go` registering `GET /statusline.sh`
-    - [ ] Perform dynamic template substitution for host URL, pre-configured user, default days, and cache TTL
-    - [ ] Run unit tests to verify green status
+- [x] 7a51dc3 Task: Implement Statusline Script Template & Handler (TDD Green)
+    - [x] Embed the base `statusline.sh` template into `internal/server`
+    - [x] Implement `handleStatuslineScript` in `internal/server/server.go` registering `GET /statusline.sh`
+    - [x] Perform dynamic template substitution for host URL, pre-configured user, default days, and cache TTL
+    - [x] Run unit tests to verify green status
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Statusline Template & HTTP Endpoint Serving' (Protocol in workflow.md)
 
 ## Phase 2: Statusline Script Logic, Cost Attribution & Caching
