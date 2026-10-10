@@ -1,0 +1,4 @@
+Task: Unit & HTTP Tests for /statusline.sh Endpoint (TDD Red)
+Summary: Created comprehensive unit tests in internal/server/statusline_test.go covering GET /statusline.sh status code, Content-Type (text/x-shellscript), base URL substitution (Host, X-Forwarded-Host, X-Forwarded-Proto), query parameter injection (?user=, ?days=, ?ttl=), and default fallbacks.
+Files: internal/server/statusline_test.go
+Why: Establish failing TDD tests defining expected behavioral contract before handler implementation.
