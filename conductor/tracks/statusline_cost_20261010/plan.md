@@ -14,7 +14,7 @@
 - [x] 7a51dc3 Task: Conductor - User Manual Verification 'Phase 1: Statusline Template & HTTP Endpoint Serving' (Protocol in workflow.md)
 
 ## Phase 2: Statusline Script Logic, Cost Attribution & Caching
-- [ ] Task: Integration & Script Execution Tests (TDD Red)
+- [x] a4f03b8 Task: Integration & Script Execution Tests (TDD Red)
     - [ ] Create tests executing the rendered bash script against a mock HTTP server
     - [ ] Validate bash script syntax using `bash -n`
     - [ ] Validate simulated stdin JSON input from `agy` CLI
