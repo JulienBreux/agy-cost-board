@@ -33,7 +33,7 @@ The main goal is to track the allocation of Gemini Enterprise licenses for a pro
 ### 4. Unified Dual-Mode Architecture (Single Binary)
 - **CLI Subcommands:** Provides rapid commands such as `serve`, `cost`, `license`, `user`, and `init` with formatted table, JSON, and CSV outputs.
 - **Web Interface (Cloud Run):** Triggered via `serve` (binding to `$PORT`), offering an intuitive analytics dashboard with charts, KPI summary cards, and user drill-downs.
-- Packaged as a lightweight, scratch/distroless Docker container ready for Google Cloud Run deployment.
+- Packaged as a lightweight, scratch/distroless Docker container ready for Google Cloud Run deployment, including a one-click Cloud Run Button deployment workflow (`app.json`).
 
 ### 5. Seamless Ingestion & Local Developer Experience
 - **Authentication:** Native support for Google Cloud Application Default Credentials (ADC) and Workload Identity Federation.
