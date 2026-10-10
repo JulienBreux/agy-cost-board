@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -148,7 +149,7 @@ func TestStatuslineScriptExecution(t *testing.T) {
 
 		// Wait briefly for background subshell to complete fetch and write cache
 		var cachePopulated bool
-		for i := 0; i < 20; i++ {
+		for range 20 {
 			time.Sleep(100 * time.Millisecond)
 			if data, err := os.ReadFile(cacheFile); err == nil && len(bytes.TrimSpace(data)) > 0 {
 				val := string(bytes.TrimSpace(data))
@@ -190,9 +191,14 @@ func TestStatuslineScriptExecution(t *testing.T) {
 	})
 
 	t.Run("Script attaches IAM Bearer token from gcloud auth print-identity-token", func(t *testing.T) {
-		var authHeaderReceived string
+		var (
+			mu                 sync.Mutex
+			authHeaderReceived string
+		)
 		authServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			mu.Lock()
 			authHeaderReceived = r.Header.Get("Authorization")
+			mu.Unlock()
 			w.Header().Set("Content-Type", "application/json")
 			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"user_id":    "alice@example.com",
@@ -225,15 +231,19 @@ func TestStatuslineScriptExecution(t *testing.T) {
 		}
 
 		// Wait for subshell to make the authenticated request
-		for i := 0; i < 20; i++ {
+		var gotAuth string
+		for range 20 {
 			time.Sleep(100 * time.Millisecond)
-			if authHeaderReceived != "" {
+			mu.Lock()
+			gotAuth = authHeaderReceived
+			mu.Unlock()
+			if gotAuth != "" {
 				break
 			}
 		}
 
-		if authHeaderReceived != "Bearer mock-iam-token-xyz" {
-			t.Errorf("expected Authorization 'Bearer mock-iam-token-xyz', got %q", authHeaderReceived)
+		if gotAuth != "Bearer mock-iam-token-xyz" {
+			t.Errorf("expected Authorization 'Bearer mock-iam-token-xyz', got %q", gotAuth)
 		}
 	})
 

@@ -173,6 +173,84 @@ The built-in HTTP server exposes clean JSON APIs consumed by the embedded fronte
 | `GET`  | `/api/v1/licenses/status?days=30`    | Seat quota, active/dormant status, and estimated monthly savings |
 | `GET`  | `/api/v1/users/{id}?days=30`         | Developer drilldown, historical spend, and model breakdown       |
 | `GET`  | `/api/v1/setup/status`               | Real-time 5-point GCP telemetry diagnostic status                |
+| `GET`  | `/statusline.sh?user=&days=30&ttl=300` | Dynamic Antigravity CLI statusline script with user spend display |
+
+---
+
+## Antigravity CLI Statusline Spend Integration
+
+Display individual developer AI spend directly in the Antigravity CLI status bar (e.g., ` · cost $123`) using a dynamic, fail-open fork of the official Antigravity statusline script.
+
+### One-Line Quick Install
+
+Download and configure the script directly from your deployed `agy-cost-board` instance:
+
+```bash
+curl -sS https://<YOUR_AGY_COST_BOARD_URL>/statusline.sh -o ~/.config/antigravity/statusline.sh && chmod +x ~/.config/antigravity/statusline.sh
+```
+
+### Antigravity Configuration
+
+To activate the statusline script in Antigravity, add or update the `statusline` setting in `~/.config/antigravity/config.json`:
+
+```json
+{
+  "statusline": "~/.config/antigravity/statusline.sh"
+}
+```
+
+Or configure the environment variable in your shell profile (`~/.zshrc` or `~/.bashrc`):
+
+```bash
+export AGY_STATUSLINE="$HOME/.config/antigravity/statusline.sh"
+```
+
+### Download Customization (Query Parameters)
+
+When downloading the script via `curl`, you can customize default settings:
+
+| Parameter | Default | Description |
+| --------- | ------- | ----------- |
+| `user`    | *(auto)* | Pre-bake your email address into the script (e.g., `?user=alex@google.com`) |
+| `days`    | `30`    | Lookback window in days for spend aggregation (e.g., `?days=14`) |
+| `ttl`     | `300`   | Local spend cache time-to-live in seconds (e.g., `?ttl=600` for 10 minutes) |
+
+Example:
+```bash
+curl -sS "https://<YOUR_AGY_COST_BOARD_URL>/statusline.sh?user=alex@google.com&days=30&ttl=300" -o ~/.config/antigravity/statusline.sh && chmod +x ~/.config/antigravity/statusline.sh
+```
+
+### User Resolution Hierarchy
+
+When executing, the script resolves the developer's user identity in the following order:
+1. `AGY_COST_USER` environment variable
+2. Pre-baked `user` query parameter
+3. Active Google Cloud account (`gcloud config get-value account`)
+4. Git author email (`git config user.email`)
+5. Local machine username (`$USER`)
+
+### Environment Variable Overrides
+
+Developers can override runtime behavior without redownloading the script:
+
+| Environment Variable | Default | Description |
+| -------------------- | ------- | ----------- |
+| `AGY_COST_USER`      | *(detected)* | Force a specific developer email or identity |
+| `AGY_COST_SERVER`    | *(baked URL)*| Override the `agy-cost-board` server base URL |
+| `AGY_COST_DAYS`      | `30`         | Number of days for spend calculation |
+| `AGY_COST_CACHE_TTL` | `300`        | Local cache TTL in seconds |
+| `AGY_COST_DISABLED`  | `false`      | Set to `true` or `1` to disable the cost suffix |
+
+### Cloud Run IAM & Security
+
+If your `agy-cost-board` instance is deployed to Cloud Run with authentication required (`--no-allow-unauthenticated`), the script automatically fetches an identity token via `gcloud auth print-identity-token` and transmits it in an `Authorization: Bearer <token>` header.
+
+### Performance & Fail-Open Guarantee
+
+- **Zero Terminal Latency:** Spend is read from `/tmp/agy_cost_<hash>.cache`.
+- **Asynchronous Background Refresh:** When the cache expires, the script immediately renders the existing spend and spawns an asynchronous background subshell to refresh the cache.
+- **Stampede Protection:** Lock files prevent multiple concurrent subshell calls from flooding your server.
+- **Fail-Open Resilience:** If network connectivity is lost, Cloud Run returns 403/500, or `curl` times out (1s timeout), the script gracefully degrades and outputs the standard statusline without the cost suffix, never blocking or crashing the CLI.
 
 ---
 
