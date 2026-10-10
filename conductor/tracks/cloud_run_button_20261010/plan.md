@@ -21,8 +21,8 @@
     - [x] Run test suite to verify green status
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Documentation & One-Click Deployment Guide (`README.md`)' (Protocol in workflow.md) [fc3cf86]
 
-## Phase 3: End-to-End Build & Validation
+## Phase 3: End-to-End Build & Validation [checkpoint: 0532aaa]
 - [x] Task: Validate Dockerfile & Cloud Run Compatibility [0532aaa]
     - [x] Verify root `Dockerfile` compatibility with Cloud Run Button build flow (multi-stage build, port binding)
     - [x] Run full test suite (`make test` or `go test ./...`) and lint checks (`make lint`)
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: End-to-End Build & Validation' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 3: End-to-End Build & Validation' (Protocol in workflow.md) [0532aaa]
