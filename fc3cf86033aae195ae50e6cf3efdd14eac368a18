@@ -7,3 +7,16 @@ Summary of changes:
 - Validated with automated test TestReadmeCloudRunButtonIntegration (TDD Green phase)
 
 Why: Provides clear, actionable user documentation for one-click Cloud Run deployment.
+
+Verification Checkpoint Report: Phase 2: Documentation & One-Click Deployment Guide (README.md)
+
+Automated Tests:
+- Command: go test -v -count=1 ./internal/config -run TestReadmeCloudRunButtonIntegration
+- Result: Passed (100% assertions verified)
+
+Manual Verification:
+- Validated header badge row in README.md contains official Cloud Run Button badge
+- Validated dedicated 'Deploy to Cloud Run in One Click' section with prerequisites, app.json parameters, and IAM proxy instructions
+- Validated updated manual gcloud command with --no-allow-unauthenticated
+
+User Confirmation: Explicitly approved via interactive checkpoint.
