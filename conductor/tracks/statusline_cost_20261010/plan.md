@@ -13,20 +13,20 @@
     - [x] Run unit tests to verify green status
 - [x] 7a51dc3 Task: Conductor - User Manual Verification 'Phase 1: Statusline Template & HTTP Endpoint Serving' (Protocol in workflow.md)
 
-## Phase 2: Statusline Script Logic, Cost Attribution & Caching
+## Phase 2: Statusline Script Logic, Cost Attribution & Caching [checkpoint: 0a2c07f]
 - [x] a4f03b8 Task: Integration & Script Execution Tests (TDD Red)
-    - [ ] Create tests executing the rendered bash script against a mock HTTP server
-    - [ ] Validate bash script syntax using `bash -n`
-    - [ ] Validate simulated stdin JSON input from `agy` CLI
-    - [ ] Assert output string contains ` · cost $...` at the end of the statusline
-    - [ ] Validate cache file creation in `/tmp/` and background async refresh behavior
+    - [x] Create tests executing the rendered bash script against a mock HTTP server
+    - [x] Validate bash script syntax using `bash -n`
+    - [x] Validate simulated stdin JSON input from `agy` CLI
+    - [x] Assert output string contains ` · cost $...` at the end of the statusline
+    - [x] Validate cache file creation in `/tmp/` and background async refresh behavior
 - [x] 0a2c07f Task: Implement Statusline Script Logic & Cost Formatting (TDD Green)
     - [x] Integrate user spend resolution logic calling `/api/v1/users/{id}?days={days}`
     - [x] Implement user detection hierarchy (`AGY_COST_USER` -> query param -> `gcloud` -> `git` -> `$USER`)
     - [x] Implement zero-latency local caching in `/tmp/` with configurable `AGY_COST_CACHE_TTL`
     - [x] Implement Cloud Run IAM authentication header support (`gcloud auth print-identity-token`)
     - [x] Verify script execution tests pass
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Statusline Script Logic, Cost Attribution & Caching' (Protocol in workflow.md)
+- [x] 0a2c07f Task: Conductor - User Manual Verification 'Phase 2: Statusline Script Logic, Cost Attribution & Caching' (Protocol in workflow.md)
 
 ## Phase 3: Documentation & End-to-End Validation
 - [ ] Task: Documentation & Quickstart Integration
