@@ -1,0 +1,10 @@
+Task: Automated README Cloud Run Button Validation Test (TDD Red)
+
+Summary of changes:
+- Extended internal/config/cloudrun_button_test.go with TestReadmeCloudRunButtonIntegration
+- Asserts presence of official Cloud Run Button badge [![Run on Google Cloud](https://deploy.cloud.run/button.svg)](https://deploy.cloud.run)
+- Asserts presence of dedicated 'Deploy to Cloud Run in One Click' section
+- Asserts documentation of IAM-authenticated service invocation via 'gcloud run services proxy'
+- Verified test failure prior to README update (TDD Red phase)
+
+Why: Prevents regressions and guarantees documentation accuracy for Cloud Run Button.
