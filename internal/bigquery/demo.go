@@ -35,18 +35,21 @@ func (d *DemoDataProvider) FetchTelemetryLogs(ctx context.Context, days int) ([]
 	// #nosec G404 -- pseudo-random numbers sufficient and deterministic for demo data generator
 	rng := rand.New(rand.NewPCG(uint64(d.seed), 0))
 	users := []string{
-		"alex.turner@example.com",
-		"sophia.chen@example.com",
-		"marcus.vance@example.com",
-		"elena.rostova@example.com",
-		"liam.oconnor@example.com",
-		"dev.intern@example.com",
+		"alex.turner@google.com",
+		"sophia.chen@google.com",
+		"marcus.vance@google.com",
+		"elena.rostova@google.com",
+		"liam.oconnor@google.com",
+		"dev.intern@google.com",
 	}
 
 	models := []string{
-		"gemini-1.5-pro",
-		"gemini-1.5-flash",
-		"claude-3-5-sonnet-v2",
+		"gemini-3.8-flash",
+		"gemini-4.0-flash",
+		"gemini-4.0-pro",
+		"claude-5.5-sonnet-medium",
+		"claude-5.5-opus-max",
+		"claude-5.5-opus-high",
 	}
 
 	now := time.Now().UTC()
@@ -58,7 +61,7 @@ func (d *DemoDataProvider) FetchTelemetryLogs(ctx context.Context, days int) ([]
 		// Each active user generates multiple inference calls per day
 		for _, u := range users {
 			// dev.intern only active on rare days
-			if u == "dev.intern@example.com" && rng.Float64() > 0.25 {
+			if u == "dev.intern@google.com" && rng.Float64() > 0.25 {
 				continue
 			}
 
@@ -70,7 +73,7 @@ func (d *DemoDataProvider) FetchTelemetryLogs(ctx context.Context, days int) ([]
 
 				logs = append(logs, domain.TelemetryLog{
 					Timestamp:        dayTime.Add(time.Duration(rng.IntN(24*3600)) * time.Second),
-					ProjectID:        "prj-antigravity-prod",
+					ProjectID:        "agy-prod",
 					UserID:           u,
 					Model:            model,
 					TotalTokens:      promptTokens + completionTokens,
@@ -94,8 +97,8 @@ func (d *DemoDataProvider) FetchBilledCosts(ctx context.Context, days int) ([]do
 		desc     string
 		baseCost float64
 	}{
-		{"Gemini 1.5 Pro Inference - Net Invoiced", 28.50},
-		{"Gemini 1.5 Flash Inference - Net Invoiced", 12.20},
+		{"Gemini 4.0 Pro Inference - Net Invoiced", 28.50},
+		{"Gemini 3.8 Flash Inference - Net Invoiced", 12.20},
 		{"Antigravity Workspace Cloud Seats & Inference", 35.00},
 	}
 
@@ -112,7 +115,7 @@ func (d *DemoDataProvider) FetchBilledCosts(ctx context.Context, days int) ([]do
 				UsageDate:      dateStr,
 				SKUDescription: s.desc,
 				NetCost:        netCost,
-				Currency:       "USD",
+				Currency:       "EUR",
 			})
 		}
 	}
@@ -127,56 +130,56 @@ func (d *DemoDataProvider) FetchLicenseSeats(ctx context.Context, windowDays int
 
 	seats := []domain.LicenseSeat{
 		{
-			UserID:              "alex.turner@example.com",
+			UserID:              "alex.turner@google.com",
 			Assigned:            true,
 			Status:              domain.SeatStatusActive,
 			LastActivity:        now.Add(-2 * time.Hour),
 			TotalTokensInWindow: 450000,
 		},
 		{
-			UserID:              "sophia.chen@example.com",
+			UserID:              "sophia.chen@google.com",
 			Assigned:            true,
 			Status:              domain.SeatStatusActive,
 			LastActivity:        now.Add(-4 * time.Hour),
 			TotalTokensInWindow: 380000,
 		},
 		{
-			UserID:              "marcus.vance@example.com",
+			UserID:              "marcus.vance@google.com",
 			Assigned:            true,
 			Status:              domain.SeatStatusActive,
 			LastActivity:        now.AddDate(0, 0, -1),
 			TotalTokensInWindow: 210000,
 		},
 		{
-			UserID:              "elena.rostova@example.com",
+			UserID:              "elena.rostova@google.com",
 			Assigned:            true,
 			Status:              domain.SeatStatusActive,
 			LastActivity:        now.AddDate(0, 0, -2),
 			TotalTokensInWindow: 190000,
 		},
 		{
-			UserID:              "liam.oconnor@example.com",
+			UserID:              "liam.oconnor@google.com",
 			Assigned:            true,
 			Status:              domain.SeatStatusActive,
 			LastActivity:        now.AddDate(0, 0, -3),
 			TotalTokensInWindow: 120000,
 		},
 		{
-			UserID:              "dev.intern@example.com",
+			UserID:              "dev.intern@google.com",
 			Assigned:            true,
 			Status:              domain.SeatStatusAtRisk,
 			LastActivity:        now.AddDate(0, 0, -12),
 			TotalTokensInWindow: 850,
 		},
 		{
-			UserID:              "inactive.dev1@example.com",
+			UserID:              "inactive.dev1@google.com",
 			Assigned:            true,
 			Status:              domain.SeatStatusDormant,
 			LastActivity:        now.AddDate(0, 0, -45),
 			TotalTokensInWindow: 0,
 		},
 		{
-			UserID:              "inactive.dev2@example.com",
+			UserID:              "inactive.dev2@google.com",
 			Assigned:            true,
 			Status:              domain.SeatStatusDormant,
 			LastActivity:        now.AddDate(0, 0, -60),

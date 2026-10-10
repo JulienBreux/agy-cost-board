@@ -78,7 +78,7 @@ export const UserSelector: React.FC<UserSelectorProps> = ({
       </div>
 
       {isOpen && (
-        <div className="absolute left-0 mt-2 w-72 sm:w-80 bg-[#161a22] border border-[#2d3548] rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+        <div className="absolute left-0 mt-2 w-72 sm:w-80 bg-[#14171f] border border-[#282f40] rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
           <div className="p-2 border-b border-[#202530]">
             <div className="relative">
               <Search className="w-4 h-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-google-gray-400" />

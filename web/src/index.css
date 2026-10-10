@@ -68,7 +68,15 @@ html.light .bg-\[\#0f1115\] {
 
 /* Card surfaces */
 html:not(.dark) .bg-\[\#14171f\],
-html.light .bg-\[\#14171f\] {
+html:not(.dark) .bg-\[\#161a22\],
+html:not(.dark) .bg-gray-900,
+html:not(.dark) .bg-gray-900\/60,
+html:not(.dark) .bg-gray-900\/90,
+html.light .bg-\[\#14171f\],
+html.light .bg-\[\#161a22\],
+html.light .bg-gray-900,
+html.light .bg-gray-900\/60,
+html.light .bg-gray-900\/90 {
   background-color: #ffffff !important;
 }
 
@@ -83,10 +91,22 @@ html:not(.dark) .bg-\[\#1a1e28\],
 html:not(.dark) .bg-\[\#1a1e27\],
 html:not(.dark) .bg-\[\#181c26\],
 html:not(.dark) .bg-\[\#1a1f2c\],
+html:not(.dark) .bg-\[\#12151c\]\/60,
+html:not(.dark) .bg-gray-800,
+html:not(.dark) .bg-gray-800\/40,
+html:not(.dark) .bg-gray-800\/50,
+html:not(.dark) .bg-gray-800\/60,
+html:not(.dark) .bg-gray-800\/70,
 html.light .bg-\[\#1a1e28\],
 html.light .bg-\[\#1a1e27\],
 html.light .bg-\[\#181c26\],
-html.light .bg-\[\#1a1f2c\] {
+html.light .bg-\[\#1a1f2c\],
+html.light .bg-\[\#12151c\]\/60,
+html.light .bg-gray-800,
+html.light .bg-gray-800\/40,
+html.light .bg-gray-800\/50,
+html.light .bg-gray-800\/60,
+html.light .bg-gray-800\/70 {
   background-color: #f1f3f4 !important;
 }
 
@@ -98,13 +118,19 @@ html:not(.dark) .hover\:bg-\[\#202530\]:hover,
 html:not(.dark) .hover\:bg-\[\#1f2430\]:hover,
 html:not(.dark) .hover\:bg-\[\#1e2330\]:hover,
 html:not(.dark) .hover\:bg-\[\#202532\]:hover,
+html:not(.dark) .hover\:bg-gray-800:hover,
+html:not(.dark) .hover\:bg-gray-800\/30:hover,
+html:not(.dark) .hover\:bg-gray-700:hover,
 html.light .hover\:bg-\[\#1a1e28\]\/70:hover,
 html.light .hover\:bg-\[\#1a1e28\]:hover,
 html.light .hover\:bg-\[\#1a1e27\]:hover,
 html.light .hover\:bg-\[\#202530\]:hover,
 html.light .hover\:bg-\[\#1f2430\]:hover,
 html.light .hover\:bg-\[\#1e2330\]:hover,
-html.light .hover\:bg-\[\#202532\]:hover {
+html.light .hover\:bg-\[\#202532\]:hover,
+html.light .hover\:bg-gray-800:hover,
+html.light .hover\:bg-gray-800\/30:hover,
+html.light .hover\:bg-gray-700:hover {
   background-color: #e8eaed !important;
 }
 
@@ -140,6 +166,11 @@ html:not(.dark) .border-\[\#2e3748\],
 html:not(.dark) .border-\[\#1f2430\],
 html:not(.dark) .border-\[\#1e2330\],
 html:not(.dark) .border-\[\#1d222e\],
+html:not(.dark) .border-gray-800,
+html:not(.dark) .border-gray-800\/60,
+html:not(.dark) .border-gray-800\/80,
+html:not(.dark) .border-gray-700,
+html:not(.dark) .hover\:border-gray-700:hover,
 html.light .border-\[\#222836\],
 html.light .border-\[\#202530\],
 html.light .border-\[\#282f40\],
@@ -148,7 +179,12 @@ html.light .border-\[\#2a3245\],
 html.light .border-\[\#2e3748\],
 html.light .border-\[\#1f2430\],
 html.light .border-\[\#1e2330\],
-html.light .border-\[\#1d222e\] {
+html.light .border-\[\#1d222e\],
+html.light .border-gray-800,
+html.light .border-gray-800\/60,
+html.light .border-gray-800\/80,
+html.light .border-gray-700,
+html.light .hover\:border-gray-700:hover {
   border-color: #dadce0 !important;
 }
 
@@ -156,9 +192,11 @@ html.light .border-\[\#1d222e\] {
 html:not(.dark) .divide-\[\#1e2330\] > :not([hidden]) ~ :not([hidden]),
 html:not(.dark) .divide-\[\#202530\] > :not([hidden]) ~ :not([hidden]),
 html:not(.dark) .divide-\[\#222836\] > :not([hidden]) ~ :not([hidden]),
+html:not(.dark) .divide-gray-800\/60 > :not([hidden]) ~ :not([hidden]),
 html.light .divide-\[\#1e2330\] > :not([hidden]) ~ :not([hidden]),
 html.light .divide-\[\#202530\] > :not([hidden]) ~ :not([hidden]),
-html.light .divide-\[\#222836\] > :not([hidden]) ~ :not([hidden]) {
+html.light .divide-\[\#222836\] > :not([hidden]) ~ :not([hidden]),
+html.light .divide-gray-800\/60 > :not([hidden]) ~ :not([hidden]) {
   border-color: #e8eaed !important;
 }
 
@@ -243,6 +281,25 @@ html.light .text-google-gray-400 {
 }
 html:not(.dark) .text-google-gray-500,
 html.light .text-google-gray-500 {
+  color: #70757a !important;
+}
+
+html:not(.dark) .text-gray-100,
+html:not(.dark) .text-gray-200,
+html.light .text-gray-100,
+html.light .text-gray-200 {
+  color: #202124 !important;
+}
+
+html:not(.dark) .text-gray-300,
+html:not(.dark) .text-gray-400,
+html.light .text-gray-300,
+html.light .text-gray-400 {
+  color: #5f6368 !important;
+}
+
+html:not(.dark) .text-gray-500,
+html.light .text-gray-500 {
   color: #70757a !important;
 }
 

@@ -35,8 +35,8 @@ func TestDemoDataProvider(t *testing.T) {
 		if len(userMap) < 4 {
 			t.Errorf("expected at least 4 active demo users, got %d", len(userMap))
 		}
-		if !modelMap["gemini-1.5-pro"] {
-			t.Errorf("expected gemini-1.5-pro model in telemetry logs")
+		if !modelMap["gemini-4.0-pro"] {
+			t.Errorf("expected gemini-4.0-pro model in telemetry logs")
 		}
 		if totalTokens <= 0 {
 			t.Errorf("expected positive total token volume, got %d", totalTokens)
@@ -56,8 +56,8 @@ func TestDemoDataProvider(t *testing.T) {
 		var totalNetCost float64
 		for _, c := range costs {
 			totalNetCost += c.NetCost
-			if c.Currency != "USD" {
-				t.Errorf("expected USD currency, got %s", c.Currency)
+			if c.Currency != "EUR" {
+				t.Errorf("expected EUR currency, got %s", c.Currency)
 			}
 		}
 

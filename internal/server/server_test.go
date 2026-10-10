@@ -137,7 +137,7 @@ func TestAPIEndpoints(t *testing.T) {
 	})
 
 	t.Run("GET /api/v1/users/{id} returns user breakdown summary", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/api/v1/users/alex.turner@example.com?days=30", nil)
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/users/alex.turner@google.com?days=30", nil)
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
 
@@ -148,16 +148,16 @@ func TestAPIEndpoints(t *testing.T) {
 		if err := json.NewDecoder(rec.Body).Decode(&user); err != nil {
 			t.Fatalf("failed to decode user summary: %v", err)
 		}
-		if user.UserID != "alex.turner@example.com" {
-			t.Errorf("expected alex.turner@example.com, got %s", user.UserID)
+		if user.UserID != "alex.turner@google.com" {
+			t.Errorf("expected alex.turner@google.com, got %s", user.UserID)
 		}
 		if user.TotalCost <= 0 {
 			t.Errorf("expected positive total cost, got %f", user.TotalCost)
 		}
 	})
 
-	t.Run("GET /api/v1/users/unknown@example.com returns 404", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/api/v1/users/unknown.nobody@example.com?days=30", nil)
+	t.Run("GET /api/v1/users/unknown@google.com returns 404", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/users/unknown.nobody@google.com?days=30", nil)
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
 
@@ -279,7 +279,7 @@ func TestCurrentUserEndpoint(t *testing.T) {
 
 	t.Run("GET /api/v1/me extracts identity from X-Goog-Authenticated-User-Email", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/api/v1/me", nil)
-		req.Header.Set("X-Goog-Authenticated-User-Email", "accounts.google.com:sarah.connor@example.com")
+		req.Header.Set("X-Goog-Authenticated-User-Email", "accounts.google.com:sarah.connor@google.com")
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
 
@@ -290,8 +290,8 @@ func TestCurrentUserEndpoint(t *testing.T) {
 		if err := json.NewDecoder(rec.Body).Decode(&user); err != nil {
 			t.Fatalf("decode err: %v", err)
 		}
-		if user.UserID != "sarah.connor@example.com" {
-			t.Errorf("expected user_id sarah.connor@example.com, got %s", user.UserID)
+		if user.UserID != "sarah.connor@google.com" {
+			t.Errorf("expected user_id sarah.connor@google.com, got %s", user.UserID)
 		}
 		if !user.Authenticated {
 			t.Errorf("expected authenticated true")
@@ -326,7 +326,7 @@ func TestUserActivityEndpoint(t *testing.T) {
 	router := setupTestServer(t)
 
 	t.Run("GET /api/v1/users/{id}/activity returns recent inference events", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/api/v1/users/alex.turner@example.com/activity?days=30&limit=5", nil)
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/users/alex.turner@google.com/activity?days=30&limit=5", nil)
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
 
@@ -338,14 +338,14 @@ func TestUserActivityEndpoint(t *testing.T) {
 			t.Fatalf("decode err: %v", err)
 		}
 		if len(activity) == 0 {
-			t.Errorf("expected non-empty activity for alex.turner@example.com")
+			t.Errorf("expected non-empty activity for alex.turner@google.com")
 		}
 		if len(activity) > 5 {
 			t.Errorf("expected at most 5 records, got %d", len(activity))
 		}
 		first := activity[0]
-		if first.UserID != "alex.turner@example.com" {
-			t.Errorf("expected user_id alex.turner@example.com, got %s", first.UserID)
+		if first.UserID != "alex.turner@google.com" {
+			t.Errorf("expected user_id alex.turner@google.com, got %s", first.UserID)
 		}
 		if first.TotalTokens <= 0 {
 			t.Errorf("expected total_tokens > 0, got %d", first.TotalTokens)
@@ -357,7 +357,7 @@ func TestUserDashboardEndpoint(t *testing.T) {
 	router := setupTestServer(t)
 
 	t.Run("GET /api/v1/users/{id}/dashboard returns driving metrics and recommendations", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/api/v1/users/alex.turner@example.com/dashboard?days=30&budget=250", nil)
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/users/alex.turner@google.com/dashboard?days=30&budget=250", nil)
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
 
@@ -368,8 +368,8 @@ func TestUserDashboardEndpoint(t *testing.T) {
 		if err := json.NewDecoder(rec.Body).Decode(&driving); err != nil {
 			t.Fatalf("decode err: %v", err)
 		}
-		if driving.UserID != "alex.turner@example.com" {
-			t.Errorf("expected user_id alex.turner@example.com, got %s", driving.UserID)
+		if driving.UserID != "alex.turner@google.com" {
+			t.Errorf("expected user_id alex.turner@google.com, got %s", driving.UserID)
 		}
 		if driving.MonthlyBudget != 250.0 {
 			t.Errorf("expected budget 250.0, got %f", driving.MonthlyBudget)
@@ -379,8 +379,8 @@ func TestUserDashboardEndpoint(t *testing.T) {
 		}
 	})
 
-	t.Run("GET /api/v1/users/{id}/dashboard with URL-encoded dev.intern%40example.com and monthlyBudget", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/api/v1/users/dev.intern%40example.com/dashboard?days=30&monthlyBudget=100", nil)
+	t.Run("GET /api/v1/users/{id}/dashboard with URL-encoded dev.intern%40google.com and monthlyBudget", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/users/dev.intern%40google.com/dashboard?days=30&monthlyBudget=100", nil)
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
 
@@ -391,12 +391,11 @@ func TestUserDashboardEndpoint(t *testing.T) {
 		if err := json.NewDecoder(rec.Body).Decode(&driving); err != nil {
 			t.Fatalf("decode err: %v", err)
 		}
-		if driving.UserID != "dev.intern@example.com" {
-			t.Errorf("expected user_id dev.intern@example.com, got %s", driving.UserID)
+		if driving.UserID != "dev.intern@google.com" {
+			t.Errorf("expected user_id dev.intern@google.com, got %s", driving.UserID)
 		}
 		if driving.MonthlyBudget != 100.0 {
 			t.Errorf("expected budget 100.0, got %f", driving.MonthlyBudget)
 		}
 	})
 }
-

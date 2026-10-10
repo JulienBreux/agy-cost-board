@@ -34,7 +34,7 @@ func TestEndToEndCLIFlows(t *testing.T) {
 		if !strings.Contains(out, "USER") || !strings.Contains(out, "MODEL") || !strings.Contains(out, "ALLOCATED COST") {
 			t.Errorf("expected table header in output, got: %s", out)
 		}
-		if !strings.Contains(out, "alex.turner@example.com") {
+		if !strings.Contains(out, "alex.turner@google.com") {
 			t.Errorf("expected demo user in output, got: %s", out)
 		}
 	})
@@ -68,7 +68,7 @@ func TestEndToEndCLIFlows(t *testing.T) {
 		rootCmd := cli.NewRootCommand()
 		rootCmd.SetOut(buf)
 		rootCmd.SetErr(buf)
-		rootCmd.SetArgs([]string{"user", "sophia.chen@example.com", "--demo", "--format=json"})
+		rootCmd.SetArgs([]string{"user", "sophia.chen@google.com", "--demo", "--format=json"})
 
 		if err := rootCmd.Execute(); err != nil {
 			t.Fatalf("CLI command failed: %v", err)
@@ -79,8 +79,8 @@ func TestEndToEndCLIFlows(t *testing.T) {
 			t.Fatalf("failed to parse JSON user summary: %v, raw: %s", err, buf.String())
 		}
 
-		if user.UserID != "sophia.chen@example.com" {
-			t.Errorf("expected sophia.chen@example.com, got %s", user.UserID)
+		if user.UserID != "sophia.chen@google.com" {
+			t.Errorf("expected sophia.chen@google.com, got %s", user.UserID)
 		}
 		if user.TotalCost <= 0 {
 			t.Errorf("expected positive total cost, got %f", user.TotalCost)

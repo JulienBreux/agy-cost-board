@@ -516,7 +516,7 @@ export const CostChart: React.FC<CostChartProps> = ({
                       className={`p-2 rounded-lg border transition-all cursor-pointer ${
                         isFocused
                           ? 'bg-[#1a1f2c] border-google-blue/40 shadow-sm'
-                          : 'bg-[#12151c]/60 border-[#1f2430] hover:border-[#2e3748]'
+                          : 'bg-[#181c26] border-[#202530] hover:border-[#2e3748]'
                       }`}
                     >
                       <div className="flex items-center justify-between text-xs mb-1">
@@ -547,7 +547,7 @@ export const CostChart: React.FC<CostChartProps> = ({
                       </div>
 
                       {/* Proportional Progress Bar */}
-                      <div className="h-1.5 w-full bg-[#1e2330] rounded-full overflow-hidden">
+                      <div className="h-1.5 w-full bg-[#202530] rounded-full overflow-hidden">
                         <div
                           className="h-full rounded-full transition-all duration-500"
                           style={{

@@ -11,8 +11,8 @@ import (
 func TestFormatters(t *testing.T) {
 	headers := []string{"USER", "MODEL", "TOKENS", "COST"}
 	rows := [][]string{
-		{"alex@example.com", "gemini-1.5-pro", "150000", "$15.50"},
-		{"sophia@example.com", "gemini-1.5-flash", "95000", "$3.20"},
+		{"alex@google.com", "gemini-1.5-pro", "150000", "$15.50"},
+		{"sophia@google.com", "gemini-1.5-flash", "95000", "$3.20"},
 	}
 
 	t.Run("FormatJSON serializes slice or struct cleanly", func(t *testing.T) {
@@ -20,8 +20,8 @@ func TestFormatters(t *testing.T) {
 		if err != nil {
 			t.Fatalf("unexpected error formatting JSON: %v", err)
 		}
-		if !strings.Contains(out, "alex@example.com") {
-			t.Errorf("JSON output missing alex@example.com: %s", out)
+		if !strings.Contains(out, "alex@google.com") {
+			t.Errorf("JSON output missing alex@google.com: %s", out)
 		}
 		if !strings.Contains(out, "gemini-1.5-pro") {
 			t.Errorf("JSON output missing gemini-1.5-pro: %s", out)
@@ -40,7 +40,7 @@ func TestFormatters(t *testing.T) {
 		if lines[0] != "USER,MODEL,TOKENS,COST" {
 			t.Errorf("unexpected header line: %s", lines[0])
 		}
-		if !strings.Contains(lines[1], "alex@example.com") {
+		if !strings.Contains(lines[1], "alex@google.com") {
 			t.Errorf("first row missing user email: %s", lines[1])
 		}
 	})
@@ -50,7 +50,7 @@ func TestFormatters(t *testing.T) {
 		if !strings.Contains(out, "USER") || !strings.Contains(out, "MODEL") {
 			t.Errorf("table output missing headers: %s", out)
 		}
-		if !strings.Contains(out, "alex@example.com") {
+		if !strings.Contains(out, "alex@google.com") {
 			t.Errorf("table output missing data: %s", out)
 		}
 
@@ -91,7 +91,7 @@ func TestCLICommandsWithDemo(t *testing.T) {
 		}
 
 		out := buf.String()
-		if !strings.Contains(out, "USER") || !strings.Contains(out, "alex.turner@example.com") {
+		if !strings.Contains(out, "USER") || !strings.Contains(out, "alex.turner@google.com") {
 			t.Errorf("expected table with demo users, got: %s", out)
 		}
 	})
@@ -108,7 +108,7 @@ func TestCLICommandsWithDemo(t *testing.T) {
 		}
 
 		out := buf.String()
-		if !strings.Contains(out, `"user_id": "alex.turner@example.com"`) {
+		if !strings.Contains(out, `"user_id": "alex.turner@google.com"`) {
 			t.Errorf("expected JSON with user_id, got: %s", out)
 		}
 	})
@@ -186,14 +186,14 @@ func TestCLICommandsWithDemo(t *testing.T) {
 		rootCmd := cli.NewRootCommand()
 		rootCmd.SetOut(buf)
 		rootCmd.SetErr(buf)
-		rootCmd.SetArgs([]string{"user", "alex.turner@example.com", "--demo"})
+		rootCmd.SetArgs([]string{"user", "alex.turner@google.com", "--demo"})
 
 		if err := rootCmd.Execute(); err != nil {
 			t.Fatalf("command failed: %v", err)
 		}
 
 		out := buf.String()
-		if !strings.Contains(out, "alex.turner@example.com") || !strings.Contains(out, "TOTAL TOKENS") {
+		if !strings.Contains(out, "alex.turner@google.com") || !strings.Contains(out, "TOTAL TOKENS") {
 			t.Errorf("expected user summary output, got: %s", out)
 		}
 	})
@@ -203,14 +203,14 @@ func TestCLICommandsWithDemo(t *testing.T) {
 		rootCmd := cli.NewRootCommand()
 		rootCmd.SetOut(buf)
 		rootCmd.SetErr(buf)
-		rootCmd.SetArgs([]string{"user", "alex.turner@example.com", "--demo", "--format=json"})
+		rootCmd.SetArgs([]string{"user", "alex.turner@google.com", "--demo", "--format=json"})
 
 		if err := rootCmd.Execute(); err != nil {
 			t.Fatalf("command failed: %v", err)
 		}
 
 		out := buf.String()
-		if !strings.Contains(out, `"user_id": "alex.turner@example.com"`) {
+		if !strings.Contains(out, `"user_id": "alex.turner@google.com"`) {
 			t.Errorf("expected JSON with user_id, got: %s", out)
 		}
 	})

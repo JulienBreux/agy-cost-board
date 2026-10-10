@@ -187,8 +187,8 @@ func (s *Server) handleCurrentUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if s.setupCfg.Demo {
-		identity.UserID = "alex.turner@example.com"
-		identity.Email = "alex.turner@example.com"
+		identity.UserID = "alex.turner@google.com"
+		identity.Email = "alex.turner@google.com"
 		identity.Authenticated = false
 		identity.Source = "demo"
 		respondJSON(w, http.StatusOK, identity)

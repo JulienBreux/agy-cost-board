@@ -14,7 +14,7 @@ export const LiveSyncBadge: FC<LiveSyncBadgeProps> = ({
   isLoading = false,
 }) => {
   return (
-    <div className="flex items-center gap-2.5 bg-gray-900/90 border border-gray-800 rounded-lg px-3 py-1.5 text-xs">
+    <div className="flex items-center gap-2.5 bg-[#1a1e28] border border-[#202530] rounded-lg px-3 py-1.5 text-xs shadow-sm">
       <div className="flex items-center gap-1.5">
         {isLive ? (
           <>
@@ -26,14 +26,14 @@ export const LiveSyncBadge: FC<LiveSyncBadgeProps> = ({
           </>
         ) : (
           <>
-            <span className="h-2 w-2 rounded-full bg-gray-500"></span>
-            <span className="font-medium text-gray-400">Sync Paused</span>
+            <span className="h-2 w-2 rounded-full bg-google-gray-500"></span>
+            <span className="font-medium text-google-gray-400">Sync Paused</span>
           </>
         )}
       </div>
 
       {lastUpdated && (
-        <span className="text-[11px] text-gray-500 border-l border-gray-800 pl-2 hidden sm:inline">
+        <span className="text-[11px] text-google-gray-400 border-l border-[#202530] pl-2 hidden sm:inline">
           Updated {lastUpdated.toLocaleTimeString()}
         </span>
       )}
@@ -44,7 +44,7 @@ export const LiveSyncBadge: FC<LiveSyncBadgeProps> = ({
           onClick={onRefresh}
           aria-label="Refresh telemetry data"
           disabled={isLoading}
-          className="text-gray-400 hover:text-white transition p-0.5 rounded hover:bg-gray-800 disabled:opacity-50"
+          className="text-google-gray-400 hover:text-white transition p-0.5 rounded hover:bg-[#202530] disabled:opacity-50"
           title="Refresh telemetry data"
         >
           <svg

@@ -52,13 +52,13 @@ func TestAttributionEngine(t *testing.T) {
 	})
 
 	t.Run("GetUserSummary computes detailed metrics for a user", func(t *testing.T) {
-		summary, err := engine.GetUserSummary(ctx, "alex.turner@example.com", 30)
+		summary, err := engine.GetUserSummary(ctx, "alex.turner@google.com", 30)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		if summary.UserID != "alex.turner@example.com" {
-			t.Errorf("expected alex.turner@example.com, got %s", summary.UserID)
+		if summary.UserID != "alex.turner@google.com" {
+			t.Errorf("expected alex.turner@google.com, got %s", summary.UserID)
 		}
 		if summary.TotalTokens <= 0 {
 			t.Errorf("expected positive total tokens, got %d", summary.TotalTokens)
@@ -127,12 +127,12 @@ func TestAttributionEngine(t *testing.T) {
 	})
 
 	t.Run("GetUserActivity returns sorted user logs with cost estimates", func(t *testing.T) {
-		logs, err := engine.GetUserActivity(ctx, "alex.turner@example.com", 30, 10)
+		logs, err := engine.GetUserActivity(ctx, "alex.turner@google.com", 30, 10)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 		if len(logs) == 0 {
-			t.Fatalf("expected logs for alex.turner@example.com")
+			t.Fatalf("expected logs for alex.turner@google.com")
 		}
 		if len(logs) > 10 {
 			t.Errorf("expected at most 10 logs, got %d", len(logs))
@@ -145,12 +145,12 @@ func TestAttributionEngine(t *testing.T) {
 	})
 
 	t.Run("GetUserConsumptionDriving computes budget, velocity, and daily trends", func(t *testing.T) {
-		driving, err := engine.GetUserConsumptionDriving(ctx, "alex.turner@example.com", 30, 200.0)
+		driving, err := engine.GetUserConsumptionDriving(ctx, "alex.turner@google.com", 30, 200.0)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
-		if driving.UserID != "alex.turner@example.com" {
-			t.Errorf("expected user alex.turner@example.com, got %s", driving.UserID)
+		if driving.UserID != "alex.turner@google.com" {
+			t.Errorf("expected user alex.turner@google.com, got %s", driving.UserID)
 		}
 		if driving.TotalSpendInWindow <= 0 {
 			t.Errorf("expected total spend > 0, got %f", driving.TotalSpendInWindow)
@@ -169,4 +169,3 @@ func TestAttributionEngine(t *testing.T) {
 		}
 	})
 }
-

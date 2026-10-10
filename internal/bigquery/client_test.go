@@ -150,7 +150,7 @@ func TestRowMappers(t *testing.T) {
 	t.Run("MapTelemetryRow maps fields accurately", func(t *testing.T) {
 		raw := bigquery.TelemetryRow{
 			Timestamp:        now,
-			UserID:           "dev@example.com",
+			UserID:           "dev@google.com",
 			Model:            "gemini-1.5-pro",
 			TotalTokens:      1500,
 			PromptTokens:     1000,
@@ -161,8 +161,8 @@ func TestRowMappers(t *testing.T) {
 		if mapped.ProjectID != "my-prj" {
 			t.Errorf("expected project ID my-prj, got %s", mapped.ProjectID)
 		}
-		if mapped.UserID != "dev@example.com" {
-			t.Errorf("expected dev@example.com, got %s", mapped.UserID)
+		if mapped.UserID != "dev@google.com" {
+			t.Errorf("expected dev@google.com, got %s", mapped.UserID)
 		}
 		if mapped.TotalTokens != 1500 {
 			t.Errorf("expected 1500 total tokens, got %d", mapped.TotalTokens)
@@ -192,17 +192,17 @@ func TestDeriveLicenseSeats(t *testing.T) {
 	logs := []domain.TelemetryLog{
 		{
 			Timestamp:   now.Add(-2 * time.Hour),
-			UserID:      "active@example.com",
+			UserID:      "active@google.com",
 			TotalTokens: 5000,
 		},
 		{
 			Timestamp:   now.Add(-10 * time.Hour),
-			UserID:      "active@example.com",
+			UserID:      "active@google.com",
 			TotalTokens: 2000,
 		},
 		{
 			Timestamp:   now.AddDate(0, 0, -5),
-			UserID:      "atrisk@example.com",
+			UserID:      "atrisk@google.com",
 			TotalTokens: 100,
 		},
 	}

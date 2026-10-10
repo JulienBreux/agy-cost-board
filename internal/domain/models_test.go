@@ -120,7 +120,7 @@ func TestClassifySeatStatus(t *testing.T) {
 
 func TestAllocatedUserCostSerialization(t *testing.T) {
 	item := domain.AllocatedUserCost{
-		UserID:           "dev1@example.com",
+		UserID:           "dev1@google.com",
 		Model:            "gemini-1.5-pro",
 		UsageDate:        "2026-09-20",
 		UserTokens:       100000,
@@ -151,7 +151,7 @@ func TestAllocatedUserCostSerialization(t *testing.T) {
 	if len(csvRow) != 7 {
 		t.Errorf("expected 7 CSV columns, got %d", len(csvRow))
 	}
-	if csvRow[0] != "dev1@example.com" {
+	if csvRow[0] != "dev1@google.com" {
 		t.Errorf("expected first column to be user ID, got %s", csvRow[0])
 	}
 }
@@ -197,7 +197,7 @@ func TestGenerateOptimizationTips(t *testing.T) {
 			"gemini-1.5-pro":   {Tokens: 800000, Cost: 80.0, Share: 0.8},
 			"gemini-1.5-flash": {Tokens: 200000, Cost: 2.0, Share: 0.2},
 		}
-		tips := domain.GenerateOptimizationTips("user@example.com", modelBreakdown, 1000000, domain.SeatStatusActive)
+		tips := domain.GenerateOptimizationTips("user@google.com", modelBreakdown, 1000000, domain.SeatStatusActive)
 		if len(tips) == 0 {
 			t.Fatalf("expected optimization tips")
 		}
@@ -216,7 +216,7 @@ func TestGenerateOptimizationTips(t *testing.T) {
 	})
 
 	t.Run("Generates license tip when user seat is dormant", func(t *testing.T) {
-		tips := domain.GenerateOptimizationTips("user@example.com", nil, 0, domain.SeatStatusDormant)
+		tips := domain.GenerateOptimizationTips("user@google.com", nil, 0, domain.SeatStatusDormant)
 		var foundLicenseTip bool
 		for _, tip := range tips {
 			if tip.ID == "dormant-license" {

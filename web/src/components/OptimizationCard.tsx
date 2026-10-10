@@ -42,8 +42,8 @@ export const OptimizationCard: FC<OptimizationCardProps> = ({
   };
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 shadow-sm">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-gray-800/80">
+    <div className="bg-[#14171f] border border-[#222836] rounded-xl p-5 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#202530]">
         <div className="flex items-center gap-2.5">
           <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -56,8 +56,8 @@ export const OptimizationCard: FC<OptimizationCardProps> = ({
             </svg>
           </div>
           <div>
-            <h3 className="text-base font-semibold text-gray-100">Optimization Insights</h3>
-            <p className="text-xs text-gray-400">Actionable advice to drive cost efficiency</p>
+            <h3 className="text-base font-semibold text-white">Optimization Insights</h3>
+            <p className="text-xs text-google-gray-400">Actionable advice to drive cost efficiency</p>
           </div>
         </div>
 
@@ -73,20 +73,20 @@ export const OptimizationCard: FC<OptimizationCardProps> = ({
 
       {safeTips.length === 0 ? (
         <div className="py-8 text-center">
-          <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-gray-800/60 flex items-center justify-center text-emerald-400">
+          <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-[#1e2330] flex items-center justify-center text-emerald-400">
             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <p className="text-sm font-medium text-gray-300">Your consumption is well-optimized!</p>
-          <p className="text-xs text-gray-500 mt-1">No cost-saving recommendations right now.</p>
+          <p className="text-sm font-medium text-google-gray-300">Your consumption is well-optimized!</p>
+          <p className="text-xs text-google-gray-500 mt-1">No cost-saving recommendations right now.</p>
         </div>
       ) : (
         <div className="mt-4 space-y-3">
           {safeTips.map((tip, idx) => (
             <div
               key={idx}
-              className="p-3.5 rounded-lg bg-gray-800/40 border border-gray-800 hover:border-gray-700 transition flex flex-col md:flex-row items-start md:items-center justify-between gap-3"
+              className="p-3.5 rounded-lg bg-[#181c26] border border-[#202530] hover:border-[#2e3748] transition flex flex-col md:flex-row items-start md:items-center justify-between gap-3"
             >
               <div className="space-y-1.5 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -97,12 +97,12 @@ export const OptimizationCard: FC<OptimizationCardProps> = ({
                   >
                     {tip.severity}
                   </span>
-                  <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">
+                  <span className="text-[10px] font-medium text-google-gray-400 uppercase tracking-wider">
                     {getTypeLabel(tip.type || '')}
                   </span>
-                  <span className="text-sm font-medium text-gray-200">{tip.title}</span>
+                  <span className="text-sm font-medium text-white">{tip.title}</span>
                 </div>
-                <p className="text-xs text-gray-400 leading-relaxed">{tip.description}</p>
+                <p className="text-xs text-google-gray-400 leading-relaxed">{tip.description}</p>
               </div>
 
               <div className="flex items-center gap-3 self-end md:self-center shrink-0">
@@ -115,7 +115,7 @@ export const OptimizationCard: FC<OptimizationCardProps> = ({
                   <button
                     type="button"
                     onClick={() => onApplyTip(tip)}
-                    className="text-xs px-2.5 py-1 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white border border-gray-700 transition font-medium"
+                    className="text-xs px-2.5 py-1 rounded bg-[#1e2330] hover:bg-[#202530] text-google-gray-300 hover:text-white border border-[#202530] transition font-medium"
                   >
                     Learn More
                   </button>
