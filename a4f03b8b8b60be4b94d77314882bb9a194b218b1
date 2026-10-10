@@ -1,0 +1,4 @@
+Task: Integration & Script Execution Tests (TDD Red)
+Summary: Created bash script integration and execution tests in internal/server/statusline_exec_test.go covering syntax validation (bash -n), stdin JSON parsing, spend output formatting (' · cost '), cache existence, AGY_COST_DISABLED suppression, and background subshell cache population.
+Files: internal/server/statusline_exec_test.go
+Why: Ensure end-to-end compatibility of the generated bash script with bash 3.2+ and define the failing TDD contract for background cache generation.
