@@ -21,16 +21,14 @@ RUN apk add --no-cache ca-certificates git
 
 # Cache Go modules
 COPY go.mod go.sum ./
-RUN --mount=type=cache,target=/go/pkg/mod go mod download
+RUN go mod download
 
 # Copy source code and compiled static web assets for Go embed.FS
 COPY . ./
 COPY --from=web-builder /app/web/dist ./web/dist
 
 # Build pure static Linux binary
-RUN --mount=type=cache,target=/root/.cache/go-build \
-    --mount=type=cache,target=/go/pkg/mod \
-    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -trimpath \
     -ldflags="-w -s" \
     -o /app/bin/agy-cost-board \

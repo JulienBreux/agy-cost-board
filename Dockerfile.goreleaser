@@ -1,0 +1,22 @@
+# ==============================================================================
+# GoReleaser Multi-Arch Distroless Production Runtime
+# ==============================================================================
+FROM gcr.io/distroless/static-debian12:nonroot
+WORKDIR /
+
+# GoReleaser puts pre-built binaries in $TARGETPLATFORM/ in dockers_v2 build context
+ARG TARGETPLATFORM
+COPY $TARGETPLATFORM/agy-cost-board /agy-cost-board
+
+# Cloud Run and container dynamic port binding
+ENV PORT=8080
+EXPOSE 8080
+
+# Run as non-privileged user
+USER nonroot:nonroot
+
+# Default entrypoint allows running CLI subcommands directly (cost, license, doctor, etc.)
+ENTRYPOINT ["/agy-cost-board"]
+
+# Default action is to launch the HTTP web server
+CMD ["serve"]

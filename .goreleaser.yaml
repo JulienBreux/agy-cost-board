@@ -81,6 +81,28 @@ changelog:
     - title: Others
       order: 999
 
+dockers_v2:
+  - id: agy-cost-board
+    dockerfile: Dockerfile.goreleaser
+    images:
+      - ghcr.io/julienbreux/agy-cost-board
+    tags:
+      - "{{ .Version }}"
+      - "v{{ .Version }}"
+      - "latest"
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    labels:
+      "org.opencontainers.image.title": "{{ .ProjectName }}"
+      "org.opencontainers.image.description": "AI Agent Cost & Usage Monitoring Board for Antigravity"
+      "org.opencontainers.image.url": "https://github.com/JulienBreux/agy-cost-board"
+      "org.opencontainers.image.source": "https://github.com/JulienBreux/agy-cost-board"
+      "org.opencontainers.image.version": "{{ .Version }}"
+      "org.opencontainers.image.revision": "{{ .FullCommit }}"
+      "org.opencontainers.image.created": "{{ .Date }}"
+      "org.opencontainers.image.licenses": "Apache-2.0"
+
 release:
   github:
     owner: JulienBreux
@@ -88,3 +110,4 @@ release:
   draft: false
   prerelease: auto
   mode: replace
+

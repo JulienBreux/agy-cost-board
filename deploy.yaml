@@ -15,9 +15,7 @@ kind: Service
 metadata:
   name: agy-cost-board
   labels:
-    cloud.googleapis.com/location: us-central1
-    app.kubernetes.io/name: agy-cost-board
-    app.kubernetes.io/part-of: agy-cost-board
+    app: agy-cost-board
   annotations:
     # Allow incoming traffic from the internet; IAM authentication is enforced by default
     run.googleapis.com/ingress: all
@@ -39,9 +37,8 @@ spec:
       # serviceAccountName: agy-cost-board-sa@PROJECT_ID.iam.gserviceaccount.com
       containers:
         - name: agy-cost-board
-          # Replace PROJECT_ID with your Google Cloud project ID, or use Artifact Registry:
-          # image: us-docker.pkg.dev/PROJECT_ID/agy-cost-board/agy-cost-board:latest
-          image: gcr.io/PROJECT_ID/agy-cost-board:latest
+          # Pre-built container image from GitHub Container Registry (GHCR)
+          image: ghcr.io/julienbreux/agy-cost-board:latest
           ports:
             - name: http1
               containerPort: 8080
