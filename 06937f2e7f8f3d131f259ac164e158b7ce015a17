@@ -1,0 +1,4 @@
+Task: Documentation & Quickstart Integration
+Summary: Documented Antigravity CLI statusline integration in README.md including endpoint reference, 1-line curl quickstart, agy configuration instructions, query parameter customization, environment variable overrides, IAM auth, and fail-open guarantees. Refactored test suite to resolve linter recommendations and eliminated test data races.
+Files: README.md, internal/server/statusline_exec_test.go
+Why: Enable developers to discover, configure, and use the dynamic statusline spend integration in agy CLI.
