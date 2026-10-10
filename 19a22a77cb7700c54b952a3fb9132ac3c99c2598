@@ -1,0 +1,8 @@
+Task: Unit Tests for Cloud Run Button Configuration (TDD Red)
+
+Summary of changes:
+- Created internal/config/cloudrun_button_test.go
+- Implemented TestCloudRunButtonAppJsonSpecification validating app.json schema, file presence, options (allow-unauthenticated: false, port 8080, memory 512Mi, cpu 1), and required environment variables
+- Verified test failure prior to implementing app.json (TDD Red phase)
+
+Why: Enforces the Cloud Run Button specification and prevents configuration drift.
