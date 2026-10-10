@@ -15,3 +15,9 @@
 - [x] **Track: Add a new tab just for a user with a complete dashboard that helps user to driver her consumption**
   *Link: [./tracks/user_consumption_dashboard_20261009/index.md](./tracks/user_consumption_dashboard_20261009/index.md)*
 
+---
+
+- [ ] **Track: Implement Cloud Run One-Click Deploy Button**
+  *Link: [./tracks/cloud_run_button_20261010/index.md](./tracks/cloud_run_button_20261010/index.md)*
+
+
