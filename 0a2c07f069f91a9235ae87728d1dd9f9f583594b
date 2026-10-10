@@ -1,0 +1,4 @@
+Task: Implement Statusline Script Logic & Cost Formatting (TDD Green)
+Summary: Implemented user identity resolution hierarchy (AGY_COST_USER, DEFAULT_USER, gcloud, git, USER), background subshell asynchronous spend fetching via /api/v1/users/{id}?days={days}, zero-latency /tmp caching with configurable TTL and stampede prevention, Cloud Run IAM Bearer token attachment via gcloud auth print-identity-token, and terminal width-aware statusline spend formatting (' · cost ').
+Files: internal/server/statusline.sh.tmpl, internal/server/statusline_exec_test.go
+Why: Ensure fast, non-blocking developer terminal statusline spend display compatible with Cloud Run IAM deployments.
