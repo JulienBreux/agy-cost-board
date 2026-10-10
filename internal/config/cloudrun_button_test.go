@@ -1,6 +1,7 @@
 package config_test
 
 import (
+	"bytes"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -11,11 +12,9 @@ import (
 // CloudRunAppSpec represents the schema of app.json for Google Cloud Run Button.
 // Specification: https://github.com/GoogleCloudPlatform/cloud-run-button
 type CloudRunAppSpec struct {
-	Name        string                       `json:"name"`
-	Description string                       `json:"description"`
-	Env         map[string]CloudRunEnvSpec   `json:"env"`
-	Options     CloudRunOptionsSpec          `json:"options"`
-	Hooks       map[string]map[string]string `json:"hooks,omitempty"`
+	Name    string                     `json:"name"`
+	Env     map[string]CloudRunEnvSpec `json:"env"`
+	Options CloudRunOptionsSpec        `json:"options"`
 }
 
 type CloudRunEnvSpec struct {
@@ -60,18 +59,17 @@ func TestCloudRunButtonAppJsonSpecification(t *testing.T) {
 		t.Fatalf("app.json does not exist at repo root: %v", err)
 	}
 
-	// 2. Valid JSON
+	// 2. Valid JSON with DisallowUnknownFields() matching Cloud Run Button backend
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
 	var spec CloudRunAppSpec
-	if err := json.Unmarshal(data, &spec); err != nil {
-		t.Fatalf("failed to parse app.json as valid JSON: %v", err)
+	if err := dec.Decode(&spec); err != nil {
+		t.Fatalf("failed to parse app.json with DisallowUnknownFields: %v", err)
 	}
 
-	// 3. Name & Description
+	// 3. Name
 	if spec.Name != "agy-cost-board" {
 		t.Errorf("expected spec.Name to be 'agy-cost-board', got: '%s'", spec.Name)
-	}
-	if spec.Description == "" {
-		t.Errorf("expected spec.Description to be non-empty")
 	}
 
 	// 4. Options

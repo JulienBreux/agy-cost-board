@@ -1,7 +1,5 @@
 {
-  "$schema": "https://raw.githubusercontent.com/GoogleCloudPlatform/cloud-run-button/master/schema.json",
   "name": "agy-cost-board",
-  "description": "Per-user AI cost attribution and seat management dashboard for Google Antigravity & Gemini Enterprise",
   "env": {
     "PROJECT_ID": {
       "description": "Google Cloud Project ID hosting BigQuery telemetry and billing tables",
@@ -26,6 +24,5 @@
     "port": 8080,
     "memory": "512Mi",
     "cpu": "1"
-  },
-  "hooks": {}
+  }
 }
