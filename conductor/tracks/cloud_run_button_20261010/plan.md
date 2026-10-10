@@ -15,10 +15,10 @@
 ## Phase 2: Documentation & One-Click Deployment Guide (`README.md`)
 - [x] Task: Automated README Cloud Run Button Validation Test (TDD Red) [9bc43f3]
     - [x] Add test asserting `README.md` contains the official Cloud Run badge and target URL
-- [ ] Task: Update `README.md` with Badge & Deployment Guide (TDD Green)
-    - [ ] Add `[![Run on Google Cloud](https://deploy.cloud.run/button.svg)](https://deploy.cloud.run)` to top badge row
-    - [ ] Add dedicated section "Deploy to Cloud Run in One Click" detailing prerequisites, button action, parameters, and IAM access instructions
-    - [ ] Run test suite to verify green status
+- [x] Task: Update `README.md` with Badge & Deployment Guide (TDD Green) [fc3cf86]
+    - [x] Add `[![Run on Google Cloud](https://deploy.cloud.run/button.svg)](https://deploy.cloud.run)` to top badge row
+    - [x] Add dedicated section "Deploy to Cloud Run in One Click" detailing prerequisites, button action, parameters, and IAM access instructions
+    - [x] Run test suite to verify green status
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Documentation & One-Click Deployment Guide (`README.md`)' (Protocol in workflow.md)
 
 ## Phase 3: End-to-End Build & Validation
