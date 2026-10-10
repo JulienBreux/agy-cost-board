@@ -139,6 +139,7 @@ export interface PersonalDailyTrend {
   cost: number;
   total_tokens: number;
   models?: Record<string, number>;
+  by_model?: Record<string, number>;
 }
 
 export interface OptimizationTip {
@@ -257,6 +258,7 @@ export const fetchUserDashboard = async (
     cost: t.total_cost ?? t.cost ?? 0,
     total_tokens: t.total_tokens ?? t.tokens ?? 0,
     models: t.by_model || {},
+    by_model: t.by_model || {},
   }));
 
   const recommendations = raw.recommendations || [];
