@@ -1,0 +1,8 @@
+{
+  "track_id": "statusline_cost_20261010",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-10-10T16:42:20+02:00",
+  "updated_at": "2026-10-10T16:42:20+02:00",
+  "description": "Display user spend in the status bar of agy by serving a tailored statusline.sh script from the agy-cost-board server"
+}
