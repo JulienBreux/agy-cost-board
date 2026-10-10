@@ -28,9 +28,9 @@
     - [x] Verify script execution tests pass
 - [x] 0a2c07f Task: Conductor - User Manual Verification 'Phase 2: Statusline Script Logic, Cost Attribution & Caching' (Protocol in workflow.md)
 
-## Phase 3: Documentation & End-to-End Validation
+## Phase 3: Documentation & End-to-End Validation [checkpoint: 06937f2]
 - [x] 06937f2 Task: Documentation & Quickstart Integration
     - [x] Update `README.md` with "Antigravity CLI Statusline Integration" section
     - [x] Include one-line `curl` download command and `agy` configuration snippet
     - [x] Run full test suite (`make test`) and linter (`make lint`)
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Documentation & End-to-End Validation' (Protocol in workflow.md)
+- [x] 06937f2 Task: Conductor - User Manual Verification 'Phase 3: Documentation & End-to-End Validation' (Protocol in workflow.md)
