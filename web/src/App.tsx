@@ -19,6 +19,7 @@ import { LicenseTable } from './components/LicenseTable';
 import { SetupHealthView } from './components/SetupHealthView';
 import { UserModal } from './components/UserModal';
 import { UserDashboardView } from './components/UserDashboardView';
+import { ThemeProvider } from './context/ThemeContext';
 import { RefreshCw, AlertTriangle } from 'lucide-react';
 
 export function App() {
@@ -142,7 +143,8 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#0f1115] text-google-gray-200">
+    <ThemeProvider>
+      <div className="min-h-screen flex flex-col bg-[#0f1115] text-google-gray-200">
       {/* Navigation Header */}
       <Navbar
         activeTab={activeTab}
@@ -280,6 +282,7 @@ export function App() {
         </p>
       </footer>
     </div>
+  </ThemeProvider>
   );
 }
 

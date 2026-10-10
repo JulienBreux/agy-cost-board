@@ -4,6 +4,7 @@
 
 :root {
   font-family: 'Google Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  color-scheme: dark;
 }
 
 code, pre {
@@ -24,4 +25,263 @@ code, pre {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #3e4451;
+}
+
+/* ==========================================================================
+   Light Theme Specifications & Overrides
+   ========================================================================== */
+
+html:not(.dark),
+html.light {
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+/* Light mode scrollbars */
+html:not(.dark) ::-webkit-scrollbar-track,
+html.light ::-webkit-scrollbar-track {
+  background: #f1f3f4;
+}
+html:not(.dark) ::-webkit-scrollbar-thumb,
+html.light ::-webkit-scrollbar-thumb {
+  background: #dadce0;
+}
+html:not(.dark) ::-webkit-scrollbar-thumb:hover,
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: #bdc1c6;
+}
+
+/* Page background & Default Text */
+html:not(.dark) body,
+html.light body {
+  background-color: #f8f9fa !important;
+  color: #202124 !important;
+}
+
+html:not(.dark) .bg-\[\#0f1115\],
+html.light .bg-\[\#0f1115\] {
+  background-color: #f8f9fa !important;
+}
+
+/* Card surfaces */
+html:not(.dark) .bg-\[\#14171f\],
+html.light .bg-\[\#14171f\] {
+  background-color: #ffffff !important;
+}
+
+/* Secondary card surfaces, inner wells, chips, tables */
+html:not(.dark) .bg-\[\#1e2330\],
+html.light .bg-\[\#1e2330\] {
+  background-color: #f1f3f4 !important;
+}
+
+/* Controls, table header rows, input backgrounds */
+html:not(.dark) .bg-\[\#1a1e28\],
+html:not(.dark) .bg-\[\#1a1e27\],
+html:not(.dark) .bg-\[\#181c26\],
+html:not(.dark) .bg-\[\#1a1f2c\],
+html.light .bg-\[\#1a1e28\],
+html.light .bg-\[\#1a1e27\],
+html.light .bg-\[\#181c26\],
+html.light .bg-\[\#1a1f2c\] {
+  background-color: #f1f3f4 !important;
+}
+
+/* Hover backgrounds */
+html:not(.dark) .hover\:bg-\[\#1a1e28\]\/70:hover,
+html:not(.dark) .hover\:bg-\[\#1a1e28\]:hover,
+html:not(.dark) .hover\:bg-\[\#1a1e27\]:hover,
+html:not(.dark) .hover\:bg-\[\#202530\]:hover,
+html:not(.dark) .hover\:bg-\[\#1f2430\]:hover,
+html:not(.dark) .hover\:bg-\[\#1e2330\]:hover,
+html:not(.dark) .hover\:bg-\[\#202532\]:hover,
+html.light .hover\:bg-\[\#1a1e28\]\/70:hover,
+html.light .hover\:bg-\[\#1a1e28\]:hover,
+html.light .hover\:bg-\[\#1a1e27\]:hover,
+html.light .hover\:bg-\[\#202530\]:hover,
+html.light .hover\:bg-\[\#1f2430\]:hover,
+html.light .hover\:bg-\[\#1e2330\]:hover,
+html.light .hover\:bg-\[\#202532\]:hover {
+  background-color: #e8eaed !important;
+}
+
+/* Inputs and inner card wells */
+html:not(.dark) .bg-\[\#111318\],
+html:not(.dark) .bg-\[\#12151c\],
+html:not(.dark) .bg-\[\#101218\],
+html:not(.dark) .bg-\[\#0c0e12\],
+html.light .bg-\[\#111318\],
+html.light .bg-\[\#12151c\],
+html.light .bg-\[\#101218\],
+html.light .bg-\[\#0c0e12\] {
+  background-color: #ffffff !important;
+}
+
+/* Progress bar background tracks */
+html:not(.dark) .bg-\[\#202532\],
+html:not(.dark) .bg-\[\#202530\],
+html:not(.dark) .bg-\[\#2a3245\],
+html.light .bg-\[\#202532\],
+html.light .bg-\[\#202530\],
+html.light .bg-\[\#2a3245\] {
+  background-color: #e8eaed !important;
+}
+
+/* Borders */
+html:not(.dark) .border-\[\#222836\],
+html:not(.dark) .border-\[\#202530\],
+html:not(.dark) .border-\[\#282f40\],
+html:not(.dark) .border-\[\#2d3548\],
+html:not(.dark) .border-\[\#2a3245\],
+html:not(.dark) .border-\[\#2e3748\],
+html:not(.dark) .border-\[\#1f2430\],
+html:not(.dark) .border-\[\#1e2330\],
+html:not(.dark) .border-\[\#1d222e\],
+html.light .border-\[\#222836\],
+html.light .border-\[\#202530\],
+html.light .border-\[\#282f40\],
+html.light .border-\[\#2d3548\],
+html.light .border-\[\#2a3245\],
+html.light .border-\[\#2e3748\],
+html.light .border-\[\#1f2430\],
+html.light .border-\[\#1e2330\],
+html.light .border-\[\#1d222e\] {
+  border-color: #dadce0 !important;
+}
+
+/* Table and container dividers */
+html:not(.dark) .divide-\[\#1e2330\] > :not([hidden]) ~ :not([hidden]),
+html:not(.dark) .divide-\[\#202530\] > :not([hidden]) ~ :not([hidden]),
+html:not(.dark) .divide-\[\#222836\] > :not([hidden]) ~ :not([hidden]),
+html.light .divide-\[\#1e2330\] > :not([hidden]) ~ :not([hidden]),
+html.light .divide-\[\#202530\] > :not([hidden]) ~ :not([hidden]),
+html.light .divide-\[\#222836\] > :not([hidden]) ~ :not([hidden]) {
+  border-color: #e8eaed !important;
+}
+
+/* Header & Footer */
+html:not(.dark) header,
+html.light header {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  border-color: #dadce0 !important;
+}
+
+html:not(.dark) footer,
+html.light footer {
+  border-color: #dadce0 !important;
+}
+
+/* Active navigation tabs in light mode */
+html:not(.dark) nav button.bg-\[\#1e2330\],
+html.light nav button.bg-\[\#1e2330\] {
+  background-color: #e8eaed !important;
+  color: #1a73e8 !important;
+  border-color: #d2e3fc !important;
+}
+
+html:not(.dark) nav button.text-emerald-400,
+html.light nav button.text-emerald-400 {
+  color: #059669 !important;
+  border-color: #a7f3d0 !important;
+  background-color: #ecfdf5 !important;
+}
+
+/* Text Hierarchy */
+html:not(.dark) .text-white:not(
+  .bg-google-blue,
+  .bg-google-blue *,
+  [class*="bg-google-blue"],
+  [class*="bg-google-blue"] *,
+  .bg-google-green,
+  .bg-google-green *,
+  [class*="bg-google-green"],
+  [class*="bg-google-green"] *,
+  .bg-google-red,
+  .bg-google-red *,
+  [class*="bg-google-red"],
+  [class*="bg-google-red"] *,
+  .bg-emerald-600,
+  .bg-emerald-600 *,
+  .bg-red-600,
+  .bg-red-600 *
+),
+html.light .text-white:not(
+  .bg-google-blue,
+  .bg-google-blue *,
+  [class*="bg-google-blue"],
+  [class*="bg-google-blue"] *,
+  .bg-google-green,
+  .bg-google-green *,
+  [class*="bg-google-green"],
+  [class*="bg-google-green"] *,
+  .bg-google-red,
+  .bg-google-red *,
+  [class*="bg-google-red"],
+  [class*="bg-google-red"] *,
+  .bg-emerald-600,
+  .bg-emerald-600 *,
+  .bg-red-600,
+  .bg-red-600 *
+) {
+  color: #202124 !important;
+}
+
+html:not(.dark) .text-google-gray-200,
+html.light .text-google-gray-200 {
+  color: #3c4043 !important;
+}
+html:not(.dark) .text-google-gray-300,
+html.light .text-google-gray-300 {
+  color: #3c4043 !important;
+}
+html:not(.dark) .text-google-gray-400,
+html.light .text-google-gray-400 {
+  color: #5f6368 !important;
+}
+html:not(.dark) .text-google-gray-500,
+html.light .text-google-gray-500 {
+  color: #70757a !important;
+}
+
+html:not(.dark) .hover\:text-white:hover,
+html.light .hover\:text-white:hover {
+  color: #202124 !important;
+}
+
+/* Modal overlay in light mode */
+html:not(.dark) .bg-black\/70,
+html.light .bg-black\/70 {
+  background-color: rgba(32, 33, 36, 0.45) !important;
+}
+
+/* SVG Chart lines and tracks */
+html:not(.dark) [stroke="#1e2330"],
+html.light [stroke="#1e2330"] {
+  stroke: #e8eaed !important;
+}
+
+html:not(.dark) [stroke="#222836"],
+html.light [stroke="#222836"] {
+  stroke: #dadce0 !important;
+}
+
+html:not(.dark) svg text[fill="#9aa0a6"],
+html.light svg text[fill="#9aa0a6"] {
+  fill: #5f6368 !important;
+}
+
+/* Form input elements */
+html:not(.dark) input,
+html:not(.dark) select,
+html.light input,
+html.light select {
+  color: #202124 !important;
+}
+
+html:not(.dark) input::placeholder,
+html.light input::placeholder {
+  color: #80868b !important;
 }

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Layers, DollarSign, ShieldCheck, Zap, Activity, User } from 'lucide-react';
+import { ThemeToggle } from './ThemeToggle';
 
 interface NavbarProps {
   activeTab: 'overview' | 'costs' | 'licenses' | 'setup' | 'my-consumption';
@@ -96,21 +97,27 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
           </nav>
 
-          {/* Time Window Selector */}
-          <div className="flex items-center space-x-1 bg-[#1a1e28] p-1 rounded-lg border border-[#282f40]">
-            {[7, 14, 30].map((d) => (
-              <button
-                key={d}
-                onClick={() => setDays(d)}
-                className={`text-xs px-2.5 py-1 rounded font-medium transition-all ${
-                  days === d
-                    ? 'bg-google-blue text-white shadow'
-                    : 'text-google-gray-400 hover:text-white'
-                }`}
-              >
-                {d}d
-              </button>
-            ))}
+          {/* Right Controls: Time Window & Theme Selector */}
+          <div className="flex items-center space-x-2">
+            {/* Time Window Selector */}
+            <div className="flex items-center space-x-1 bg-[#1a1e28] p-1 rounded-lg border border-[#282f40]">
+              {[7, 14, 30].map((d) => (
+                <button
+                  key={d}
+                  onClick={() => setDays(d)}
+                  className={`text-xs px-2.5 py-1 rounded font-medium transition-all ${
+                    days === d
+                      ? 'bg-google-blue text-white shadow'
+                      : 'text-google-gray-400 hover:text-white'
+                  }`}
+                >
+                  {d}d
+                </button>
+              ))}
+            </div>
+
+            {/* Theme Switcher Button */}
+            <ThemeToggle />
           </div>
         </div>
       </div>

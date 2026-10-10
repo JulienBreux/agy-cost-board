@@ -8,8 +8,24 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <script type="module" crossorigin src="/assets/index-D9hYxFXZ.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-BvUunRSW.css">
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem('agy-theme');
+          var isDark = saved === 'dark' || (saved !== 'light' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (isDark) {
+            document.documentElement.classList.add('dark');
+            document.documentElement.classList.remove('light');
+          } else {
+            document.documentElement.classList.add('light');
+            document.documentElement.classList.remove('dark');
+          }
+          document.documentElement.setAttribute('data-theme', saved || 'auto');
+        } catch (e) {}
+      })();
+    </script>
+    <script type="module" crossorigin src="/assets/index-BwB2dG0R.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-DGHiMD8k.css">
   </head>
   <body class="bg-[#0f1115] text-google-gray-200 antialiased min-h-screen">
     <div id="root"></div>
