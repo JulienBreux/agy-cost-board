@@ -96,6 +96,9 @@ func (s *Server) setupRoutes() {
 		api.Get("/setup/status", s.handleSetupStatus)
 	})
 
+	// Antigravity CLI statusline dynamic script
+	r.Get("/statusline.sh", s.handleStatuslineScript)
+
 	// Embedded SPA static file serving
 	if s.staticFS != nil {
 		s.setupStaticSPA(r)
