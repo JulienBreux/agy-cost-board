@@ -1,3 +1,8 @@
 Task: Engine Currency Resolution & Tests
 Summary: Added resolveCurrency helper in Engine; propagate native currency from billed costs to AllocatedUserCost, UserCostSummary, OverviewMetrics, and UserConsumptionDriving; verified with TDD unit tests.
 Files: internal/attribution/engine.go, internal/attribution/engine_test.go
+
+Phase 1 Verification Report: Go Domain & Attribution Engine Currency Propagation
+Automated Tests: go test -v -race ./internal/domain/... ./internal/attribution/... (PASS)
+Verification: Domain currency resolver and engine currency propagation confirmed working; all test suites pass.
+User Confirmation: Confirmed by user.
