@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/julienbreux/agy-cost-board/internal/config"
+	"github.com/julienbreux/agy-cost-board/internal/domain"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -49,7 +50,7 @@ func newCostCommand(v *viper.Viper) *cobra.Command {
 				cmd.Println(out)
 
 			case "csv":
-				headers := []string{"USER", "MODEL", "USAGE_DATE", "USER_TOKENS", "TOTAL_MODEL_TOKENS", "TOKEN_SHARE_PCT", "ALLOCATED_COST_USD"}
+				headers := []string{"USER", "MODEL", "USAGE_DATE", "USER_TOKENS", "TOKEN_SHARE", "ALLOCATED_COST", "CURRENCY"}
 				var rows [][]string
 				for _, c := range costs {
 					rows = append(rows, c.ToCSVRow())
@@ -70,7 +71,7 @@ func newCostCommand(v *viper.Viper) *cobra.Command {
 						c.UsageDate,
 						strconv.FormatInt(c.UserTokens, 10),
 						fmt.Sprintf("%.1f%%", c.TokenShare*100),
-						fmt.Sprintf("$%.2f", c.AllocatedCost),
+						domain.FormatCost(c.AllocatedCost, c.Currency),
 					})
 				}
 				cmd.Print(FormatTable(headers, rows))

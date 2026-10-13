@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/julienbreux/agy-cost-board/internal/config"
+	"github.com/julienbreux/agy-cost-board/internal/domain"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -48,14 +49,15 @@ func newLicenseCommand(v *viper.Viper) *cobra.Command {
 				cmd.Println(out)
 
 			case "csv":
-				headers := []string{"SEAT_QUOTA", "ASSIGNED_SEATS", "ACTIVE_SEATS", "DORMANT_SEATS", "UTILIZATION_PCT", "ESTIMATED_MONTHLY_SAVINGS_USD"}
+				headers := []string{"SEAT_QUOTA", "ASSIGNED_SEATS", "ACTIVE_SEATS", "DORMANT_SEATS", "UTILIZATION_PCT", "ESTIMATED_MONTHLY_SAVINGS", "CURRENCY"}
 				rows := [][]string{{
 					strconv.Itoa(gov.SeatQuota),
 					strconv.Itoa(gov.AssignedSeats),
 					strconv.Itoa(gov.ActiveSeats),
 					strconv.Itoa(gov.DormantSeats),
 					fmt.Sprintf("%.1f%%", gov.UtilizationPct),
-					fmt.Sprintf("$%.2f", gov.EstimatedMonthlySavings),
+					fmt.Sprintf("%.2f", gov.EstimatedMonthlySavings),
+					gov.Currency,
 				}}
 				out, err := FormatCSV(headers, rows)
 				if err != nil {
@@ -71,7 +73,7 @@ func newLicenseCommand(v *viper.Viper) *cobra.Command {
 					strconv.Itoa(gov.ActiveSeats),
 					strconv.Itoa(gov.DormantSeats),
 					fmt.Sprintf("%.1f%%", gov.UtilizationPct),
-					fmt.Sprintf("$%.2f", gov.EstimatedMonthlySavings),
+					domain.FormatCost(gov.EstimatedMonthlySavings, gov.Currency),
 				}}
 				cmd.Print(FormatTable(headers, rows))
 

@@ -100,6 +100,7 @@ type LicenseGovernanceSummary struct {
 	DormantSeats            int           `json:"dormant_seats"`
 	UtilizationPct          float64       `json:"utilization_pct"`
 	EstimatedMonthlySavings float64       `json:"estimated_monthly_savings"`
+	Currency                string        `json:"currency"`
 	DormantUsers            []LicenseSeat `json:"dormant_users"`
 }
 

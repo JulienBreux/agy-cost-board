@@ -201,4 +201,11 @@ func TestTUIModelNavigation(t *testing.T) {
 			t.Errorf("expected quit cmd on 'q'")
 		}
 	})
+
+	t.Run("TUI displays dynamic currency symbol in overview and costs", func(t *testing.T) {
+		view := m.View()
+		if !strings.Contains(view, "€") {
+			t.Errorf("expected TUI overview to contain € in demo mode, got: %s", view)
+		}
+	})
 }

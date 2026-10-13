@@ -257,9 +257,15 @@ func (e *Engine) GetLicenseGovernance(ctx context.Context, windowDays int) (*dom
 		return nil, fmt.Errorf("fetch seats: %w", err)
 	}
 
+	govCurrency := "USD"
+	if billedCosts, err := e.provider.FetchBilledCosts(ctx, windowDays); err == nil {
+		govCurrency = resolveCurrency(billedCosts)
+	}
+
 	summary := &domain.LicenseGovernanceSummary{
 		SeatQuota:     quota,
 		AssignedSeats: len(seats),
+		Currency:      govCurrency,
 		DormantUsers:  make([]domain.LicenseSeat, 0),
 	}
 

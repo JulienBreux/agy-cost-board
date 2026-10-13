@@ -215,6 +215,57 @@ func TestCLICommandsWithDemo(t *testing.T) {
 		}
 	})
 
+	t.Run("cost command formats dynamic currency in demo mode", func(t *testing.T) {
+		buf := new(bytes.Buffer)
+		rootCmd := cli.NewRootCommand()
+		rootCmd.SetOut(buf)
+		rootCmd.SetErr(buf)
+		rootCmd.SetArgs([]string{"cost", "--demo", "--format=table"})
+
+		if err := rootCmd.Execute(); err != nil {
+			t.Fatalf("command failed: %v", err)
+		}
+
+		out := buf.String()
+		if !strings.Contains(out, "€") {
+			t.Errorf("expected cost output to contain € in demo mode, got: %s", out)
+		}
+	})
+
+	t.Run("user command formats dynamic currency in demo mode", func(t *testing.T) {
+		buf := new(bytes.Buffer)
+		rootCmd := cli.NewRootCommand()
+		rootCmd.SetOut(buf)
+		rootCmd.SetErr(buf)
+		rootCmd.SetArgs([]string{"user", "alex.turner@google.com", "--demo"})
+
+		if err := rootCmd.Execute(); err != nil {
+			t.Fatalf("command failed: %v", err)
+		}
+
+		out := buf.String()
+		if !strings.Contains(out, "€") {
+			t.Errorf("expected user output to contain € in demo mode, got: %s", out)
+		}
+	})
+
+	t.Run("license command formats dynamic currency in demo mode", func(t *testing.T) {
+		buf := new(bytes.Buffer)
+		rootCmd := cli.NewRootCommand()
+		rootCmd.SetOut(buf)
+		rootCmd.SetErr(buf)
+		rootCmd.SetArgs([]string{"license", "--demo"})
+
+		if err := rootCmd.Execute(); err != nil {
+			t.Fatalf("command failed: %v", err)
+		}
+
+		out := buf.String()
+		if !strings.Contains(out, "€") {
+			t.Errorf("expected license output to contain € in demo mode, got: %s", out)
+		}
+	})
+
 	t.Run("doctor command executes in demo mode", func(t *testing.T) {
 		buf := new(bytes.Buffer)
 		rootCmd := cli.NewRootCommand()

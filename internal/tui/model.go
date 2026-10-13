@@ -278,10 +278,10 @@ func (m Model) View() string {
 
 	// KPI Cards
 	if m.Overview != nil {
-		card1 := cardStyle.Render("TOTAL BILLED\n" + cardValueStyle.Render(fmt.Sprintf("$%.2f", m.Overview.TotalBilledCost)))
+		card1 := cardStyle.Render("TOTAL BILLED\n" + cardValueStyle.Render(domain.FormatCost(m.Overview.TotalBilledCost, m.Overview.Currency)))
 		card2 := cardStyle.Render("TOTAL TOKENS\n" + cardValueStyle.Render(strconv.FormatInt(m.Overview.TotalTokens, 10)))
 		card3 := cardStyle.Render("ACTIVE USERS\n" + cardValueStyle.Render(strconv.Itoa(m.Overview.ActiveUsersCount)))
-		card4 := cardStyle.Render("POTENTIAL SAVINGS\n" + cardWarnValueStyle.Render(fmt.Sprintf("$%.2f/mo", m.Overview.EstimatedMonthlySavings)))
+		card4 := cardStyle.Render("POTENTIAL SAVINGS\n" + cardWarnValueStyle.Render(fmt.Sprintf("%s/mo", domain.FormatCost(m.Overview.EstimatedMonthlySavings, m.Overview.Currency))))
 		sb.WriteString(lipgloss.JoinHorizontal(lipgloss.Top, card1, card2, card3, card4))
 		sb.WriteString("\n\n")
 	}
@@ -304,7 +304,7 @@ func (m Model) View() string {
 func (m Model) renderCostsView() string {
 	var sb strings.Builder
 	sb.WriteString(tableHeaderStyle.Render(fmt.Sprintf("%-28s %-20s %-12s %-14s %-10s %-12s",
-		"USER", "MODEL", "DATE", "TOKENS", "SHARE %", "COST (USD)")))
+		"USER", "MODEL", "DATE", "TOKENS", "SHARE %", "COST")))
 	sb.WriteString("\n")
 
 	if len(m.Costs) == 0 {
@@ -325,9 +325,9 @@ func (m Model) renderCostsView() string {
 		if i == m.Cursor {
 			prefix = "> "
 		}
-		rowStr := fmt.Sprintf("%s%-26s %-20s %-12s %-14d %-10s $%.2f",
+		rowStr := fmt.Sprintf("%s%-26s %-20s %-12s %-14d %-10s %s",
 			prefix, c.UserID, c.Model, c.UsageDate, c.UserTokens,
-			fmt.Sprintf("%.1f%%", c.TokenShare*100), c.AllocatedCost)
+			fmt.Sprintf("%.1f%%", c.TokenShare*100), domain.FormatCost(c.AllocatedCost, c.Currency))
 
 		if i == m.Cursor {
 			sb.WriteString(selectedRowStyle.Render(rowStr))
@@ -381,16 +381,16 @@ func (m Model) renderUserBreakdownView() string {
 
 	u := m.SelectedUser
 	sb.WriteString(fmt.Sprintf("DEVELOPER BREAKDOWN: %s\n", u.UserID))
-	sb.WriteString(fmt.Sprintf("Status: %s | Total Tokens: %d | Total Attributed Cost: $%.2f\n\n",
-		u.SeatStatus, u.TotalTokens, u.TotalCost))
+	sb.WriteString(fmt.Sprintf("Status: %s | Total Tokens: %d | Total Attributed Cost: %s\n\n",
+		u.SeatStatus, u.TotalTokens, domain.FormatCost(u.TotalCost, u.Currency)))
 
 	sb.WriteString(tableHeaderStyle.Render(fmt.Sprintf("%-24s %-16s %-12s %-12s",
-		"MODEL", "TOKENS", "TOKEN SHARE", "COST (USD)")))
+		"MODEL", "TOKENS", "TOKEN SHARE", "COST")))
 	sb.WriteString("\n")
 
 	for model, detail := range u.ModelBreakdown {
-		sb.WriteString(fmt.Sprintf("  %-22s %-16d %-12s $%.2f\n",
-			model, detail.Tokens, fmt.Sprintf("%.1f%%", detail.Share*100), detail.Cost))
+		sb.WriteString(fmt.Sprintf("  %-22s %-16d %-12s %s\n",
+			model, detail.Tokens, fmt.Sprintf("%.1f%%", detail.Share*100), domain.FormatCost(detail.Cost, u.Currency)))
 	}
 
 	return sb.String()

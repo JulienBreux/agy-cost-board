@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/julienbreux/agy-cost-board/internal/config"
+	"github.com/julienbreux/agy-cost-board/internal/domain"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -58,7 +59,7 @@ func newUserCommand(v *viper.Viper) *cobra.Command {
 					summary.UserID,
 					string(summary.SeatStatus),
 					strconv.FormatInt(summary.TotalTokens, 10),
-					fmt.Sprintf("$%.2f", summary.TotalCost),
+					domain.FormatCost(summary.TotalCost, summary.Currency),
 					lastAct,
 				}}
 				cmd.Print(FormatTable(headers, rows))
@@ -72,7 +73,7 @@ func newUserCommand(v *viper.Viper) *cobra.Command {
 							m,
 							strconv.FormatInt(detail.Tokens, 10),
 							fmt.Sprintf("%.1f%%", detail.Share*100),
-							fmt.Sprintf("$%.2f", detail.Cost),
+							domain.FormatCost(detail.Cost, summary.Currency),
 						})
 					}
 					cmd.Print(FormatTable(mHeaders, mRows))
