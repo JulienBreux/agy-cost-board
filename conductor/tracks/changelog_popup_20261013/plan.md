@@ -9,9 +9,9 @@
 - [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) (3787c26)
 
 ## Phase 2: ChangelogModal Component (TDD)
-- [~] Task: ChangelogModal Component Unit Tests
-  - [ ] Write component tests in `web/src/components/ChangelogModal.test.tsx` testing modal rendering, sparkles header, latest version badge highlight, historical release list, Escape key dismiss, and "Got it" callback.
-- [ ] Task: Implement ChangelogModal Component
+- [x] Task: ChangelogModal Component Unit Tests (70c2b62)
+  - [x] Write component tests in `web/src/components/ChangelogModal.test.tsx` testing modal rendering, sparkles header, latest version badge highlight, historical release list, Escape key dismiss, and "Got it" callback.
+- [~] Task: Implement ChangelogModal Component
   - [ ] Build `web/src/components/ChangelogModal.tsx` matching the screenshot design: dark theme card, sparkles icon, pill badges, bold feature bullet list, scrollable list, and "Got it" button.
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
