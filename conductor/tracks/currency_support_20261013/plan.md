@@ -11,7 +11,7 @@
   - Files: `internal/attribution/engine.go`, `internal/attribution/engine_test.go`
 - [x] 3f09423 Task: Conductor - User Manual Verification 'Phase 1: Go Domain & Attribution Engine Currency Propagation'
 
-## Phase 2: Go CLI, TUI & Statusline Script Integration
+## Phase 2: Go CLI, TUI & Statusline Script Integration [checkpoint: ec8885c]
 - [x] e812cec Task: CLI & TUI Dynamic Currency Formatting & Tests (TDD Red -> Green)
   - Acceptance: CLI `cost`, `user`, and `license` commands format monetary columns using `FormatCost` / `CurrencySymbol`; TUI `model.go` displays dynamic currency in KPI cards (`TOTAL BILLED`, `POTENTIAL SAVINGS`), cost list, and developer breakdown.
   - Verify: `go test -v -race ./internal/cli/... ./internal/tui/...`
@@ -20,7 +20,7 @@
   - Acceptance: `statusline.sh.tmpl` parses `currency` from `/api/v1/users/{id}` API response; maps or passes currency symbol into `COST_FMT` (e.g. ` · cost €18`); tests confirm dynamic currency rendering.
   - Verify: `go test -v -race ./internal/server/...`
   - Files: `internal/server/statusline.sh.tmpl`, `internal/server/statusline_test.go`, `internal/server/statusline_exec_test.go`
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Go CLI, TUI & Statusline Script Integration'
+- [x] ec8885c Task: Conductor - User Manual Verification 'Phase 2: Go CLI, TUI & Statusline Script Integration'
 
 ## Phase 3: Web Dashboard Centralized Currency & Component Modernization
 - [ ] Task: Web Currency Formatter & Unit Tests (TDD Red -> Green)
