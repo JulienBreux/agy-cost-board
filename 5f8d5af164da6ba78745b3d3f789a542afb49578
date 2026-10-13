@@ -1,0 +1,4 @@
+Task: Storage & Version Comparison Unit Tests
+Summary: Added comprehensive unit tests for cookie reading/writing, localStorage fallback, semver parsing, and version precedence comparison.
+Files: web/src/utils/changelogStorage.test.ts
+Why: Fulfills Red phase of TDD for changelog persistence and auto-popup triggering logic.
