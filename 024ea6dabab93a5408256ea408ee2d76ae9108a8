@@ -1,0 +1,9 @@
+Task: Integrate Changelog Triggers in Navbar and Footer
+Summary:
+- Added onOpenChangelog prop and sparkles button in Navbar.tsx with amber accent and accessible 'What's new' labeling.
+- Added onOpenChangelog prop and click interceptor to the version link in Footer.tsx, opening the changelog modal while preserving semantic link capabilities.
+- Verified all unit tests in Navbar.test.tsx and Footer.test.tsx pass.
+
+Files Modified:
+- web/src/components/Navbar.tsx
+- web/src/components/Footer.tsx
