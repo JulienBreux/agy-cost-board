@@ -1,15 +1,15 @@
 # Implementation Plan: Changelog Popup from Last Visit/Release
 
-## Phase 1: Changelog Data & Storage Utilities (TDD)
+## Phase 1: Changelog Data & Storage Utilities (TDD) [checkpoint: 3787c26]
 - [x] Task: Storage & Version Comparison Unit Tests (5f8d5af)
   - [x] Write unit tests in `web/src/utils/changelogStorage.test.ts` for cookie read/write, localStorage fallback, and semver comparison logic (`hasNewVersion`).
 - [x] Task: Implement Changelog Data and Storage Helpers (3787c26)
   - [x] Create `web/src/data/changelog.ts` with structured release notes for existing versions (`v0.5.1`, `v0.5.0`, `v0.4.0`, etc.).
   - [x] Implement `web/src/utils/changelogStorage.ts` with cookie reading/writing (`agy_last_seen_version`), localStorage sync, and semver comparison.
-- [~] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) (3787c26)
 
 ## Phase 2: ChangelogModal Component (TDD)
-- [ ] Task: ChangelogModal Component Unit Tests
+- [~] Task: ChangelogModal Component Unit Tests
   - [ ] Write component tests in `web/src/components/ChangelogModal.test.tsx` testing modal rendering, sparkles header, latest version badge highlight, historical release list, Escape key dismiss, and "Got it" callback.
 - [ ] Task: Implement ChangelogModal Component
   - [ ] Build `web/src/components/ChangelogModal.tsx` matching the screenshot design: dark theme card, sparkles icon, pill badges, bold feature bullet list, scrollable list, and "Got it" button.
