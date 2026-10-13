@@ -235,7 +235,13 @@ func CalculateBudgetMetrics(spend float64, budget float64, days int) (status str
 }
 
 // GenerateOptimizationTips evaluates user telemetry to generate contextual cost-saving tips.
-func GenerateOptimizationTips(userID string, modelBreakdown map[string]ModelCostDetail, totalTokens int64, seatStatus SeatStatus) []OptimizationTip {
+func GenerateOptimizationTips(userID string, modelBreakdown map[string]ModelCostDetail, totalTokens int64, seatStatus SeatStatus, currency ...string) []OptimizationTip {
+	cur := "USD"
+	if len(currency) > 0 && currency[0] != "" {
+		cur = currency[0]
+	}
+	sym := CurrencySymbol(cur)
+
 	tips := make([]OptimizationTip, 0)
 
 	// 1. Check Seat Status
@@ -243,7 +249,7 @@ func GenerateOptimizationTips(userID string, modelBreakdown map[string]ModelCost
 		tips = append(tips, OptimizationTip{
 			ID:                  "dormant-license",
 			Title:               "Dormant Gemini Enterprise License",
-			Description:         "No recent inference activity detected. Consider releasing or reallocating this license to save $45/mo.",
+			Description:         fmt.Sprintf("No recent inference activity detected. Consider releasing or reallocating this license to save %s45/mo.", sym),
 			Severity:            "warning",
 			EstimatedSavingsUSD: 45.0,
 		})
