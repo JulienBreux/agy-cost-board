@@ -1,6 +1,7 @@
 import React from 'react';
 import { ShieldCheck, AlertCircle, Clock, Trash2, CheckCircle2 } from 'lucide-react';
 import { LicenseGovernance } from '../api';
+import { formatCurrency } from '../utils/currency';
 
 interface LicenseTableProps {
   governance: LicenseGovernance;
@@ -46,7 +47,7 @@ export const LicenseTable: React.FC<LicenseTableProps> = ({ governance, onSelect
             <h4 className="text-sm font-semibold">Reclamation Savings</h4>
           </div>
           <div className="text-3xl font-bold text-google-yellow">
-            ${governance.estimated_monthly_savings.toFixed(2)}/mo
+            {formatCurrency(governance.estimated_monthly_savings, governance.currency)}/mo
           </div>
           <p className="text-xs text-google-gray-400 mt-1">
             At $45.00 standard Gemini Enterprise seat list price

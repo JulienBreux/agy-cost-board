@@ -1,6 +1,7 @@
 import React from 'react';
 import { DollarSign, Cpu, Users, TrendingDown } from 'lucide-react';
 import { OverviewMetrics } from '../api';
+import { formatCurrency } from '../utils/currency';
 
 interface KPICardsProps {
   metrics: OverviewMetrics;
@@ -19,7 +20,7 @@ export const KPICards: React.FC<KPICardsProps> = ({ metrics }) => {
         </div>
         <div className="mt-3">
           <div className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-            ${metrics.total_billed_cost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {formatCurrency(metrics.total_billed_cost, metrics.currency)}
           </div>
           <div className="mt-1 flex items-center text-xs text-google-gray-400">
             <span>Reconciled with Cloud Billing</span>
@@ -73,7 +74,7 @@ export const KPICards: React.FC<KPICardsProps> = ({ metrics }) => {
         </div>
         <div className="mt-3">
           <div className="text-2xl sm:text-3xl font-bold text-google-yellow tracking-tight">
-            ${metrics.estimated_monthly_savings.toFixed(2)}
+            {formatCurrency(metrics.estimated_monthly_savings, metrics.currency)}
             <span className="text-sm font-normal text-google-gray-400">/mo</span>
           </div>
           <div className="mt-1 flex items-center text-xs text-google-gray-400">

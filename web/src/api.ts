@@ -53,6 +53,7 @@ export interface LicenseGovernance {
   utilization_pct: number;
   estimated_monthly_savings: number;
   dormant_users: LicenseSeat[];
+  currency?: string;
 }
 
 export interface UserSummary {

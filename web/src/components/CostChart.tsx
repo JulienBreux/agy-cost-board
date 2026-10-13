@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { DailyTrend, ModelDetail } from '../api';
 import { Layers, BarChart3, Coins, Sparkles, PieChart } from 'lucide-react';
+import { getCurrencySymbol } from '../utils/currency';
 
 interface CostChartProps {
   trends?: DailyTrend[];
@@ -62,7 +63,7 @@ export const CostChart: React.FC<CostChartProps> = ({
   const [chartMode, setChartMode] = useState<'stacked' | 'aggregate'>('stacked');
   const [metricMode, setMetricMode] = useState<'cost' | 'tokens'>('cost');
 
-  const currencySymbol = currency === 'EUR' ? '€' : currency === 'USD' ? '$' : `${currency} `;
+  const currencySymbol = getCurrencySymbol(currency);
   const safeTrends = Array.isArray(trends) ? trends : [];
   const safeBreakdown = modelBreakdown && typeof modelBreakdown === 'object' ? modelBreakdown : {};
 
@@ -190,7 +191,7 @@ export const CostChart: React.FC<CostChartProps> = ({
                   title="View spend in currency"
                 >
                   <Coins className="h-3 w-3" />
-                  <span>$</span>
+                  <span>{currencySymbol.trim()}</span>
                 </button>
                 <button
                   onClick={() => setMetricMode('tokens')}

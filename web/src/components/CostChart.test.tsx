@@ -165,4 +165,20 @@ describe('CostChart Component', () => {
     fireEvent.mouseLeave(modelItem);
     expect(screen.getByText('Total Spend')).toBeInTheDocument();
   });
+
+  it('renders dynamic currency symbol in metric toggle and formatted amounts when currency is EUR', () => {
+    render(
+      <CostChart
+        trends={mockTrends}
+        modelBreakdown={mockModelBreakdown}
+        currency="EUR"
+      />
+    );
+
+    const costToggleBtn = screen.getByTitle('View spend in currency');
+    expect(costToggleBtn).toHaveTextContent('€');
+    expect(screen.getByText('€27.00')).toBeInTheDocument();
+    expect(screen.getByText('€18.50')).toBeInTheDocument();
+    expect(screen.getAllByText('€45.50').length).toBeGreaterThanOrEqual(1);
+  });
 });

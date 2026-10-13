@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Search, Filter, ArrowUpDown } from 'lucide-react';
 import { AllocatedUserCost } from '../api';
+import { formatCurrency } from '../utils/currency';
 
 interface CostTableProps {
   costs: AllocatedUserCost[];
@@ -169,7 +170,7 @@ export const CostTable: React.FC<CostTableProps> = ({ costs, onSelectUser }) => 
                     </div>
                   </td>
                   <td className="py-3 px-4 text-right font-semibold text-white font-mono">
-                    ${r.allocated_cost.toFixed(2)}
+                    {formatCurrency(r.allocated_cost, r.currency)}
                   </td>
                 </tr>
               ))
