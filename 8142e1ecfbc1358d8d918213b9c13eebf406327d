@@ -1,0 +1,3 @@
+Task: Domain Currency Helpers & Unit Tests
+Summary: Implemented CurrencySymbol mapping ISO-4217 currency codes to symbols with fallback, FormatCost formatting monetary amounts, and updated GenerateOptimizationTips to support dynamic currency.
+Files: internal/domain/currency.go, internal/domain/currency_test.go, internal/domain/models.go
