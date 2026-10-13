@@ -1,0 +1,10 @@
+Task: App-Level Orchestration & State Management
+Summary:
+- Integrated ChangelogModal component into App.tsx.
+- Connected auto-open check on initial version fetch using hasNewVersion(appVersion, getLastSeenVersion()).
+- Added handleCloseChangelog that closes the modal and records appVersion in cookie and localStorage via setLastSeenVersion().
+- Connected onOpenChangelog triggers from both Navbar ('What's new' button) and Footer (version link).
+- Verified with unit and integration tests (122/122 passed).
+
+Files Modified:
+- web/src/App.tsx
