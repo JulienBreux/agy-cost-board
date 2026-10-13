@@ -1,0 +1,4 @@
+Task: Documentation & Changelog Entry
+Summary: Updated README.md Superpowers section to document the 'What's New' Release Changelog Popup feature, explaining the automatic first-visit / new-version discovery, persistent cookie/localStorage storage, navigation and footer trigger entry points, and timeline presentation.
+Files:
+- README.md
