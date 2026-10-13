@@ -104,6 +104,73 @@ func TestStatuslineScriptExecution(t *testing.T) {
 		}
 	})
 
+	t.Run("Script outputs dynamic currency symbol from cache (EUR -> €)", func(t *testing.T) {
+		cacheFile := "/tmp/agy_cost_alice_example_com.cache"
+		_ = os.WriteFile(cacheFile, []byte("18\nEUR\n"), 0644)
+		defer os.Remove(cacheFile)
+
+		cmd := exec.Command("bash", scriptPath)
+		cmd.Stdin = strings.NewReader(stdinJSON)
+		cmd.Env = append(os.Environ(), "AGY_COST_BOARD_URL="+mockServer.URL)
+
+		var stdout, stderr bytes.Buffer
+		cmd.Stdout = &stdout
+		cmd.Stderr = &stderr
+
+		if err := cmd.Run(); err != nil {
+			t.Fatalf("script execution failed: %v, stderr: %s", err, stderr.String())
+		}
+
+		outStr := stdout.String()
+		if !strings.Contains(outStr, "€18") {
+			t.Errorf("expected output to contain '€18', got: %q", outStr)
+		}
+	})
+
+	t.Run("Script outputs dynamic currency symbol from cache (JPY -> ¥)", func(t *testing.T) {
+		cacheFile := "/tmp/agy_cost_alice_example_com.cache"
+		_ = os.WriteFile(cacheFile, []byte("5000\nJPY\n"), 0644)
+		defer os.Remove(cacheFile)
+
+		cmd := exec.Command("bash", scriptPath)
+		cmd.Stdin = strings.NewReader(stdinJSON)
+		cmd.Env = append(os.Environ(), "AGY_COST_BOARD_URL="+mockServer.URL)
+
+		var stdout bytes.Buffer
+		cmd.Stdout = &stdout
+
+		if err := cmd.Run(); err != nil {
+			t.Fatalf("script execution failed: %v", err)
+		}
+
+		outStr := stdout.String()
+		if !strings.Contains(outStr, "¥5000") {
+			t.Errorf("expected output to contain '¥5000', got: %q", outStr)
+		}
+	})
+
+	t.Run("Script outputs dynamic currency with code fallback (CHF -> CHF )", func(t *testing.T) {
+		cacheFile := "/tmp/agy_cost_alice_example_com.cache"
+		_ = os.WriteFile(cacheFile, []byte("42\nCHF\n"), 0644)
+		defer os.Remove(cacheFile)
+
+		cmd := exec.Command("bash", scriptPath)
+		cmd.Stdin = strings.NewReader(stdinJSON)
+		cmd.Env = append(os.Environ(), "AGY_COST_BOARD_URL="+mockServer.URL)
+
+		var stdout bytes.Buffer
+		cmd.Stdout = &stdout
+
+		if err := cmd.Run(); err != nil {
+			t.Fatalf("script execution failed: %v", err)
+		}
+
+		outStr := stdout.String()
+		if !strings.Contains(outStr, "CHF 42") {
+			t.Errorf("expected output to contain 'CHF 42', got: %q", outStr)
+		}
+	})
+
 	t.Run("Script respects AGY_COST_DISABLED=true", func(t *testing.T) {
 		cacheFile := "/tmp/agy_cost_alice_example_com.cache"
 		_ = os.WriteFile(cacheFile, []byte("123\n"), 0644)
@@ -159,8 +226,8 @@ func TestStatuslineScriptExecution(t *testing.T) {
 		for range 50 {
 			time.Sleep(100 * time.Millisecond)
 			if data, err := os.ReadFile(cacheFile); err == nil && len(bytes.TrimSpace(data)) > 0 {
-				val := string(bytes.TrimSpace(data))
-				if val == "123" {
+				lines := strings.Split(string(bytes.TrimSpace(data)), "\n")
+				if len(lines) > 0 && lines[0] == "123" {
 					cachePopulated = true
 					break
 				}
@@ -169,6 +236,82 @@ func TestStatuslineScriptExecution(t *testing.T) {
 
 		if !cachePopulated {
 			t.Errorf("expected background fetch to populate cache file %s with '123'", cacheFile)
+		}
+	})
+
+	t.Run("Script background fetch stores currency and outputs dynamic symbol (EUR)", func(t *testing.T) {
+		eurServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if strings.HasPrefix(r.URL.Path, "/api/v1/users/") {
+				w.Header().Set("Content-Type", "application/json")
+				_ = json.NewEncoder(w).Encode(map[string]interface{}{
+					"user_id":    "euro.user@example.com",
+					"total_cost": 18.25,
+					"currency":   "EUR",
+				})
+				return
+			}
+			http.NotFound(w, r)
+		}))
+		defer eurServer.Close()
+
+		cacheFile := "/tmp/agy_cost_euro_user_example_com.cache"
+		lockFile := "/tmp/agy_cost_euro_user_example_com.lock"
+		_ = os.Remove(cacheFile)
+		_ = os.Remove(lockFile)
+		defer os.Remove(cacheFile)
+		defer os.Remove(lockFile)
+
+		mockBinDir := t.TempDir()
+		mockGcloud := filepath.Join(mockBinDir, "gcloud")
+		_ = os.WriteFile(mockGcloud, []byte("#!/bin/sh\nexit 0\n"), 0755)
+
+		cmd := exec.Command("bash", scriptPath)
+		cmd.Stdin = strings.NewReader(stdinJSON)
+		cmd.Env = append(os.Environ(),
+			"AGY_COST_BOARD_URL="+eurServer.URL,
+			"AGY_COST_USER=euro.user@example.com",
+			"PATH="+mockBinDir+":"+os.Getenv("PATH"),
+		)
+
+		var stdout, stderr bytes.Buffer
+		cmd.Stdout = &stdout
+		cmd.Stderr = &stderr
+
+		if err := cmd.Run(); err != nil {
+			t.Fatalf("script execution failed: %v, stderr: %s", err, stderr.String())
+		}
+
+		// Wait for background subshell to complete fetch and write cache
+		var cachePopulated bool
+		for range 50 {
+			time.Sleep(100 * time.Millisecond)
+			if data, err := os.ReadFile(cacheFile); err == nil && len(bytes.TrimSpace(data)) > 0 {
+				lines := strings.Split(string(bytes.TrimSpace(data)), "\n")
+				if len(lines) >= 2 && lines[0] == "18" && lines[1] == "EUR" {
+					cachePopulated = true
+					break
+				}
+			}
+		}
+
+		if !cachePopulated {
+			t.Fatalf("expected background fetch to populate cache file %s with '18' and 'EUR'", cacheFile)
+		}
+
+		// Run again to verify it renders €18
+		cmd2 := exec.Command("bash", scriptPath)
+		cmd2.Stdin = strings.NewReader(stdinJSON)
+		cmd2.Env = append(os.Environ(),
+			"AGY_COST_BOARD_URL="+eurServer.URL,
+			"AGY_COST_USER=euro.user@example.com",
+		)
+		var stdout2 bytes.Buffer
+		cmd2.Stdout = &stdout2
+		if err := cmd2.Run(); err != nil {
+			t.Fatalf("second script execution failed: %v", err)
+		}
+		if !strings.Contains(stdout2.String(), "€18") {
+			t.Errorf("expected output to contain '€18', got: %q", stdout2.String())
 		}
 	})
 

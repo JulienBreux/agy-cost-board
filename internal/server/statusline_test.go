@@ -115,4 +115,20 @@ func TestStatuslineEndpoint(t *testing.T) {
 			t.Errorf("expected script to contain %q, but was not found", expectedTTL)
 		}
 	})
+
+	t.Run("GET /statusline.sh includes dynamic currency resolver function", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/statusline.sh", nil)
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("expected 200 OK, got %d", rec.Code)
+		}
+
+		body := rec.Body.String()
+		if !strings.Contains(body, "resolve_currency_symbol") {
+			t.Errorf("expected script to define resolve_currency_symbol function, but not found")
+		}
+	})
 }
+
