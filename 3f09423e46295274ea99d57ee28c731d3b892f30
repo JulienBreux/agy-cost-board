@@ -1,0 +1,3 @@
+Task: Engine Currency Resolution & Tests
+Summary: Added resolveCurrency helper in Engine; propagate native currency from billed costs to AllocatedUserCost, UserCostSummary, OverviewMetrics, and UserConsumptionDriving; verified with TDD unit tests.
+Files: internal/attribution/engine.go, internal/attribution/engine_test.go
