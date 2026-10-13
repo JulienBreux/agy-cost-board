@@ -1,0 +1,11 @@
+Task: Integration Unit Tests
+Summary:
+- Added comprehensive unit tests in web/src/components/Navbar.test.tsx covering navigation tabs, days selector, and 'What's new' changelog trigger button.
+- Updated web/src/components/Footer.test.tsx to test onOpenChangelog handler when clicking the release version link.
+- Updated web/src/App.test.tsx to test auto-opening of the Changelog modal upon detecting a newer version, persistent dismissal saving last seen version, and manual opening from Navbar and Footer triggers.
+- Verified all new tests fail cleanly in the TDD Red phase.
+
+Files Modified:
+- web/src/components/Navbar.test.tsx (created)
+- web/src/components/Footer.test.tsx
+- web/src/App.test.tsx
