@@ -1,0 +1,3 @@
+Task: Web Currency Formatter & Unit Tests
+Summary: Implemented normalizeCurrency, getCurrencySymbol, and formatCurrency utilities utilizing Intl.NumberFormat in web/src/utils/currency.ts; verified with 14 unit tests covering USD, EUR, GBP, JPY, CAD, AUD, custom fraction digits, and negative values.
+Files: web/src/utils/currency.ts, web/src/utils/currency.test.ts
