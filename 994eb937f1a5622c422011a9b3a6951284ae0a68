@@ -2,3 +2,21 @@ Task: Documentation & Changelog Entry
 Summary: Updated README.md Superpowers section to document the 'What's New' Release Changelog Popup feature, explaining the automatic first-visit / new-version discovery, persistent cookie/localStorage storage, navigation and footer trigger entry points, and timeline presentation.
 Files:
 - README.md
+
+Phase: Phase 4: Full Verification, Web Bundle Build & Docs
+Status: VERIFIED & COMPLETE
+Target Commit: 994eb93
+
+Automated Tests:
+- Command: CI=true npm --prefix web test && go test -race ./... && golangci-lint run
+- Web Unit & Integration Tests: 20 test files, 122 tests passed
+- Go Test Suite (-race): All packages passed
+- Production Web Bundle: Built cleanly with tsc && vite build into web/dist
+- Static Analysis: golangci-lint passed with 0 issues
+
+Manual Verification:
+- Verified automatic popup opening on initial visit with cookie/localStorage check
+- Verified latest release badge (v0.6.0 Latest), date formatting, bold bullet leads, and historical release timeline
+- Verified dismissal behavior ('Got it' button and Escape key) persisting agy_last_seen_version
+- Verified on-demand triggers in Navbar ('What's new' button) and Footer (version link)
+- User Confirmation: Confirmed by user via interactive dialog modal
