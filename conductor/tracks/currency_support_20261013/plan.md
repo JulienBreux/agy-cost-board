@@ -16,7 +16,7 @@
   - Acceptance: CLI `cost`, `user`, and `license` commands format monetary columns using `FormatCost` / `CurrencySymbol`; TUI `model.go` displays dynamic currency in KPI cards (`TOTAL BILLED`, `POTENTIAL SAVINGS`), cost list, and developer breakdown.
   - Verify: `go test -v -race ./internal/cli/... ./internal/tui/...`
   - Files: `internal/cli/cost.go`, `internal/cli/user.go`, `internal/cli/license.go`, `internal/tui/model.go`, `internal/cli/formatters_test.go`, `internal/tui/tui_test.go`
-- [ ] Task: Statusline Script Dynamic Currency & Tests (TDD Red -> Green)
+- [x] ec8885c Task: Statusline Script Dynamic Currency & Tests (TDD Red -> Green)
   - Acceptance: `statusline.sh.tmpl` parses `currency` from `/api/v1/users/{id}` API response; maps or passes currency symbol into `COST_FMT` (e.g. ` · cost €18`); tests confirm dynamic currency rendering.
   - Verify: `go test -v -race ./internal/server/...`
   - Files: `internal/server/statusline.sh.tmpl`, `internal/server/statusline_test.go`, `internal/server/statusline_exec_test.go`
