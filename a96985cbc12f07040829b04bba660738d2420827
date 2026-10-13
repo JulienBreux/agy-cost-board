@@ -1,0 +1,15 @@
+Task 7: Modernize Personal Consumption, Driving, and Modal Components with Dynamic Currency Support
+
+Implemented dynamic currency formatting and symbol resolution across all personal consumption and driving components:
+- web/src/utils/currency.ts: Added symbol mapping ($, €, £, ¥) in normalizeCurrency to handle legacy props and fallback.
+- web/src/components/PersonalCostChart.tsx: Modernized tooltips, metric toggle button, breakdown cards, and per-token calculations using formatCurrency and getCurrencySymbol.
+- web/src/components/PersonalKPICards.tsx: Replaced manual symbol concatenation with formatCurrency.
+- web/src/components/BudgetProgressBar.tsx: Replaced ternary currency symbols with getCurrencySymbol and formatCurrency.
+- web/src/components/OptimizationCard.tsx: Formatted potential savings dynamically using formatCurrency.
+- web/src/components/RecentActivityTable.tsx: Formatted log costs with 4-decimal precision using formatCurrency.
+- web/src/components/StatuslineHelpBox.tsx: Replaced hardcoded '$' with dynamic currency symbol from getCurrencySymbol.
+- web/src/components/UserModal.tsx: Replaced DollarSign and manual '$' with Coins and formatCurrency for total spend and model breakdown.
+- Added and updated comprehensive unit tests across all components.
+
+Verification Command: npm --prefix web test -- --run && npm --prefix web run build
+Status: Verified (17 test files, 95/95 passing, clean build)
