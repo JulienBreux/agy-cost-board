@@ -1,0 +1,4 @@
+Task: ChangelogModal Component Unit Tests
+Summary: Added unit tests verifying ChangelogModal rendering, header with sparkles, latest version blue badge, historical releases, bullet points, backdrop dismissal, keyboard Escape dismissal, and 'Got it' button callback.
+Files: web/src/components/ChangelogModal.test.tsx
+Why: Fulfills Red phase of TDD for ChangelogModal visual component.
