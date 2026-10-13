@@ -1,0 +1,18 @@
+Task 9: Full Suite Verification & Demo Mode E2E Test
+
+Verification Summary:
+- Extended E2E CLI tests (cost, license table & JSON, user breakdown & table) to assert dynamic currency rendering (€).
+- Extended E2E HTTP server tests (overview metrics, allocated user costs, license status, user summary, user dashboard, statusline script) to verify EUR currency propagation.
+- Updated README.md documenting Native Multi-Currency Ingestion (Zero FX Conversion) and dynamic currency formatting across CLI, TUI, statusline, and Web UI.
+- Fixed golangci-lint perfsprint warning in internal/tui/model.go.
+- Rebuilt embedded SPA bundle in web/dist.
+
+Verification Commands:
+- make test (All Go tests passed with race detector enabled; 16 web test files, 95/95 vitest passed)
+- make lint (golangci-lint passed with 0 errors)
+- npm --prefix web run build (TypeScript clean compile and Vite production build)
+- ./bin/agy-cost-board cost --demo (Verified € symbol rendered across all CLI cost records)
+- ./bin/agy-cost-board license --demo (Verified € symbol rendered in license governance)
+- ./bin/agy-cost-board user sophia.chen@google.com --demo (Verified € symbol in user breakdown)
+
+Status: Complete
