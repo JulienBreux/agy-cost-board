@@ -1,6 +1,6 @@
 # Implementation Plan: Native Currency Support Across Engine, CLI, TUI, Statusline, and Web
 
-## Phase 1: Go Domain & Attribution Engine Currency Propagation
+## Phase 1: Go Domain & Attribution Engine Currency Propagation [checkpoint: 3f09423]
 - [x] 8142e1e Task: Domain Currency Helpers & Unit Tests (TDD Red -> Green)
   - Acceptance: `CurrencySymbol` maps ISO-4217 codes (`USD` -> `$`, `EUR` -> `€`, `GBP` -> `£`, `JPY` -> `¥`, `CAD` -> `CA$`, `AUD` -> `A$`, `CHF` -> `CHF `, `INR` -> `₹`) with safe fallback to `CODE `; `FormatCost` formats cost with 2 decimals and currency symbol; `GenerateOptimizationTips` reflects dynamic currency formatting.
   - Verify: `go test -v -race ./internal/domain/...`
@@ -9,7 +9,7 @@
   - Acceptance: `Engine` inspects `billedCosts` from `FetchBilledCosts` and adopts the billing currency; sets `.Currency` across `AllocatedUserCost`, `UserCostSummary`, `OverviewMetrics`, and `UserConsumptionDriving`; falls back to `"USD"` when billed costs are empty.
   - Verify: `go test -v -race ./internal/attribution/...`
   - Files: `internal/attribution/engine.go`, `internal/attribution/engine_test.go`
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Go Domain & Attribution Engine Currency Propagation'
+- [x] 3f09423 Task: Conductor - User Manual Verification 'Phase 1: Go Domain & Attribution Engine Currency Propagation'
 
 ## Phase 2: Go CLI, TUI & Statusline Script Integration
 - [ ] Task: CLI & TUI Dynamic Currency Formatting & Tests (TDD Red -> Green)
