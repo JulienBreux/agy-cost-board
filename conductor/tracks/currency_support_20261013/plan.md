@@ -31,7 +31,7 @@
   - Acceptance: `KPICards.tsx`, `CostTable.tsx`, `LicenseTable.tsx`, and `CostChart.tsx` use `formatCurrency` / `getCurrencySymbol`; metric toggle in `CostChart` dynamically displays currency symbol instead of static `$`; component tests verify correct currency rendering.
   - Verify: `npm --prefix web test -- src/components/CostChart.test.tsx src/components/KPICards.test.tsx src/App.test.tsx --run`
   - Files: `web/src/components/KPICards.tsx`, `web/src/components/CostTable.tsx`, `web/src/components/LicenseTable.tsx`, `web/src/components/CostChart.tsx`, `web/src/App.tsx`
-- [ ] Task: Modernize Personal Consumption, Driving & Modal Components & Tests (TDD Red -> Green)
+- [x] a96985c Task: Modernize Personal Consumption, Driving & Modal Components & Tests (TDD Red -> Green)
   - Acceptance: `PersonalCostChart.tsx`, `PersonalKPICards.tsx`, `BudgetProgressBar.tsx`, `OptimizationCard.tsx`, `RecentActivityTable.tsx`, `StatuslineHelpBox.tsx`, and `UserModal.tsx` use centralized currency formatting; metric toggle in `PersonalCostChart` displays dynamic currency symbol; all tests pass.
   - Verify: `npm --prefix web test -- --run`
   - Files: `web/src/components/PersonalCostChart.tsx`, `web/src/components/PersonalKPICards.tsx`, `web/src/components/BudgetProgressBar.tsx`, `web/src/components/OptimizationCard.tsx`, `web/src/components/RecentActivityTable.tsx`, `web/src/components/StatuslineHelpBox.tsx`, `web/src/components/UserModal.tsx`
