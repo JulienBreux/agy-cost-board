@@ -1,0 +1,8 @@
+{
+  "track_id": "currency_support_20261013",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-10-13T12:30:00+02:00",
+  "updated_at": "2026-10-13T12:30:00+02:00",
+  "description": "Support and display native billing export currencies (ISO 4217) across BigQuery engine, CLI, TUI, statusline, and Web UI without hardcoded USD"
+}

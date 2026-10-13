@@ -25,5 +25,11 @@
 - [x] **Track: Antigravity CLI Statusline Spend Integration**
   *Link: [./tracks/statusline_cost_20261010/index.md](./tracks/statusline_cost_20261010/index.md)*
 
+---
+
+- [ ] **Track: Native Currency Support Across Engine, CLI, TUI, Statusline, and Web**
+  *Link: [./tracks/currency_support_20261013/index.md](./tracks/currency_support_20261013/index.md)*
+
+
 
 
