@@ -30,6 +30,7 @@
 - [x] **Track: Native Currency Support Across Engine, CLI, TUI, Statusline, and Web**
   *Link: [./tracks/currency_support_20261013/index.md](./tracks/currency_support_20261013/index.md)*
 
+---
 
-
-
+- [ ] **Track: Implement a popup to display changelog from the last visit/release (cookie)**
+  *Link: [./tracks/changelog_popup_20261013/index.md](./tracks/changelog_popup_20261013/index.md)*
