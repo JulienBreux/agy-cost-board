@@ -27,7 +27,7 @@
   - Acceptance: `web/src/utils/currency.ts` provides `formatCurrency` and `getCurrencySymbol` utilizing `Intl.NumberFormat`; unit tests verify formatting for USD, EUR, GBP, JPY, CAD.
   - Verify: `npm --prefix web test -- src/utils/currency.test.ts --run`
   - Files: `web/src/utils/currency.ts`, `web/src/utils/currency.test.ts`
-- [ ] Task: Modernize Overview, Costs, and License Components & Tests (TDD Red -> Green)
+- [x] 99aad15 Task: Modernize Overview, Costs, and License Components & Tests (TDD Red -> Green)
   - Acceptance: `KPICards.tsx`, `CostTable.tsx`, `LicenseTable.tsx`, and `CostChart.tsx` use `formatCurrency` / `getCurrencySymbol`; metric toggle in `CostChart` dynamically displays currency symbol instead of static `$`; component tests verify correct currency rendering.
   - Verify: `npm --prefix web test -- src/components/CostChart.test.tsx src/components/KPICards.test.tsx src/App.test.tsx --run`
   - Files: `web/src/components/KPICards.tsx`, `web/src/components/CostTable.tsx`, `web/src/components/LicenseTable.tsx`, `web/src/components/CostChart.tsx`, `web/src/App.tsx`
