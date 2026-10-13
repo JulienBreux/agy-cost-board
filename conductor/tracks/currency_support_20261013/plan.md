@@ -23,7 +23,7 @@
 - [x] ec8885c Task: Conductor - User Manual Verification 'Phase 2: Go CLI, TUI & Statusline Script Integration'
 
 ## Phase 3: Web Dashboard Centralized Currency & Component Modernization
-- [ ] Task: Web Currency Formatter & Unit Tests (TDD Red -> Green)
+- [x] 6d66909 Task: Web Currency Formatter & Unit Tests (TDD Red -> Green)
   - Acceptance: `web/src/utils/currency.ts` provides `formatCurrency` and `getCurrencySymbol` utilizing `Intl.NumberFormat`; unit tests verify formatting for USD, EUR, GBP, JPY, CAD.
   - Verify: `npm --prefix web test -- src/utils/currency.test.ts --run`
   - Files: `web/src/utils/currency.ts`, `web/src/utils/currency.test.ts`
