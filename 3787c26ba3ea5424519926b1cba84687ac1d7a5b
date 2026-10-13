@@ -1,0 +1,4 @@
+Task: Implement Changelog Data and Storage Helpers
+Summary: Added structured CHANGELOG_DATA covering releases v0.1.0 through v0.6.0 and implemented changelogStorage with cookie persistence (1-yr Max-Age, SameSite=Lax), localStorage mirroring, and semver comparison logic.
+Files: web/src/data/changelog.ts, web/src/utils/changelogStorage.ts
+Why: Provides the data layer and persistence mechanism for the release changelog popup.
