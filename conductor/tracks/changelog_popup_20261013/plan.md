@@ -3,10 +3,10 @@
 ## Phase 1: Changelog Data & Storage Utilities (TDD)
 - [x] Task: Storage & Version Comparison Unit Tests (5f8d5af)
   - [x] Write unit tests in `web/src/utils/changelogStorage.test.ts` for cookie read/write, localStorage fallback, and semver comparison logic (`hasNewVersion`).
-- [~] Task: Implement Changelog Data and Storage Helpers
-  - [ ] Create `web/src/data/changelog.ts` with structured release notes for existing versions (`v0.5.1`, `v0.5.0`, `v0.4.0`, etc.).
-  - [ ] Implement `web/src/utils/changelogStorage.ts` with cookie reading/writing (`agy_last_seen_version`), localStorage sync, and semver comparison.
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Implement Changelog Data and Storage Helpers (3787c26)
+  - [x] Create `web/src/data/changelog.ts` with structured release notes for existing versions (`v0.5.1`, `v0.5.0`, `v0.4.0`, etc.).
+  - [x] Implement `web/src/utils/changelogStorage.ts` with cookie reading/writing (`agy_last_seen_version`), localStorage sync, and semver comparison.
+- [~] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 2: ChangelogModal Component (TDD)
 - [ ] Task: ChangelogModal Component Unit Tests
