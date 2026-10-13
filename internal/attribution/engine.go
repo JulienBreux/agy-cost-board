@@ -43,6 +43,16 @@ func NewEngine(provider bigquery.DataProvider, ttl time.Duration) *Engine {
 	}
 }
 
+// resolveCurrency extracts the ISO-4217 currency from billed costs, falling back to USD.
+func resolveCurrency(billedCosts []domain.BilledCost) string {
+	for _, b := range billedCosts {
+		if b.Currency != "" {
+			return b.Currency
+		}
+	}
+	return "USD"
+}
+
 // getFromCache retrieves an item from cache if not expired.
 func (e *Engine) getFromCache(key string) (any, bool) {
 	e.cacheMu.RLock()
@@ -82,6 +92,8 @@ func (e *Engine) GetAttributedCosts(ctx context.Context, days int, modelFilter s
 	if err != nil {
 		return nil, fmt.Errorf("fetch billed costs: %w", err)
 	}
+
+	currency := resolveCurrency(billedCosts)
 
 	// Group billing by date
 	dailyBilled := make(map[string]float64)
@@ -141,7 +153,7 @@ func (e *Engine) GetAttributedCosts(ctx context.Context, days int, modelFilter s
 					TotalModelTokens: mut.totalTokens,
 					TokenShare:       share,
 					AllocatedCost:    allocated,
-					Currency:         "USD",
+					Currency:         currency,
 				})
 			}
 		}
@@ -171,9 +183,16 @@ func (e *Engine) GetUserSummary(ctx context.Context, userID string, days int) (*
 		return nil, err
 	}
 
+	summaryCurrency := "USD"
+	if len(allCosts) > 0 && allCosts[0].Currency != "" {
+		summaryCurrency = allCosts[0].Currency
+	} else if billedCosts, err := e.provider.FetchBilledCosts(ctx, days); err == nil {
+		summaryCurrency = resolveCurrency(billedCosts)
+	}
+
 	summary := &domain.UserCostSummary{
 		UserID:         userID,
-		Currency:       "USD",
+		Currency:       summaryCurrency,
 		ModelBreakdown: make(map[string]domain.ModelCostDetail),
 	}
 
@@ -292,7 +311,7 @@ func (e *Engine) GetOverviewMetrics(ctx context.Context, days int) (*domain.Over
 		AssignedSeats:           gov.AssignedSeats,
 		UtilizationPct:          gov.UtilizationPct,
 		EstimatedMonthlySavings: gov.EstimatedMonthlySavings,
-		Currency:                "USD",
+		Currency:                resolveCurrency(billedCosts),
 		ModelBreakdown:          make(map[string]domain.ModelCostDetail),
 		DailyTrends:             make([]domain.DailySpendTrend, 0),
 	}
@@ -493,7 +512,7 @@ func (e *Engine) GetUserConsumptionDriving(ctx context.Context, userID string, d
 	}
 
 	budgetStatus, consumedPct, projectedMonthEnd := domain.CalculateBudgetMetrics(summary.TotalCost, monthlyBudget, days)
-	recommendations := domain.GenerateOptimizationTips(userID, summary.ModelBreakdown, summary.TotalTokens, summary.SeatStatus)
+	recommendations := domain.GenerateOptimizationTips(userID, summary.ModelBreakdown, summary.TotalTokens, summary.SeatStatus, summary.Currency)
 
 	return &domain.UserConsumptionDriving{
 		UserID:                 userID,

@@ -167,5 +167,38 @@ func TestAttributionEngine(t *testing.T) {
 		if len(driving.Recommendations) == 0 {
 			t.Errorf("expected recommendations for user")
 		}
+		if driving.Currency != "EUR" {
+			t.Errorf("expected driving currency EUR, got %s", driving.Currency)
+		}
+	})
+
+	t.Run("Native currency propagation from billed costs", func(t *testing.T) {
+		costs, err := engine.GetAttributedCosts(ctx, 30, "")
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(costs) == 0 {
+			t.Fatalf("expected costs")
+		}
+		if costs[0].Currency != "EUR" {
+			t.Errorf("expected cost currency EUR, got %s", costs[0].Currency)
+		}
+
+		summary, err := engine.GetUserSummary(ctx, "alex.turner@google.com", 30)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if summary.Currency != "EUR" {
+			t.Errorf("expected summary currency EUR, got %s", summary.Currency)
+		}
+
+		overview, err := engine.GetOverviewMetrics(ctx, 30)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if overview.Currency != "EUR" {
+			t.Errorf("expected overview currency EUR, got %s", overview.Currency)
+		}
 	})
 }
+
