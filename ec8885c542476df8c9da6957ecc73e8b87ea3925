@@ -1,0 +1,3 @@
+Task: Statusline Script Dynamic Currency & Tests
+Summary: Added resolve_currency_symbol helper and dynamic currency parsing in statusline.sh.tmpl; background fetch writes both total cost and currency to cache file; cost formatting dynamically renders currency symbol (e.g., €18, ¥5000) with fallback to $ for legacy or missing cache; verified with unit tests and bash syntax/execution tests.
+Files: internal/server/statusline.sh.tmpl, internal/server/statusline_test.go, internal/server/statusline_exec_test.go
