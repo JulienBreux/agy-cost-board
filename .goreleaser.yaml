@@ -18,7 +18,7 @@ builds:
       - -trimpath
     ldflags:
       - -s -w
-      - -X main.Version={{.Version}}
+      - -X main.Version=v{{.Version}}
       - -X main.Commit={{.ShortCommit}}
       - -X main.BuildDate={{.Date}}
     targets:

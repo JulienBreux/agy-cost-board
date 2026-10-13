@@ -45,7 +45,7 @@ export function App() {
     return params.get('user') || '';
   });
   const [days, setDays] = useState<number>(30);
-  const [appVersion, setAppVersion] = useState<string>('v0.4.0');
+  const [appVersion, setAppVersion] = useState<string>('');
 
   const [overview, setOverview] = useState<OverviewMetrics | null>(null);
   const [costs, setCosts] = useState<AllocatedUserCost[]>([]);

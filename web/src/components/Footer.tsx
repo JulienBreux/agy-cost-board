@@ -9,23 +9,30 @@ export interface FooterProps {
   authorUrl?: string;
 }
 
+/**
+ * Resolves the GitHub release URL for a build version.
+ * Any version starting with a semver core (`0.5.0`, `v0.5.0`, `v0.5.0-dirty`,
+ * `v0.5.0-3-gabc1234`) links to its `vX.Y.Z` tag; anything else links to the releases index.
+ */
+export const releaseUrlFor = (githubRepoUrl: string, version: string): string => {
+  const semverCore = /^v?(\d+\.\d+\.\d+)/.exec(version)?.[1];
+  return semverCore
+    ? `${githubRepoUrl}/releases/tag/v${semverCore}`
+    : `${githubRepoUrl}/releases`;
+};
+
 export const Footer: React.FC<FooterProps> = ({
   projectName = 'AGY Cost Board',
-  version = 'v0.4.0',
+  version = '',
   githubRepoUrl = 'https://github.com/JulienBreux/agy-cost-board',
   releasesUrl,
   authorName = 'Julien Breux',
   authorUrl = 'https://github.com/JulienBreux',
 }) => {
-  // Strip git dirty flag suffix (-dirty) for GitHub release tag URL
-  const cleanTag = version.replace(/-dirty$/, '');
-  const isSemanticTag = /^v?\d+\.\d+\.\d+/.test(cleanTag);
-  const effectiveReleasesUrl =
-    releasesUrl ||
-    (isSemanticTag ? `${githubRepoUrl}/releases/tag/${cleanTag}` : `${githubRepoUrl}/releases`);
+  const effectiveReleasesUrl = releasesUrl || releaseUrlFor(githubRepoUrl, version);
 
   return (
-    <footer className="border-t border-[#1e2330] bg-[#0c0e14] py-4 text-xs sm:text-sm text-google-gray-400">
+    <footer className="border-t border-[#1e2330] py-4 text-xs sm:text-sm text-google-gray-400">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-0">
         {/* Left: GitHub icon & link • Project Name • Version */}
         <div className="flex items-center space-x-2">
@@ -56,15 +63,17 @@ export const Footer: React.FC<FooterProps> = ({
             {projectName}
           </span>
 
-          <a
-            href={effectiveReleasesUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-mono text-google-blue hover:text-blue-400 hover:underline transition-colors font-medium ml-1"
-            title={`View release ${version}`}
-          >
-            {version}
-          </a>
+          {version && (
+            <a
+              href={effectiveReleasesUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-mono text-google-blue hover:text-blue-400 hover:underline transition-colors font-medium ml-1"
+              title={`View release ${version}`}
+            >
+              {version}
+            </a>
+          )}
         </div>
 
         {/* Right: With ❤️ by Julien Breux */}

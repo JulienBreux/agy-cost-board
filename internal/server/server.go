@@ -55,9 +55,6 @@ func NewServerWithSetup(engine *attribution.Engine, staticFS fs.FS, cfg setup.Co
 		router:      chi.NewRouter(),
 		setupCfg:    cfg,
 		setupRunner: runner,
-		versionInfo: VersionInfo{
-			Version: "v0.4.0",
-		},
 	}
 
 	s.setupRoutes()

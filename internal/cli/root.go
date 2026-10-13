@@ -16,7 +16,7 @@ import (
 
 // Version metadata set at build time via ldflags.
 var (
-	Version   = "v0.4.0"
+	Version   = "dev"
 	Commit    = "none"
 	BuildDate = "unknown"
 )

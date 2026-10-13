@@ -34,6 +34,52 @@ func setupTestServer(t *testing.T) http.Handler {
 	return srv.Router()
 }
 
+func TestVersionEndpoints(t *testing.T) {
+	newServer := func(t *testing.T) *server.Server {
+		t.Helper()
+		engine := attribution.NewEngine(bigquery.NewDemoDataProvider(), 5*time.Minute)
+		return server.NewServer(engine, fstest.MapFS{"index.html": &fstest.MapFile{Data: []byte("<html></html>")}})
+	}
+
+	get := func(t *testing.T, h http.Handler, path string, out any) {
+		t.Helper()
+		rec := httptest.NewRecorder()
+		h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("GET %s: expected 200 OK, got %d", path, rec.Code)
+		}
+		if err := json.NewDecoder(rec.Body).Decode(out); err != nil {
+			t.Fatalf("GET %s: invalid json response: %v", path, err)
+		}
+	}
+
+	t.Run("version info is exposed when set", func(t *testing.T) {
+		srv := newServer(t)
+		want := server.VersionInfo{Version: "v1.2.3", Commit: "abc1234", BuildDate: "2026-10-13T00:00:00Z"}
+		srv.SetVersionInfo(want)
+
+		var got server.VersionInfo
+		get(t, srv.Router(), "/api/v1/version", &got)
+		if got != want {
+			t.Errorf("/api/v1/version: expected %+v, got %+v", want, got)
+		}
+
+		var health map[string]string
+		get(t, srv.Router(), "/healthz", &health)
+		if health["version"] != want.Version {
+			t.Errorf("/healthz: expected version %q, got %q", want.Version, health["version"])
+		}
+	})
+
+	t.Run("healthz omits version when unset", func(t *testing.T) {
+		var health map[string]string
+		get(t, newServer(t).Router(), "/healthz", &health)
+		if v, ok := health["version"]; ok {
+			t.Errorf("/healthz: expected no version field, got %q", v)
+		}
+	})
+}
+
 func TestAPIEndpoints(t *testing.T) {
 	router := setupTestServer(t)
 
