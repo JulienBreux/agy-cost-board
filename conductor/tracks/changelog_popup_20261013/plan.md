@@ -27,9 +27,9 @@
   - [x] Ensure dismissing the modal updates the cookie and localStorage.
 - [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) (5553930)
 
-## Phase 4: Full Verification, Web Bundle Build & Docs
+## Phase 4: Full Verification, Web Bundle Build & Docs [checkpoint: 994eb93]
 - [x] Task: Run Full Automated Verification Suite (725e02c)
   - [x] Run `npm --prefix web test`, `go test -race ./...`, `npm --prefix web run build`, and `golangci-lint run`.
 - [x] Task: Documentation & Changelog Entry (994eb93)
   - [x] Update `README.md` documentation detailing the changelog popup feature.
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) (994eb93)
