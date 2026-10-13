@@ -28,8 +28,8 @@
 - [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) (5553930)
 
 ## Phase 4: Full Verification, Web Bundle Build & Docs
-- [~] Task: Run Full Automated Verification Suite
-  - [ ] Run `npm --prefix web test`, `go test -race ./...`, `npm --prefix web run build`, and `golangci-lint run`.
-- [ ] Task: Documentation & Changelog Entry
+- [x] Task: Run Full Automated Verification Suite (725e02c)
+  - [x] Run `npm --prefix web test`, `go test -race ./...`, `npm --prefix web run build`, and `golangci-lint run`.
+- [~] Task: Documentation & Changelog Entry
   - [ ] Update `README.md` documentation detailing the changelog popup feature.
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
