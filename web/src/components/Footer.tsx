@@ -7,6 +7,7 @@ export interface FooterProps {
   releasesUrl?: string;
   authorName?: string;
   authorUrl?: string;
+  onOpenChangelog?: () => void;
 }
 
 /**
@@ -28,6 +29,7 @@ export const Footer: React.FC<FooterProps> = ({
   releasesUrl,
   authorName = 'Julien Breux',
   authorUrl = 'https://github.com/JulienBreux',
+  onOpenChangelog,
 }) => {
   const effectiveReleasesUrl = releasesUrl || releaseUrlFor(githubRepoUrl, version);
 
@@ -68,8 +70,14 @@ export const Footer: React.FC<FooterProps> = ({
               href={effectiveReleasesUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-mono text-google-blue hover:text-blue-400 hover:underline transition-colors font-medium ml-1"
-              title={`View release ${version}`}
+              onClick={(e) => {
+                if (onOpenChangelog) {
+                  e.preventDefault();
+                  onOpenChangelog();
+                }
+              }}
+              className="font-mono text-google-blue hover:text-blue-400 hover:underline transition-colors font-medium ml-1 cursor-pointer"
+              title={onOpenChangelog ? `View changelog for ${version}` : `View release ${version}`}
             >
               {version}
             </a>

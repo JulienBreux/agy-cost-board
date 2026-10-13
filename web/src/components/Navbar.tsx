@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layers, DollarSign, ShieldCheck, Zap, Activity, User } from 'lucide-react';
+import { Layers, DollarSign, ShieldCheck, Zap, Activity, User, Sparkles } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 
 interface NavbarProps {
@@ -7,6 +7,7 @@ interface NavbarProps {
   setActiveTab: (tab: 'overview' | 'costs' | 'licenses' | 'setup' | 'my-consumption') => void;
   days: number;
   setDays: (days: number) => void;
+  onOpenChangelog?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -14,6 +15,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   setActiveTab,
   days,
   setDays,
+  onOpenChangelog,
 }) => {
   return (
     <header className="border-b border-[#202530] bg-[#14171f]/80 backdrop-blur-md sticky top-0 z-40">
@@ -115,6 +117,20 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </button>
               ))}
             </div>
+
+            {/* What's new Changelog Trigger */}
+            {onOpenChangelog && (
+              <button
+                type="button"
+                onClick={onOpenChangelog}
+                className="flex items-center space-x-1.5 bg-[#1a1e28] hover:bg-[#202530] border border-[#282f40] rounded-lg px-2.5 py-1.5 text-xs font-medium text-amber-400 hover:text-amber-300 transition-all shadow-sm focus:outline-none focus:ring-1 focus:ring-amber-400"
+                title="What's new"
+                aria-label="What's new"
+              >
+                <Sparkles className="h-4 w-4" />
+                <span className="hidden md:inline font-medium text-google-gray-300">What's new</span>
+              </button>
+            )}
 
             {/* Theme Switcher Button */}
             <ThemeToggle />
