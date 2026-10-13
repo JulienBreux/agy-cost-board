@@ -32,5 +32,5 @@
 
 ---
 
-- [ ] **Track: Implement a popup to display changelog from the last visit/release (cookie)**
+- [~] **Track: Implement a popup to display changelog from the last visit/release (cookie)**
   *Link: [./tracks/changelog_popup_20261013/index.md](./tracks/changelog_popup_20261013/index.md)*
