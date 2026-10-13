@@ -1,0 +1,3 @@
+Task: Modernize Overview, Costs, and License Components & Tests
+Summary: Added currency field to LicenseGovernance in web/src/api.ts; updated KPICards, CostTable, and LicenseTable to format monetary values using formatCurrency; updated CostChart to dynamically display currency symbol in metric toggle and chart breakdowns using getCurrencySymbol; added unit tests verifying dynamic currency rendering in KPICards.test.tsx and CostChart.test.tsx.
+Files: web/src/api.ts, web/src/components/KPICards.tsx, web/src/components/CostTable.tsx, web/src/components/LicenseTable.tsx, web/src/components/CostChart.tsx, web/src/components/CostChart.test.tsx, web/src/components/KPICards.test.tsx
