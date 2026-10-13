@@ -104,6 +104,13 @@ Give engineers direct visibility and autonomy over their AI usage. The **My Cons
 - **Budget Thresholds & Overage Guards:** Set custom monthly budgets with active progress meters and proactive overage risk alerts.
 - **Personal Spend Trajectory:** Historical daily model breakdowns with stacked bar and aggregate visualizations.
 
+### ✨ "What's New" Release Changelog Popup
+Keep platform teams and developers informed of new capabilities and fixes directly within the dashboard:
+- **Automatic First-Visit & Update Discovery:** Automatically greets users on their initial visit or whenever a newer version is deployed.
+- **Persistent Version Memory:** Records the last seen release using an `agy_last_seen_version` cookie (with automatic `localStorage` synchronization and fallback) to prevent repeated interruptions across sessions.
+- **Interactive On-Demand Triggers:** Access the complete release history at any time by clicking the **"What's new"** sparkles (✨) button in the navigation bar or the version indicator in the footer.
+- **Rich Historical Timeline:** Dark-themed modal featuring release pill badges, human-formatted dates, bold bulleted lead-ins, and a scrollable historical timeline.
+
 ### 🧪 100% Offline Synthetic Demo Lab
 Evaluate and test all features instantly with `--demo`. Built-in deterministic simulation generates 30 days of realistic multi-user and multi-model data without touching Google Cloud or requiring network access.
 
