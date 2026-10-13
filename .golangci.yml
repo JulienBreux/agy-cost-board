@@ -1,70 +1,58 @@
-version: "2"
 run:
+  timeout: 5m
   tests: true
+
 linters:
-  default: none
+  disable-all: true
   enable:
-    - copyloopvar
     - errcheck
-    - gocritic
-    - gosec
     - govet
     - ineffassign
-    - intrange
-    - misspell
-    - perfsprint
     - revive
-    - unconvert
+    - gosec
+    - misspell
+    - gocritic
+    - copyloopvar
+    - intrange
     - usestdlibvars
-  settings:
-    gosec:
-      excludes:
-        - G101
-        - G115
-    govet:
-      disable:
-        - fieldalignment
-        - shadow
-        - nilness
-      enable-all: true
-    revive:
-      rules:
-        - name: blank-imports
-          disabled: false
-        - name: context-as-argument
-          disabled: false
-        - name: error-return
-          disabled: false
-        - name: error-strings
-          disabled: false
-        - name: error-naming
-          disabled: false
-        - name: if-return
-          disabled: false
-        - name: var-naming
-          disabled: false
-  exclusions:
-    generated: lax
-    presets:
-      - comments
-      - common-false-positives
-      - legacy
-      - std-error-handling
+    - perfsprint
+    - unconvert
+    # staticcheck, gosimple, and unused are disabled due to honnef.co/go/tools SSA/IR builder panic on Go 1.27 AST on Linux
+
+linters-settings:
+  govet:
+    enable-all: true
+    disable:
+      - fieldalignment
+      - shadow
+      - nilness
+  gosec:
+    excludes:
+      - G101
+      - G115
+  revive:
     rules:
-      - linters:
-          - errcheck
-          - gosec
-        path: _test\.go
-    paths:
-      - web
-      - dist
-      - third_party$
-      - builtin$
-      - examples$
-formatters:
-  exclusions:
-    generated: lax
-    paths:
-      - third_party$
-      - builtin$
-      - examples$
+      - name: blank-imports
+        disabled: false
+      - name: context-as-argument
+        disabled: false
+      - name: error-return
+        disabled: false
+      - name: error-strings
+        disabled: false
+      - name: error-naming
+        disabled: false
+      - name: if-return
+        disabled: false
+      - name: var-naming
+        disabled: false
+
+issues:
+  exclude-dirs:
+    - web
+    - dist
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gosec
+        - errcheck
