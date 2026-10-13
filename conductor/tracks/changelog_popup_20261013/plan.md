@@ -22,10 +22,10 @@
 - [x] Task: Integrate Changelog Triggers in Navbar and Footer (024ea6d)
   - [x] Add "What's new" sparkles ✨ button in `web/src/components/Navbar.tsx`.
   - [x] Enable opening the changelog modal from `web/src/components/Footer.tsx`.
-- [~] Task: App-Level Orchestration & State Management
-  - [ ] Wire modal visibility and auto-open check into `web/src/App.tsx`.
-  - [ ] Ensure dismissing the modal updates the cookie and localStorage.
-- [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: App-Level Orchestration & State Management (5553930)
+  - [x] Wire modal visibility and auto-open check into `web/src/App.tsx`.
+  - [x] Ensure dismissing the modal updates the cookie and localStorage.
+- [~] Task: Phase Verification & Checkpoint (Refer to workflow.md)
 
 ## Phase 4: Full Verification, Web Bundle Build & Docs
 - [ ] Task: Run Full Automated Verification Suite
