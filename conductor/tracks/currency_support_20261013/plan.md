@@ -1,11 +1,11 @@
 # Implementation Plan: Native Currency Support Across Engine, CLI, TUI, Statusline, and Web
 
 ## Phase 1: Go Domain & Attribution Engine Currency Propagation
-- [x] Task: Domain Currency Helpers & Unit Tests (TDD Red -> Green)
+- [x] 8142e1e Task: Domain Currency Helpers & Unit Tests (TDD Red -> Green)
   - Acceptance: `CurrencySymbol` maps ISO-4217 codes (`USD` -> `$`, `EUR` -> `€`, `GBP` -> `£`, `JPY` -> `¥`, `CAD` -> `CA$`, `AUD` -> `A$`, `CHF` -> `CHF `, `INR` -> `₹`) with safe fallback to `CODE `; `FormatCost` formats cost with 2 decimals and currency symbol; `GenerateOptimizationTips` reflects dynamic currency formatting.
   - Verify: `go test -v -race ./internal/domain/...`
   - Files: `internal/domain/currency.go`, `internal/domain/currency_test.go`, `internal/domain/models.go`, `internal/domain/models_test.go`
-- [~] Task: Engine Currency Resolution & Tests (TDD Red -> Green)
+- [x] 3f09423 Task: Engine Currency Resolution & Tests (TDD Red -> Green)
   - Acceptance: `Engine` inspects `billedCosts` from `FetchBilledCosts` and adopts the billing currency; sets `.Currency` across `AllocatedUserCost`, `UserCostSummary`, `OverviewMetrics`, and `UserConsumptionDriving`; falls back to `"USD"` when billed costs are empty.
   - Verify: `go test -v -race ./internal/attribution/...`
   - Files: `internal/attribution/engine.go`, `internal/attribution/engine_test.go`
