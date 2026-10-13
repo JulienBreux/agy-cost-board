@@ -15,7 +15,7 @@
   - [x] Build `web/src/components/ChangelogModal.tsx` matching the screenshot design: dark theme card, sparkles icon, pill badges, bold feature bullet list, scrollable list, and "Got it" button.
 - [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) (d9b2472)
 
-## Phase 3: Navbar, Footer, and App Integration (TDD)
+## Phase 3: Navbar, Footer, and App Integration (TDD) [checkpoint: 5553930]
 - [x] Task: Integration Unit Tests (e25c221)
   - [x] Update `web/src/components/Navbar.test.tsx` and `web/src/components/Footer.test.tsx` to verify "What's new" trigger buttons.
   - [x] Update `web/src/App.test.tsx` to verify auto-popup when new version is detected and dismissal behavior.
@@ -25,10 +25,10 @@
 - [x] Task: App-Level Orchestration & State Management (5553930)
   - [x] Wire modal visibility and auto-open check into `web/src/App.tsx`.
   - [x] Ensure dismissing the modal updates the cookie and localStorage.
-- [~] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) (5553930)
 
 ## Phase 4: Full Verification, Web Bundle Build & Docs
-- [ ] Task: Run Full Automated Verification Suite
+- [~] Task: Run Full Automated Verification Suite
   - [ ] Run `npm --prefix web test`, `go test -race ./...`, `npm --prefix web run build`, and `golangci-lint run`.
 - [ ] Task: Documentation & Changelog Entry
   - [ ] Update `README.md` documentation detailing the changelog popup feature.
