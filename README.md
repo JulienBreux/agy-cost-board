@@ -63,6 +63,7 @@ flowchart LR
 | **Cloud Run Native**            | Complex multi-container deployments                        | **Zero-config single static binary (`CGO_ENABLED=0`), dynamic `$PORT`, & `/healthz`**        |
 | **Local Evaluation**            | Requires full GCP credentials and BigQuery permissions     | **Offline synthetic Demo Mode (`--demo`) with 30 days of multi-user data**                   |
 | **BigQuery Efficiency**         | Costly repetitive full-table scans                         | **Thread-safe in-memory TTL caching with 0 redundant scan charges**                          |
+| **Multi-Currency**             | Hardcoded USD assumptions with manual conversions          | **Native ISO-4217 billing currency ingestion (EUR, USD, GBP, JPY...) with zero FX loss**     |
 
 ---
 
@@ -72,6 +73,9 @@ flowchart LR
 Instead of crude token-rate approximations, `agy-cost-board` reconciles real-time Cloud Logging inference records (`InferenceResponseLog`) with actual Google Cloud Billing exports (`gcp_billing_export_v1_*`). Each developer is charged precisely:
 $$\text{Allocated Cost}(u, m, d) = \text{Billed Cost}(m, d) \times \frac{\text{Tokens}(u, m, d)}{\sum_{k} \text{Tokens}(k, m, d)}$$
 Guaranteed mathematically complete attribution with zero unallocated residue.
+
+### 💱 Native Multi-Currency Ingestion (Zero FX Conversion)
+Google Cloud invoices organizations in their contracted local currency (e.g., EUR `€`, USD `$`, GBP `£`, JPY `¥`, CAD `CA$`). `agy-cost-board` dynamically extracts ISO-4217 currency codes directly from Cloud Billing exports and propagates exact currency symbols across all CLI tables, JSON outputs, TUI screens, the dynamic statusline, and the React dashboard. Under no circumstances does the engine apply lossy foreign exchange (FX) rate math or depend on external FX APIs—ensuring 100% reconciliation fidelity with your actual invoice.
 
 ### 💺 Gemini Enterprise Shelfware Reclamation
 Track active seat quota utilization across configurable lookback windows (7d, 14d, 30d). `agy-cost-board` flags **Active**, **At-Risk** (< 1,000 tokens), and **Dormant** (0 tokens) seats, quantifying immediate monthly dollar savings ($45/seat/month) to rightsize your licensing agreements.
@@ -193,7 +197,7 @@ The built-in HTTP server exposes clean JSON APIs consumed by the embedded fronte
 
 ## Antigravity CLI Statusline Spend Integration
 
-Display individual developer AI spend directly in the Antigravity CLI status bar (e.g., ` · cost $123`) using a dynamic, fail-open fork of the official Antigravity statusline script.
+Display individual developer AI spend directly in the Antigravity CLI status bar (e.g., ` · cost €18` or ` · cost $123`) using a dynamic, fail-open fork of the official Antigravity statusline script.
 
 ### One-Line Quick Install
 
@@ -222,7 +226,7 @@ export AGY_STATUSLINE="$HOME/.gemini/antigravity-cli/statusline.sh"
 <p align="center">
   <img src="docs/assets/statusline.png" alt="Antigravity CLI Status Bar with Cost Attribution" width="100%" />
   <br />
-  <em><b>Antigravity CLI Status Bar:</b> Live developer spend (<code>· cost $18</code>) displayed seamlessly at the end of the statusline.</em>
+  <em><b>Antigravity CLI Status Bar:</b> Live developer spend (<code>· cost €18</code> / <code>· cost $18</code>) displayed seamlessly at the end of the statusline.</em>
 </p>
 
 

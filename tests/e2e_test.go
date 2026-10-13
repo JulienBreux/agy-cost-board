@@ -37,6 +37,9 @@ func TestEndToEndCLIFlows(t *testing.T) {
 		if !strings.Contains(out, "alex.turner@google.com") {
 			t.Errorf("expected demo user in output, got: %s", out)
 		}
+		if !strings.Contains(out, "€") {
+			t.Errorf("expected euro symbol (€) in demo cost table output, got: %s", out)
+		}
 	})
 
 	t.Run("E2E CLI license command with JSON output", func(t *testing.T) {
@@ -58,8 +61,31 @@ func TestEndToEndCLIFlows(t *testing.T) {
 		if summary.SeatQuota <= 0 {
 			t.Errorf("expected positive seat quota, got %d", summary.SeatQuota)
 		}
+		if summary.Currency != "EUR" {
+			t.Errorf("expected EUR currency in license summary, got %s", summary.Currency)
+		}
 		if summary.EstimatedMonthlySavings <= 0 && summary.DormantSeats > 0 {
 			t.Errorf("expected savings when dormant seats exist: %f", summary.EstimatedMonthlySavings)
+		}
+	})
+
+	t.Run("E2E CLI license command with table output", func(t *testing.T) {
+		buf := new(bytes.Buffer)
+		rootCmd := cli.NewRootCommand()
+		rootCmd.SetOut(buf)
+		rootCmd.SetErr(buf)
+		rootCmd.SetArgs([]string{"license", "--demo", "--format=table", "--days=30"})
+
+		if err := rootCmd.Execute(); err != nil {
+			t.Fatalf("CLI command failed: %v", err)
+		}
+
+		out := buf.String()
+		if !strings.Contains(out, "SEAT QUOTA") {
+			t.Errorf("expected table header in license output, got: %s", out)
+		}
+		if !strings.Contains(out, "€") {
+			t.Errorf("expected euro symbol (€) in license table output, got: %s", out)
 		}
 	})
 
@@ -85,8 +111,31 @@ func TestEndToEndCLIFlows(t *testing.T) {
 		if user.TotalCost <= 0 {
 			t.Errorf("expected positive total cost, got %f", user.TotalCost)
 		}
+		if user.Currency != "EUR" {
+			t.Errorf("expected EUR currency, got %s", user.Currency)
+		}
 		if len(user.ModelBreakdown) == 0 {
 			t.Errorf("expected non-empty model breakdown")
+		}
+	})
+
+	t.Run("E2E CLI user command table output", func(t *testing.T) {
+		buf := new(bytes.Buffer)
+		rootCmd := cli.NewRootCommand()
+		rootCmd.SetOut(buf)
+		rootCmd.SetErr(buf)
+		rootCmd.SetArgs([]string{"user", "sophia.chen@google.com", "--demo", "--format=table"})
+
+		if err := rootCmd.Execute(); err != nil {
+			t.Fatalf("CLI command failed: %v", err)
+		}
+
+		out := buf.String()
+		if !strings.Contains(out, "sophia.chen@google.com") {
+			t.Errorf("expected user in output, got: %s", out)
+		}
+		if !strings.Contains(out, "€") {
+			t.Errorf("expected euro symbol (€) in user table output, got: %s", out)
 		}
 	})
 
@@ -180,6 +229,9 @@ func TestEndToEndHTTPServerFlows(t *testing.T) {
 		if metrics.TotalBilledCost <= 0 {
 			t.Errorf("expected positive billed cost, got %f", metrics.TotalBilledCost)
 		}
+		if metrics.Currency != "EUR" {
+			t.Errorf("expected EUR currency in overview metrics, got: %s", metrics.Currency)
+		}
 		if metrics.TotalTokens <= 0 {
 			t.Errorf("expected positive tokens, got %d", metrics.TotalTokens)
 		}
@@ -206,10 +258,88 @@ func TestEndToEndHTTPServerFlows(t *testing.T) {
 
 		var totalCost float64
 		for _, c := range costs {
+			if c.Currency != "EUR" {
+				t.Errorf("expected EUR currency for allocated cost, got: %s", c.Currency)
+			}
 			totalCost += c.AllocatedCost
 		}
 		if totalCost <= 0 {
 			t.Errorf("expected positive total allocated cost, got: %f", totalCost)
+		}
+	})
+
+	t.Run("GET /api/v1/licenses/status end-to-end", func(t *testing.T) {
+		res, err := client.Get(ts.URL + "/api/v1/licenses/status?days=30")
+		if err != nil {
+			t.Fatalf("request failed: %v", err)
+		}
+		defer res.Body.Close()
+
+		var summary domain.LicenseGovernanceSummary
+		if err := json.NewDecoder(res.Body).Decode(&summary); err != nil {
+			t.Fatalf("failed to decode license summary: %v", err)
+		}
+
+		if summary.Currency != "EUR" {
+			t.Errorf("expected EUR currency in license summary, got: %s", summary.Currency)
+		}
+		if summary.SeatQuota <= 0 {
+			t.Errorf("expected positive seat quota, got: %d", summary.SeatQuota)
+		}
+	})
+
+	t.Run("GET /api/v1/users/{id} end-to-end", func(t *testing.T) {
+		res, err := client.Get(ts.URL + "/api/v1/users/sophia.chen@google.com?days=30")
+		if err != nil {
+			t.Fatalf("request failed: %v", err)
+		}
+		defer res.Body.Close()
+
+		var user domain.UserCostSummary
+		if err := json.NewDecoder(res.Body).Decode(&user); err != nil {
+			t.Fatalf("failed to decode user summary: %v", err)
+		}
+
+		if user.Currency != "EUR" {
+			t.Errorf("expected EUR currency in user summary, got: %s", user.Currency)
+		}
+	})
+
+	t.Run("GET /api/v1/users/{id}/dashboard end-to-end", func(t *testing.T) {
+		res, err := client.Get(ts.URL + "/api/v1/users/sophia.chen@google.com/dashboard?days=30")
+		if err != nil {
+			t.Fatalf("request failed: %v", err)
+		}
+		defer res.Body.Close()
+
+		var driving domain.UserConsumptionDriving
+		if err := json.NewDecoder(res.Body).Decode(&driving); err != nil {
+			t.Fatalf("failed to decode user dashboard: %v", err)
+		}
+
+		if driving.Currency != "EUR" {
+			t.Errorf("expected EUR currency in driving metrics, got: %s", driving.Currency)
+		}
+	})
+
+	t.Run("GET /statusline.sh end-to-end", func(t *testing.T) {
+		res, err := client.Get(ts.URL + "/statusline.sh?user=sophia.chen@google.com&days=30")
+		if err != nil {
+			t.Fatalf("request failed: %v", err)
+		}
+		defer res.Body.Close()
+
+		if res.StatusCode != http.StatusOK {
+			t.Errorf("expected 200, got %d", res.StatusCode)
+		}
+
+		body, _ := io.ReadAll(res.Body)
+		script := string(body)
+		if !strings.Contains(script, "AGY_COST_USER") || !strings.Contains(script, "sophia.chen@google.com") {
+			t.Errorf("expected user in statusline script")
+		}
+		if !strings.Contains(script, "cost") {
+			t.Errorf("expected cost format in statusline script")
 		}
 	})
 

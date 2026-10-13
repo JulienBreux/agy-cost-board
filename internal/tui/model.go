@@ -281,7 +281,7 @@ func (m Model) View() string {
 		card1 := cardStyle.Render("TOTAL BILLED\n" + cardValueStyle.Render(domain.FormatCost(m.Overview.TotalBilledCost, m.Overview.Currency)))
 		card2 := cardStyle.Render("TOTAL TOKENS\n" + cardValueStyle.Render(strconv.FormatInt(m.Overview.TotalTokens, 10)))
 		card3 := cardStyle.Render("ACTIVE USERS\n" + cardValueStyle.Render(strconv.Itoa(m.Overview.ActiveUsersCount)))
-		card4 := cardStyle.Render("POTENTIAL SAVINGS\n" + cardWarnValueStyle.Render(fmt.Sprintf("%s/mo", domain.FormatCost(m.Overview.EstimatedMonthlySavings, m.Overview.Currency))))
+		card4 := cardStyle.Render("POTENTIAL SAVINGS\n" + cardWarnValueStyle.Render(domain.FormatCost(m.Overview.EstimatedMonthlySavings, m.Overview.Currency) + "/mo"))
 		sb.WriteString(lipgloss.JoinHorizontal(lipgloss.Top, card1, card2, card3, card4))
 		sb.WriteString("\n\n")
 	}
