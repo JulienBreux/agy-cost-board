@@ -12,7 +12,7 @@
 - [x] 3f09423 Task: Conductor - User Manual Verification 'Phase 1: Go Domain & Attribution Engine Currency Propagation'
 
 ## Phase 2: Go CLI, TUI & Statusline Script Integration
-- [ ] Task: CLI & TUI Dynamic Currency Formatting & Tests (TDD Red -> Green)
+- [x] e812cec Task: CLI & TUI Dynamic Currency Formatting & Tests (TDD Red -> Green)
   - Acceptance: CLI `cost`, `user`, and `license` commands format monetary columns using `FormatCost` / `CurrencySymbol`; TUI `model.go` displays dynamic currency in KPI cards (`TOTAL BILLED`, `POTENTIAL SAVINGS`), cost list, and developer breakdown.
   - Verify: `go test -v -race ./internal/cli/... ./internal/tui/...`
   - Files: `internal/cli/cost.go`, `internal/cli/user.go`, `internal/cli/license.go`, `internal/tui/model.go`, `internal/cli/formatters_test.go`, `internal/tui/tui_test.go`
