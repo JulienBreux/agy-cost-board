@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { Footer, releaseUrlFor } from './Footer';
 
 const REPO = 'https://github.com/JulienBreux/agy-cost-board';
@@ -65,6 +65,16 @@ describe('Footer Component', () => {
     render(<Footer version="v0.4.0-dirty" />);
     const versionLink = screen.getByRole('link', { name: 'v0.4.0-dirty' });
     expect(versionLink).toHaveAttribute('href', `${REPO}/releases/tag/v0.4.0`);
+  });
+
+  it('calls onOpenChangelog when version link is clicked with an onOpenChangelog handler', () => {
+    const onOpenChangelog = vi.fn();
+    render(<Footer version="v0.5.0" onOpenChangelog={onOpenChangelog} />);
+
+    const versionLink = screen.getByRole('link', { name: /v0\.5\.0/i });
+    fireEvent.click(versionLink);
+
+    expect(onOpenChangelog).toHaveBeenCalledTimes(1);
   });
 });
 

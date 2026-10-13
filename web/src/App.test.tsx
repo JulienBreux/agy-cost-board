@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import App from './App';
 import * as api from './api';
+import * as changelogStorage from './utils/changelogStorage';
 
 const mockOverview: api.OverviewMetrics = {
     total_billed_cost: 1250.50,
@@ -85,6 +86,8 @@ describe('App Component Navigation', () => {
             commit: 'a3fefe9',
             build_date: '2026-10-10T19:40:54Z'
         });
+        vi.spyOn(changelogStorage, 'getLastSeenVersion').mockReturnValue('v0.4.0-dirty');
+        vi.spyOn(changelogStorage, 'setLastSeenVersion').mockImplementation(() => {});
         vi.spyOn(api, 'fetchSetupStatus').mockResolvedValue({
             project_id: 'test-project',
             timestamp: '2026-10-09T00:00:00Z',
@@ -153,6 +156,66 @@ describe('App Component Navigation', () => {
         await waitFor(() => {
             expect(screen.getByText('v0.4.0-dirty')).toBeInTheDocument();
         });
+    });
+
+    it('automatically opens changelog modal when a newer version is detected', async () => {
+        vi.spyOn(changelogStorage, 'getLastSeenVersion').mockReturnValue(null);
+        const setLastSeenSpy = vi.spyOn(changelogStorage, 'setLastSeenVersion').mockImplementation(() => {});
+
+        render(<App />);
+
+        // Should display the changelog modal
+        await waitFor(() => {
+            expect(screen.getByRole('dialog', { name: /what's new in agy cost board/i })).toBeInTheDocument();
+        });
+
+        // Click "Got it" to dismiss
+        const gotItBtn = screen.getByRole('button', { name: /got it/i });
+        fireEvent.click(gotItBtn);
+
+        // Modal should close and setLastSeenVersion should be recorded
+        await waitFor(() => {
+            expect(screen.queryByRole('dialog', { name: /what's new in agy cost board/i })).not.toBeInTheDocument();
+        });
+        expect(setLastSeenSpy).toHaveBeenCalledWith('v0.4.0-dirty');
+    });
+
+    it('does not auto-open changelog modal when version has already been seen', async () => {
+        vi.spyOn(changelogStorage, 'getLastSeenVersion').mockReturnValue('v0.4.0-dirty');
+
+        render(<App />);
+
+        await waitFor(() => {
+            expect(screen.getByText('v0.4.0-dirty')).toBeInTheDocument();
+        });
+
+        expect(screen.queryByRole('dialog', { name: /what's new in agy cost board/i })).not.toBeInTheDocument();
+    });
+
+    it('opens changelog modal manually from Navbar and Footer triggers', async () => {
+        render(<App />);
+
+        await waitFor(() => {
+            expect(screen.getByText('v0.4.0-dirty')).toBeInTheDocument();
+        });
+
+        // Click "What's new" button in Navbar
+        const whatsNewBtn = screen.getByRole('button', { name: /what's new/i });
+        fireEvent.click(whatsNewBtn);
+
+        expect(await screen.findByRole('dialog', { name: /what's new in agy cost board/i })).toBeInTheDocument();
+
+        // Close it
+        fireEvent.click(screen.getByRole('button', { name: /got it/i }));
+        await waitFor(() => {
+            expect(screen.queryByRole('dialog', { name: /what's new in agy cost board/i })).not.toBeInTheDocument();
+        });
+
+        // Click version in Footer
+        const versionLink = screen.getByRole('link', { name: /v0\.4\.0-dirty/i });
+        fireEvent.click(versionLink);
+
+        expect(await screen.findByRole('dialog', { name: /what's new in agy cost board/i })).toBeInTheDocument();
     });
 });
 
