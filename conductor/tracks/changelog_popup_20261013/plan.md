@@ -19,10 +19,10 @@
 - [x] Task: Integration Unit Tests (e25c221)
   - [x] Update `web/src/components/Navbar.test.tsx` and `web/src/components/Footer.test.tsx` to verify "What's new" trigger buttons.
   - [x] Update `web/src/App.test.tsx` to verify auto-popup when new version is detected and dismissal behavior.
-- [~] Task: Integrate Changelog Triggers in Navbar and Footer
-  - [ ] Add "What's new" sparkles ✨ button in `web/src/components/Navbar.tsx`.
-  - [ ] Enable opening the changelog modal from `web/src/components/Footer.tsx`.
-- [ ] Task: App-Level Orchestration & State Management
+- [x] Task: Integrate Changelog Triggers in Navbar and Footer (024ea6d)
+  - [x] Add "What's new" sparkles ✨ button in `web/src/components/Navbar.tsx`.
+  - [x] Enable opening the changelog modal from `web/src/components/Footer.tsx`.
+- [~] Task: App-Level Orchestration & State Management
   - [ ] Wire modal visibility and auto-open check into `web/src/App.tsx`.
   - [ ] Ensure dismissing the modal updates the cookie and localStorage.
 - [ ] Task: Phase Verification & Checkpoint (Refer to workflow.md)
