@@ -21,6 +21,8 @@ import { SetupHealthView } from './components/SetupHealthView';
 import { UserModal } from './components/UserModal';
 import { UserDashboardView } from './components/UserDashboardView';
 import { Footer } from './components/Footer';
+import { ChangelogModal } from './components/ChangelogModal';
+import { getLastSeenVersion, setLastSeenVersion, hasNewVersion } from './utils/changelogStorage';
 import { ThemeProvider } from './context/ThemeContext';
 import { RefreshCw, AlertTriangle } from 'lucide-react';
 
@@ -46,6 +48,7 @@ export function App() {
   });
   const [days, setDays] = useState<number>(30);
   const [appVersion, setAppVersion] = useState<string>('');
+  const [showChangelog, setShowChangelog] = useState<boolean>(false);
 
   const [overview, setOverview] = useState<OverviewMetrics | null>(null);
   const [costs, setCosts] = useState<AllocatedUserCost[]>([]);
@@ -102,6 +105,10 @@ export function App() {
       .then((info) => {
         if (info?.version) {
           setAppVersion(info.version);
+          const lastSeen = getLastSeenVersion();
+          if (hasNewVersion(info.version, lastSeen)) {
+            setShowChangelog(true);
+          }
         }
       })
       .catch((err: unknown) => {
@@ -157,6 +164,13 @@ export function App() {
     }
   };
 
+  const handleCloseChangelog = () => {
+    setShowChangelog(false);
+    if (appVersion) {
+      setLastSeenVersion(appVersion);
+    }
+  };
+
   return (
     <ThemeProvider>
       <div className="min-h-screen flex flex-col bg-[#0f1115] text-google-gray-200">
@@ -166,6 +180,7 @@ export function App() {
         setActiveTab={setActiveTab}
         days={days}
         setDays={setDays}
+        onOpenChangelog={() => setShowChangelog(true)}
       />
 
       {/* Main Content Area */}
@@ -282,8 +297,17 @@ export function App() {
         }}
       />
 
+      {/* Changelog Release Highlights Modal */}
+      <ChangelogModal
+        isOpen={showChangelog}
+        onClose={handleCloseChangelog}
+      />
+
       {/* Footer */}
-      <Footer version={appVersion} />
+      <Footer
+        version={appVersion}
+        onOpenChangelog={() => setShowChangelog(true)}
+      />
     </div>
   </ThemeProvider>
   );
