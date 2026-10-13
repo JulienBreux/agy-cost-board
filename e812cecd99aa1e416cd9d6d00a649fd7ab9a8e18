@@ -1,0 +1,3 @@
+Task: CLI & TUI Dynamic Currency Formatting & Tests
+Summary: Added dynamic currency formatting and dynamic table/CSV headers to CLI cost, user, and license commands using domain.FormatCost; added dynamic currency symbol to TUI overview KPI cards, cost list, and developer breakdown; added Currency to LicenseGovernanceSummary.
+Files: internal/domain/models.go, internal/attribution/engine.go, internal/cli/cost.go, internal/cli/license.go, internal/cli/user.go, internal/cli/root_test.go, internal/tui/model.go, internal/tui/tui_test.go
