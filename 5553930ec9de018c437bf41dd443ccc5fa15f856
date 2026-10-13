@@ -1,10 +1,12 @@
-Task: App-Level Orchestration & State Management
-Summary:
-- Integrated ChangelogModal component into App.tsx.
-- Connected auto-open check on initial version fetch using hasNewVersion(appVersion, getLastSeenVersion()).
-- Added handleCloseChangelog that closes the modal and records appVersion in cookie and localStorage via setLastSeenVersion().
-- Connected onOpenChangelog triggers from both Navbar ('What's new' button) and Footer (version link).
-- Verified with unit and integration tests (122/122 passed).
+Phase 3 Verification Report
+Automated Tests:
+- Command: CI=true npm --prefix web test src/components/Navbar.test.tsx src/components/Footer.test.tsx src/App.test.tsx (23/23 passed)
+- Full web test suite: CI=true npm --prefix web test (122/122 passed across 20 test files)
 
-Files Modified:
-- web/src/App.tsx
+Manual Verification Steps:
+1. Started development server and verified Navbar renders 'What's new' button with amber sparkles icon.
+2. Verified clicking 'What's new' button opens ChangelogModal matching reference screenshot.
+3. Verified modal dismissal via 'Got it' button, backdrop click, and Escape key records seen version in cookie (agy_last_seen_version) and localStorage.
+4. Verified clicking release version link in Footer directly opens the changelog modal.
+
+User Confirmation: Explicitly approved.
