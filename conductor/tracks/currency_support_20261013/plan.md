@@ -38,7 +38,7 @@
 - [x] a96985c Task: Conductor - User Manual Verification 'Phase 3: Web Dashboard Centralized Currency & Component Modernization'
 
 ## Phase 4: Full Verification, Lint & End-to-End Validation
-- [ ] Task: Full Suite Verification & Demo Mode E2E Test
+- [x] 04c8d3a Task: Full Suite Verification & Demo Mode E2E Test
   - Acceptance: All Go tests and Web tests pass; `golangci-lint` passes without errors; demo mode running with EUR correctly renders `€` in both CLI (`go run ./cmd/agy-cost-board cost --demo`) and Web dashboard.
   - Verify: `make test && make lint && npm --prefix web run build`
   - Files: `tests/e2e_test.go`, `README.md`
