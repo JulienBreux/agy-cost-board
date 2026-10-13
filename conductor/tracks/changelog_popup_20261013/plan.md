@@ -8,15 +8,15 @@
   - [x] Implement `web/src/utils/changelogStorage.ts` with cookie reading/writing (`agy_last_seen_version`), localStorage sync, and semver comparison.
 - [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) (3787c26)
 
-## Phase 2: ChangelogModal Component (TDD)
+## Phase 2: ChangelogModal Component (TDD) [checkpoint: d9b2472]
 - [x] Task: ChangelogModal Component Unit Tests (70c2b62)
   - [x] Write component tests in `web/src/components/ChangelogModal.test.tsx` testing modal rendering, sparkles header, latest version badge highlight, historical release list, Escape key dismiss, and "Got it" callback.
 - [x] Task: Implement ChangelogModal Component (d9b2472)
   - [x] Build `web/src/components/ChangelogModal.tsx` matching the screenshot design: dark theme card, sparkles icon, pill badges, bold feature bullet list, scrollable list, and "Got it" button.
-- [~] Task: Phase Verification & Checkpoint (Refer to workflow.md)
+- [x] Task: Phase Verification & Checkpoint (Refer to workflow.md) (d9b2472)
 
 ## Phase 3: Navbar, Footer, and App Integration (TDD)
-- [ ] Task: Integration Unit Tests
+- [~] Task: Integration Unit Tests
   - [ ] Update `web/src/components/Navbar.test.tsx` and `web/src/components/Footer.test.tsx` to verify "What's new" trigger buttons.
   - [ ] Update `web/src/App.test.tsx` to verify auto-popup when new version is detected and dismissal behavior.
 - [ ] Task: Integrate Changelog Triggers in Navbar and Footer
