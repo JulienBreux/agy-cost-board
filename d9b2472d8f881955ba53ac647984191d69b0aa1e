@@ -1,0 +1,4 @@
+Task: Implement ChangelogModal Component
+Summary: Built ChangelogModal React component matching the screenshot design with elevated dark container, amber sparkles icon, latest release blue pill badge, formatted dates, bold feature lead-ins, scrollable timeline, and bottom-right 'Got it' button.
+Files: web/src/components/ChangelogModal.tsx
+Why: Delivers the visual presentation and interactive dialog for release changelogs.
