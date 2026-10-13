@@ -22,7 +22,7 @@
   - Files: `internal/server/statusline.sh.tmpl`, `internal/server/statusline_test.go`, `internal/server/statusline_exec_test.go`
 - [x] ec8885c Task: Conductor - User Manual Verification 'Phase 2: Go CLI, TUI & Statusline Script Integration'
 
-## Phase 3: Web Dashboard Centralized Currency & Component Modernization
+## Phase 3: Web Dashboard Centralized Currency & Component Modernization [checkpoint: a96985c]
 - [x] 6d66909 Task: Web Currency Formatter & Unit Tests (TDD Red -> Green)
   - Acceptance: `web/src/utils/currency.ts` provides `formatCurrency` and `getCurrencySymbol` utilizing `Intl.NumberFormat`; unit tests verify formatting for USD, EUR, GBP, JPY, CAD.
   - Verify: `npm --prefix web test -- src/utils/currency.test.ts --run`
@@ -35,7 +35,7 @@
   - Acceptance: `PersonalCostChart.tsx`, `PersonalKPICards.tsx`, `BudgetProgressBar.tsx`, `OptimizationCard.tsx`, `RecentActivityTable.tsx`, `StatuslineHelpBox.tsx`, and `UserModal.tsx` use centralized currency formatting; metric toggle in `PersonalCostChart` displays dynamic currency symbol; all tests pass.
   - Verify: `npm --prefix web test -- --run`
   - Files: `web/src/components/PersonalCostChart.tsx`, `web/src/components/PersonalKPICards.tsx`, `web/src/components/BudgetProgressBar.tsx`, `web/src/components/OptimizationCard.tsx`, `web/src/components/RecentActivityTable.tsx`, `web/src/components/StatuslineHelpBox.tsx`, `web/src/components/UserModal.tsx`
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Web Dashboard Centralized Currency & Component Modernization'
+- [x] a96985c Task: Conductor - User Manual Verification 'Phase 3: Web Dashboard Centralized Currency & Component Modernization'
 
 ## Phase 4: Full Verification, Lint & End-to-End Validation
 - [ ] Task: Full Suite Verification & Demo Mode E2E Test
