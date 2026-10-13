@@ -106,6 +106,7 @@ func CheckADC(ctx context.Context, cfg Config) domain.CheckResult {
 	// Verify ADC credentials file or metadata
 	credFile := filepath.Clean(os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"))
 	if credFile != "" && credFile != "." {
+		//nolint:gosec // G703: ADC credentials file existence check
 		if _, err := os.Stat(credFile); err != nil {
 			return domain.CheckResult{
 				ID:                  id,
