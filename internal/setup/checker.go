@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -103,8 +104,8 @@ func CheckADC(ctx context.Context, cfg Config) domain.CheckResult {
 	}
 
 	// Verify ADC credentials file or metadata
-	credFile := os.Getenv("GOOGLE_APPLICATION_CREDENTIALS")
-	if credFile != "" {
+	credFile := filepath.Clean(os.Getenv("GOOGLE_APPLICATION_CREDENTIALS"))
+	if credFile != "" && credFile != "." {
 		if _, err := os.Stat(credFile); err != nil {
 			return domain.CheckResult{
 				ID:                  id,
