@@ -1,5 +1,6 @@
 import { FC } from 'react';
 import type { OptimizationTip } from '../api';
+import { formatCurrency } from '../utils/currency';
 
 interface OptimizationCardProps {
   tips?: OptimizationTip[];
@@ -9,11 +10,10 @@ interface OptimizationCardProps {
 
 export const OptimizationCard: FC<OptimizationCardProps> = ({
   tips = [],
-  currency = '$',
+  currency = 'USD',
   onApplyTip,
 }) => {
   const safeTips = Array.isArray(tips) ? tips : [];
-  const currencySymbol = currency === 'EUR' ? '€' : currency === 'USD' ? '$' : currency;
   const totalSavings = safeTips.reduce((acc, tip) => acc + (tip.potential_savings_monthly || 0), 0);
 
   const getSeverityBadge = (severity: OptimizationTip['severity']) => {
@@ -65,7 +65,7 @@ export const OptimizationCard: FC<OptimizationCardProps> = ({
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-medium">
             <span>Potential Savings:</span>
             <span className="font-semibold text-emerald-400">
-              +{currencySymbol}{totalSavings.toFixed(2)} / month
+              +{formatCurrency(totalSavings, currency)} / month
             </span>
           </div>
         )}
@@ -108,7 +108,7 @@ export const OptimizationCard: FC<OptimizationCardProps> = ({
               <div className="flex items-center gap-3 self-end md:self-center shrink-0">
                 {(tip.potential_savings_monthly || 0) > 0 && (
                   <span className="px-2.5 py-1 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-semibold whitespace-nowrap">
-                    Save {currencySymbol}{(tip.potential_savings_monthly || 0).toFixed(2)}/mo
+                    Save {formatCurrency(tip.potential_savings_monthly || 0, currency)}/mo
                   </span>
                 )}
                 {onApplyTip && (

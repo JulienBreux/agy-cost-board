@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { PersonalDailyTrend, ModelDetail } from '../api';
 import { Layers, BarChart3, Coins, Sparkles, PieChart } from 'lucide-react';
+import { formatCurrency, getCurrencySymbol } from '../utils/currency';
 
 interface PersonalCostChartProps {
   trends?: PersonalDailyTrend[];
@@ -50,7 +51,8 @@ export const PersonalCostChart: React.FC<PersonalCostChartProps> = ({
   const [chartMode, setChartMode] = useState<'stacked' | 'aggregate'>('stacked');
   const [metricMode, setMetricMode] = useState<'cost' | 'tokens'>('cost');
 
-  const currencySymbol = currency === 'EUR' ? '€' : currency === 'USD' ? '$' : currency;
+  const currencySymbol = getCurrencySymbol(currency);
+
   const safeTrends = Array.isArray(trends) ? trends : [];
   const safeDistribution = modelDistribution && typeof modelDistribution === 'object' ? modelDistribution : {};
 
@@ -182,7 +184,7 @@ export const PersonalCostChart: React.FC<PersonalCostChartProps> = ({
                   title="View spend in currency"
                 >
                   <Coins className="h-3 w-3" />
-                  <span>$</span>
+                  <span>{currencySymbol.trim()}</span>
                 </button>
                 <button
                   onClick={() => setMetricMode('tokens')}
@@ -249,7 +251,7 @@ export const PersonalCostChart: React.FC<PersonalCostChartProps> = ({
                                 opacity: isOtherFocused ? 0.3 : 1,
                               }}
                               className="w-full transition-all duration-200"
-                              title={`${model}: ${currencySymbol}${cost.toFixed(2)} (${segPct.toFixed(1)}%)`}
+                              title={`${model}: ${formatCurrency(cost, currency)} (${segPct.toFixed(1)}%)`}
                             />
                           );
                         })
@@ -305,7 +307,7 @@ export const PersonalCostChart: React.FC<PersonalCostChartProps> = ({
                   <div className="text-right">
                     <span className="text-xs text-google-gray-400 mr-2">Spend:</span>
                     <span className="text-sm font-bold text-google-blue font-mono">
-                      {currencySymbol}{(hoveredItem.cost || 0).toFixed(2)}
+                      {formatCurrency(hoveredItem.cost || 0, currency)}
                     </span>
                   </div>
                   <div className="text-right border-l border-[#222836] pl-4">
@@ -344,7 +346,7 @@ export const PersonalCostChart: React.FC<PersonalCostChartProps> = ({
                         >
                           <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: mColor }} />
                           <span className="font-medium truncate max-w-[120px]">{model}</span>
-                          <span className="font-mono text-white font-semibold">{currencySymbol}{cost.toFixed(2)}</span>
+                          <span className="font-mono text-white font-semibold">{formatCurrency(cost, currency)}</span>
                           <span className="text-[10px] text-google-gray-500">({pct.toFixed(0)}%)</span>
                         </button>
                       );
@@ -360,7 +362,7 @@ export const PersonalCostChart: React.FC<PersonalCostChartProps> = ({
                   Window Total ({safeTrends.length} {safeTrends.length === 1 ? 'day' : 'days'}):
                 </span>
                 <span className="text-sm font-bold text-white font-mono">
-                  {currencySymbol}{(totalPeriodCost || 0).toFixed(2)}
+                  {formatCurrency(totalPeriodCost || 0, currency)}
                 </span>
               </div>
 
@@ -368,8 +370,7 @@ export const PersonalCostChart: React.FC<PersonalCostChartProps> = ({
                 <div>
                   Avg:{' '}
                   <span className="text-white font-semibold">
-                    {currencySymbol}
-                    {(safeTrends.length > 0 ? totalPeriodCost / safeTrends.length : 0).toFixed(2)}
+                    {formatCurrency(safeTrends.length > 0 ? totalPeriodCost / safeTrends.length : 0, currency)}
                     /day
                   </span>
                 </div>
@@ -459,7 +460,7 @@ export const PersonalCostChart: React.FC<PersonalCostChartProps> = ({
                       </span>
                       <span className="text-sm font-bold text-white font-mono">
                         {metricMode === 'cost'
-                          ? `${currencySymbol}${(activeDonutModel.cost ?? 0).toFixed(2)}`
+                          ? formatCurrency(activeDonutModel.cost ?? 0, currency)
                           : formatTokens(activeDonutModel.tokens ?? 0)}
                       </span>
                       <span className="text-[10px] font-semibold text-google-blue">
@@ -472,7 +473,7 @@ export const PersonalCostChart: React.FC<PersonalCostChartProps> = ({
                     <>
                       <span className="text-[10px] text-google-gray-400 font-medium">Total Spend</span>
                       <span className="text-sm font-bold text-white font-mono">
-                        {currencySymbol}{totalDistCost.toFixed(2)}
+                        {formatCurrency(totalDistCost, currency)}
                       </span>
                       <span className="text-[10px] text-google-gray-500 font-mono">
                         {formatTokens(totalDistTokens)} tokens
@@ -522,7 +523,7 @@ export const PersonalCostChart: React.FC<PersonalCostChartProps> = ({
                         </div>
                         <div className="text-right whitespace-nowrap ml-2">
                           <span className="font-semibold text-white font-mono">
-                            {currencySymbol}{cost.toFixed(2)}
+                            {formatCurrency(cost, currency)}
                           </span>
                           <span className="text-google-gray-500 ml-1.5 font-mono">
                             ({share.toFixed(1)}%)

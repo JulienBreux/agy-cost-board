@@ -67,5 +67,13 @@ describe('currency utils', () => {
     it('returns A$ for AUD', () => {
       expect(getCurrencySymbol('AUD')).toBe('A$');
     });
+
+    it('handles symbol inputs seamlessly', () => {
+      expect(getCurrencySymbol('$')).toBe('$');
+      expect(getCurrencySymbol('€')).toBe('€');
+      expect(formatCurrency(25, '$')).toBe('$25.00');
+      expect(formatCurrency(25, '€')).toBe('€25.00');
+    });
   });
 });
+

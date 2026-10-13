@@ -73,4 +73,19 @@ describe('BudgetProgressBar Component', () => {
 
     expect(handleUpdate).toHaveBeenCalledWith(150);
   });
+
+  it('renders EUR formatted values properly', () => {
+    render(
+      <BudgetProgressBar
+        budget={onTrackBudget}
+        currency="EUR"
+        onUpdateBudget={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('€35.00')).toBeInTheDocument();
+    expect(screen.getByText('of €100.00')).toBeInTheDocument();
+    expect(screen.getByText(/projected €70.00 at month end/i)).toBeInTheDocument();
+  });
 });
+

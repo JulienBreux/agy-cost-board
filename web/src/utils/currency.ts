@@ -5,8 +5,14 @@ export function normalizeCurrency(currency?: string | null): string {
   if (!currency || !currency.trim()) {
     return 'USD';
   }
-  return currency.trim().toUpperCase();
+  const trimmed = currency.trim().toUpperCase();
+  if (trimmed === '$') return 'USD';
+  if (trimmed === '€') return 'EUR';
+  if (trimmed === '£') return 'GBP';
+  if (trimmed === '¥') return 'JPY';
+  return trimmed;
 }
+
 
 /**
  * Returns the display symbol for a given ISO-4217 currency code.

@@ -52,4 +52,13 @@ describe('OptimizationCard', () => {
 
     expect(onApply).toHaveBeenCalledWith(mockTips[0]);
   });
+
+  it('renders EUR formatted savings properly', () => {
+    render(<OptimizationCard tips={mockTips} currency="EUR" />);
+
+    expect(screen.getByText(/\+€36\.50/)).toBeInTheDocument();
+    expect(screen.getByText('Save €24.50/mo')).toBeInTheDocument();
+    expect(screen.getByText('Save €12.00/mo')).toBeInTheDocument();
+  });
 });
+

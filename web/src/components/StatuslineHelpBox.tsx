@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Terminal, ExternalLink, Copy, Check, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
+import { getCurrencySymbol } from '../utils/currency';
 
 interface StatuslineHelpBoxProps {
   userId?: string;
@@ -12,7 +13,7 @@ export const StatuslineHelpBox: React.FC<StatuslineHelpBoxProps> = ({
   userId,
   days = 30,
   currentSpend,
-  currency = '$',
+  currency = 'USD',
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(() => {
     try {
@@ -59,7 +60,7 @@ export const StatuslineHelpBox: React.FC<StatuslineHelpBoxProps> = ({
     }
   };
 
-  const currencySymbol = currency === 'EUR' ? '€' : currency === 'USD' ? '$' : currency;
+  const currencySymbol = getCurrencySymbol(currency);
   const displayCost =
     typeof currentSpend === 'number' && currentSpend > 0
       ? `${currencySymbol}${Math.round(currentSpend)}`

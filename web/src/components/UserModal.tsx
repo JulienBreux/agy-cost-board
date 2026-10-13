@@ -1,6 +1,7 @@
 import React from 'react';
-import { X, User, DollarSign, Cpu, Clock, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { X, User, Coins, Cpu, Clock, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { UserSummary } from '../api';
+import { formatCurrency } from '../utils/currency';
 
 interface UserModalProps {
   user: UserSummary | null;
@@ -61,10 +62,9 @@ export const UserModal: React.FC<UserModalProps> = ({ user, onClose, onOpenDashb
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-[#181c26] border border-[#222836] rounded-xl p-4">
               <span className="text-xs text-google-gray-400">Total Attributed Cost</span>
-              <div className="text-2xl font-bold text-white mt-1 flex items-baseline space-x-1">
-                <DollarSign className="h-5 w-5 text-google-blue" />
-                <span>{user.total_cost.toFixed(2)}</span>
-                <span className="text-xs text-google-gray-500 font-normal">{user.currency}</span>
+              <div className="text-2xl font-bold text-white mt-1 flex items-baseline space-x-1.5">
+                <Coins className="h-5 w-5 text-google-blue self-center" />
+                <span>{formatCurrency(user.total_cost, user.currency)}</span>
               </div>
             </div>
 
@@ -101,7 +101,7 @@ export const UserModal: React.FC<UserModalProps> = ({ user, onClose, onOpenDashb
                     </div>
                     <div className="text-right">
                       <span className="text-sm font-bold text-white font-mono">
-                        ${detail.cost.toFixed(2)}
+                        {formatCurrency(detail.cost, user.currency)}
                       </span>
                     </div>
                   </div>

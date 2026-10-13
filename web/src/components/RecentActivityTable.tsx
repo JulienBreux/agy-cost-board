@@ -1,5 +1,6 @@
 import { FC, useState, useMemo } from 'react';
 import type { UserActivityLog } from '../api';
+import { formatCurrency } from '../utils/currency';
 
 interface RecentActivityTableProps {
   logs?: UserActivityLog[];
@@ -9,12 +10,11 @@ interface RecentActivityTableProps {
 
 export const RecentActivityTable: FC<RecentActivityTableProps> = ({
   logs = [],
-  currency = '$',
+  currency = 'USD',
   isLoading = false,
 }) => {
   const [selectedModel, setSelectedModel] = useState<string>('all');
   const safeLogs = Array.isArray(logs) ? logs : [];
-  const currencySymbol = currency === 'EUR' ? '€' : currency === 'USD' ? '$' : currency;
 
   const models = useMemo(() => {
     const set = new Set<string>();
@@ -137,7 +137,10 @@ export const RecentActivityTable: FC<RecentActivityTableProps> = ({
                     {(log.total_tokens ?? 0).toLocaleString()}
                   </td>
                   <td className="py-2.5 px-3 text-right font-semibold text-emerald-400 whitespace-nowrap">
-                    {currencySymbol}{(log.estimated_cost ?? 0).toFixed(4)}
+                    {formatCurrency(log.estimated_cost ?? 0, log.currency || currency, {
+                      minimumFractionDigits: 4,
+                      maximumFractionDigits: 4,
+                    })}
                   </td>
                 </tr>
               ))}

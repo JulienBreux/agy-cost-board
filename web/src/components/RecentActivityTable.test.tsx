@@ -61,4 +61,22 @@ describe('RecentActivityTable', () => {
 
         expect(screen.getByText(/no recent activity recorded/i)).toBeInTheDocument();
     });
+
+    it('formats costs with custom currency (e.g., EUR)', () => {
+        const eurLogs: UserActivityLog[] = [
+            {
+                timestamp: '2026-10-09T14:20:00Z',
+                user_id: 'alice@google.com',
+                model: 'gemini-2.5-flash',
+                input_tokens: 1200,
+                output_tokens: 300,
+                total_tokens: 1500,
+                estimated_cost: 0.0018,
+                currency: 'EUR',
+            },
+        ];
+        render(<RecentActivityTable logs={eurLogs} currency="EUR" />);
+        expect(screen.getByText(/€/)).toBeInTheDocument();
+        expect(screen.getByText(/0\.0018/)).toBeInTheDocument();
+    });
 });

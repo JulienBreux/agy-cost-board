@@ -147,4 +147,20 @@ describe('PersonalCostChart Component', () => {
     fireEvent.mouseLeave(modelItem);
     expect(screen.getByText('Total Spend')).toBeInTheDocument();
   });
+
+  it('renders dynamic currency symbol in the metric toggle button and formatted amounts', () => {
+    render(
+      <PersonalCostChart
+        trends={mockTrends}
+        modelDistribution={mockModelDistribution}
+        currency="EUR"
+      />
+    );
+
+    const costButton = screen.getByRole('button', { name: /€/i });
+    expect(costButton).toBeInTheDocument();
+    expect(screen.getByText('€3.50')).toBeInTheDocument();
+    expect(screen.getByText('€1.10')).toBeInTheDocument();
+  });
 });
+

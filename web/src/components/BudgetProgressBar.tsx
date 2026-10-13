@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Target, AlertTriangle, CheckCircle, Edit3, Check } from 'lucide-react';
 import { UserBudgetMetrics } from '../api';
+import { formatCurrency, getCurrencySymbol } from '../utils/currency';
 
 interface BudgetProgressBarProps {
   budget?: UserBudgetMetrics;
@@ -25,7 +26,7 @@ export const BudgetProgressBar: React.FC<BudgetProgressBarProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [inputValue, setInputValue] = useState(safeBudget.threshold.toString());
 
-  const currencySymbol = currency === 'EUR' ? '€' : currency === 'USD' ? '$' : currency;
+  const currencySymbol = getCurrencySymbol(currency);
   const pct = Math.min(Math.max(safeBudget.utilization_percent || 0, 0), 100);
 
   const handleSave = () => {
@@ -87,7 +88,7 @@ export const BudgetProgressBar: React.FC<BudgetProgressBarProps> = ({
             </button>
           ) : (
             <div className="flex items-center space-x-1.5 animate-in fade-in duration-100">
-              <span className="text-xs text-google-gray-400">{currencySymbol}</span>
+              <span className="text-xs text-google-gray-400">{currencySymbol.trim()}</span>
               <input
                 type="number"
                 value={inputValue}
@@ -112,12 +113,10 @@ export const BudgetProgressBar: React.FC<BudgetProgressBarProps> = ({
       <div className="mt-4 flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
         <div className="flex items-baseline space-x-2">
           <span className="text-2xl font-bold text-white tracking-tight">
-            {currencySymbol}
-            {(safeBudget.current_spend || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {formatCurrency(safeBudget.current_spend, currency)}
           </span>
           <span className="text-xs text-google-gray-400">
-            of {currencySymbol}
-            {(safeBudget.threshold || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            of {formatCurrency(safeBudget.threshold, currency)}
           </span>
         </div>
         <span className="text-xs font-semibold text-google-gray-300">
@@ -137,13 +136,13 @@ export const BudgetProgressBar: React.FC<BudgetProgressBarProps> = ({
       <div className="mt-3 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-google-gray-400 gap-1 border-t border-[#1d222e] pt-2.5">
         <div>
           <span>
-            Projected {currencySymbol}{(safeBudget.projected_month_end_spend || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} at month end
+            Projected {formatCurrency(safeBudget.projected_month_end_spend, currency)} at month end
           </span>
         </div>
 
         {(safeBudget.projected_overage || 0) > 0 ? (
           <span className="text-rose-400 font-medium">
-            Over budget by {currencySymbol}{(safeBudget.projected_overage || 0).toFixed(2)}
+            Over budget by {formatCurrency(safeBudget.projected_overage, currency)}
           </span>
         ) : (
           <span className="text-google-green font-medium">
@@ -154,3 +153,4 @@ export const BudgetProgressBar: React.FC<BudgetProgressBarProps> = ({
     </div>
   );
 };
+

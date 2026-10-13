@@ -1,6 +1,7 @@
 import React from 'react';
 import { DollarSign, Flame, Cpu, PieChart } from 'lucide-react';
 import { UserConsumptionKPIs } from '../api';
+import { formatCurrency } from '../utils/currency';
 
 interface PersonalKPICardsProps {
   kpis?: UserConsumptionKPIs;
@@ -15,7 +16,6 @@ export const PersonalKPICards: React.FC<PersonalKPICardsProps> = ({ kpis, curren
     total_user_tokens: 0,
     org_spend_share_percent: 0,
   };
-  const currencySymbol = currency === 'EUR' ? '€' : currency === 'USD' ? '$' : currency;
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -31,12 +31,11 @@ export const PersonalKPICards: React.FC<PersonalKPICardsProps> = ({ kpis, curren
         </div>
         <div className="mt-3">
           <div className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-            {currencySymbol}
-            {(safeKpis.mtd_spend || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {formatCurrency(safeKpis.mtd_spend, currency)}
           </div>
           <div className="mt-1 flex items-center text-xs text-google-gray-400">
             <span>
-              {currencySymbol}{(safeKpis.daily_burn_rate || 0).toFixed(2)}/day average velocity
+              {formatCurrency(safeKpis.daily_burn_rate, currency)}/day average velocity
             </span>
           </div>
         </div>
@@ -54,8 +53,7 @@ export const PersonalKPICards: React.FC<PersonalKPICardsProps> = ({ kpis, curren
         </div>
         <div className="mt-3">
           <div className="text-2xl sm:text-3xl font-bold text-amber-400 tracking-tight">
-            {currencySymbol}
-            {(safeKpis.weekly_burn_rate || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {formatCurrency(safeKpis.weekly_burn_rate, currency)}
           </div>
           <div className="mt-1 flex items-center text-xs text-google-gray-400">
             <span>Last 7 days run rate</span>

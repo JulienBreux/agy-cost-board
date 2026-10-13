@@ -39,4 +39,13 @@ describe('PersonalKPICards Component', () => {
     expect(screen.getByText('Org Spend Share')).toBeInTheDocument();
     expect(screen.getByText('0.0%')).toBeInTheDocument();
   });
+
+  it('renders EUR formatted values properly', () => {
+    render(<PersonalKPICards kpis={mockKpis} currency="EUR" />);
+
+    expect(screen.getByText('€34.50')).toBeInTheDocument();
+    expect(screen.getByText('€8.05')).toBeInTheDocument();
+    expect(screen.getByText(/€1\.15\/day average velocity/)).toBeInTheDocument();
+  });
 });
+

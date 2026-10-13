@@ -90,4 +90,16 @@ describe('StatuslineHelpBox', () => {
     fireEvent.click(screen.getByRole('button', { name: /expand statusline help/i }));
     expect(screen.getByText('One-Line Quick Install')).toBeInTheDocument();
   });
+
+  it('renders dynamic currency symbol (e.g. EUR)', () => {
+    render(
+      <StatuslineHelpBox
+        userId="alex@google.com"
+        days={30}
+        currentSpend={50}
+        currency="EUR"
+      />
+    );
+    expect(screen.getByText('cost €50')).toBeInTheDocument();
+  });
 });
