@@ -234,5 +234,49 @@ func TestViperConfigFeatures(t *testing.T) {
 			t.Errorf("expected port 7777, got %d", cfg.Port)
 		}
 	})
+
+	t.Run("mcp_enabled defaults to true and respects _MCP_ENABLED env overrides", func(t *testing.T) {
+		cfgDefault, err := config.Load(filepath.Join(t.TempDir(), "nonexistent.yaml"))
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if !cfgDefault.MCPEnabled {
+			t.Errorf("expected MCPEnabled to default to true, got false")
+		}
+
+		t.Run("disabled via _MCP_ENABLED=false", func(t *testing.T) {
+			t.Setenv("_MCP_ENABLED", "false")
+			cfg, err := config.Load(filepath.Join(t.TempDir(), "nonexistent.yaml"))
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if cfg.MCPEnabled {
+				t.Errorf("expected MCPEnabled to be false when _MCP_ENABLED=false")
+			}
+		})
+
+		t.Run("disabled via AGY_COST_BOARD_MCP_ENABLED=false", func(t *testing.T) {
+			t.Setenv("AGY_COST_BOARD_MCP_ENABLED", "false")
+			cfg, err := config.Load(filepath.Join(t.TempDir(), "nonexistent.yaml"))
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if cfg.MCPEnabled {
+				t.Errorf("expected MCPEnabled to be false when AGY_COST_BOARD_MCP_ENABLED=false")
+			}
+		})
+
+		t.Run("disabled via MCP_ENABLED=false", func(t *testing.T) {
+			t.Setenv("MCP_ENABLED", "false")
+			cfg, err := config.Load(filepath.Join(t.TempDir(), "nonexistent.yaml"))
+			if err != nil {
+				t.Fatalf("unexpected error: %v", err)
+			}
+			if cfg.MCPEnabled {
+				t.Errorf("expected MCPEnabled to be false when MCP_ENABLED=false")
+			}
+		})
+	})
 }
+
 
