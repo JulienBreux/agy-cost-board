@@ -27,6 +27,7 @@ type Config struct {
 	Format         string `mapstructure:"format" yaml:"format" json:"format"`
 	Port           int    `mapstructure:"port" yaml:"port" json:"port"`
 	Host           string `mapstructure:"host" yaml:"host" json:"host"`
+	MCPEnabled     bool   `mapstructure:"mcp_enabled" yaml:"mcp_enabled" json:"mcp_enabled"`
 }
 
 // FileConfig is an alias for Config for backwards compatibility.
@@ -68,6 +69,7 @@ func SetupViper(v *viper.Viper) {
 	_ = v.BindEnv("format", "AGY_COST_BOARD_FORMAT")
 	_ = v.BindEnv("port", "AGY_COST_BOARD_PORT", "PORT")
 	_ = v.BindEnv("host", "AGY_COST_BOARD_HOST")
+	_ = v.BindEnv("mcp_enabled", "AGY_COST_BOARD_MCP_ENABLED", "_MCP_ENABLED", "MCP_ENABLED")
 
 	// Aliases for seamless flag name and config key resolution
 	v.RegisterAlias("project", "project_id")
@@ -75,6 +77,7 @@ func SetupViper(v *viper.Viper) {
 	v.RegisterAlias("billing-table", "billing_table")
 	v.RegisterAlias("seat-quota", "seat_quota")
 	v.RegisterAlias("sink-name", "sink_name")
+	v.RegisterAlias("mcp-enabled", "mcp_enabled")
 
 	// Default fallback values
 	v.SetDefault("seat_quota", 10)
@@ -83,6 +86,7 @@ func SetupViper(v *viper.Viper) {
 	v.SetDefault("host", "0.0.0.0")
 	v.SetDefault("sink_name", "agy-inference-sink")
 	v.SetDefault("dataset", "antigravity_telemetry")
+	v.SetDefault("mcp_enabled", true)
 }
 
 // LoadViper reads and unmarshals the configuration into a strongly typed Config struct
