@@ -12,7 +12,7 @@
     - [x] Verify all unit tests pass with >80% coverage
 - [x] dc0bd9e Task: Conductor - User Manual Verification 'Phase 1: Configuration & Core MCP JSON-RPC Engine (`internal/mcp`)' (Protocol in workflow.md)
 
-## Phase 2: HTTP `/mcp` Endpoint & CLI `agy-cost-board mcp` Subcommand
+## Phase 2: HTTP `/mcp` Endpoint & CLI `agy-cost-board mcp` Subcommand [checkpoint: 2b01c9b]
 - [x] ec09955 Task: HTTP & CLI Integration Tests for MCP Transports and `_MCP_ENABLED` Toggle (TDD Red)
     - [x] Add HTTP tests in `internal/server/mcp_test.go` verifying `POST /mcp` executes `initialize`, `tools/list`, and `tools/call` when `MCPEnabled` is `true`, and returns `404 Not Found` when `MCPEnabled` is `false`
     - [x] Assert `/api/v1/version` (or `/api/v1/mcp/status`) exposes `mcp_enabled` boolean for UI discovery
@@ -21,10 +21,10 @@
     - [x] Update `internal/server/server.go` to mount `/mcp` when `MCPEnabled` is enabled and expose `mcp_enabled` in server version/status metadata
     - [x] Create `internal/cli/mcp.go` implementing `agy-cost-board mcp` stdio transport and register `--mcp-enabled` persistent flag in `internal/cli/root.go`
     - [x] Run Go test suite (`go test ./...`) and verify >80% coverage
-- [~] Task: Conductor - User Manual Verification 'Phase 2: HTTP `/mcp` Endpoint & CLI `agy-cost-board mcp` Subcommand' (Protocol in workflow.md)
+- [x] 2b01c9b Task: Conductor - User Manual Verification 'Phase 2: HTTP `/mcp` Endpoint & CLI `agy-cost-board mcp` Subcommand' (Protocol in workflow.md)
 
 ## Phase 3: Antigravity Plugin Bundle & Web UI Quota/MCP Integration
-- [ ] Task: Frontend Component Tests & Plugin Manifest Validation (TDD Red)
+- [~] Task: Frontend Component Tests & Plugin Manifest Validation (TDD Red)
     - [ ] Create frontend tests in `web/src/components/McpPluginModal.test.tsx` (or equivalent integration view test) verifying rendering of MCP status badge (`Enabled`/`Disabled`), quota telemetry preview, and copyable `mcp_config.json` snippets for Streamable HTTP and Stdio
     - [ ] Add test assertions verifying header button triggers the Antigravity Plugin / MCP Quota modal
 - [ ] Task: Scaffold Antigravity Plugin & Implement Web UI Integration (TDD Green)
