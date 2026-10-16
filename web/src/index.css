@@ -27,6 +27,15 @@ code, pre {
   background: #3e4451;
 }
 
+/* Utility to hide scrollbars for clean horizontal nav scrolling */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* ==========================================================================
    Light Theme Specifications & Overrides
    ========================================================================== */

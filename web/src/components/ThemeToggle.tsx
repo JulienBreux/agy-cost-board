@@ -61,14 +61,14 @@ export const ThemeToggle: React.FC = () => {
         aria-expanded={isOpen}
         title="Switch theme (light, dark, auto)"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="flex items-center space-x-1.5 bg-[#1a1e28] hover:bg-[#202530] border border-[#282f40] rounded-lg px-2.5 py-1.5 text-xs font-medium text-google-gray-300 hover:text-white transition-all shadow-sm focus:outline-none focus:ring-1 focus:ring-google-blue"
+        className="flex items-center space-x-1.5 bg-[#1a1e28] hover:bg-[#202530] border border-[#282f40] rounded-lg px-2.5 py-1.5 text-xs font-medium text-google-gray-300 hover:text-white transition-all shadow-sm focus:outline-none focus:ring-1 focus:ring-google-blue whitespace-nowrap flex-shrink-0"
       >
         <span className="flex-shrink-0">{getThemeIcon(theme)}</span>
         <span className="hidden sm:inline font-medium">
           {getThemeLabel(theme)}
         </span>
         <ChevronDown
-          className={`h-3 w-3 text-google-gray-400 transition-transform duration-200 ${
+          className={`h-3 w-3 text-google-gray-400 transition-transform duration-200 flex-shrink-0 ${
             isOpen ? 'rotate-180 text-white' : ''
           }`}
         />

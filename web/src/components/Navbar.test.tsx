@@ -81,4 +81,32 @@ describe('Navbar Component', () => {
     fireEvent.click(whatsNewButton);
     expect(onOpenChangelog).toHaveBeenCalledTimes(1);
   });
+
+  it('prevents navigation items from wrapping onto multiple lines', () => {
+    renderNavbar({
+      activeTab: 'overview',
+      setActiveTab: vi.fn(),
+      days: 30,
+      setDays: vi.fn(),
+    });
+
+    const brandTitle = screen.getByText('Usage and Spend');
+    expect(brandTitle).toHaveClass('whitespace-nowrap');
+
+    const navButtons = [
+      screen.getByRole('button', { name: /overview/i }),
+      screen.getByRole('button', { name: /my consumption/i }),
+      screen.getByRole('button', { name: /attributed costs/i }),
+      screen.getByRole('button', { name: /seat governance/i }),
+      screen.getByRole('button', { name: /setup & health/i }),
+    ];
+
+    navButtons.forEach((btn) => {
+      expect(btn).toHaveClass('whitespace-nowrap');
+      expect(btn).toHaveClass('flex-shrink-0');
+    });
+
+    const nav = screen.getByRole('navigation', { name: /main navigation/i });
+    expect(nav).toHaveClass('overflow-x-auto');
+  });
 });
