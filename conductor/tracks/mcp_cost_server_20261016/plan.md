@@ -17,11 +17,11 @@
     - [x] Add HTTP tests in `internal/server/mcp_test.go` verifying `POST /mcp` executes `initialize`, `tools/list`, and `tools/call` when `MCPEnabled` is `true`, and returns `404 Not Found` when `MCPEnabled` is `false`
     - [x] Assert `/api/v1/version` (or `/api/v1/mcp/status`) exposes `mcp_enabled` boolean for UI discovery
     - [x] Add CLI tests in `internal/cli/mcp_test.go` verifying `agy-cost-board mcp --demo` processes JSON-RPC messages over stdin/stdout and returns an error when `--mcp-enabled=false` or `_MCP_ENABLED=false`
-- [~] Task: Wire HTTP `/mcp` Route and `agy-cost-board mcp` Cobra Command (TDD Green)
-    - [ ] Update `internal/server/server.go` to mount `/mcp` when `MCPEnabled` is enabled and expose `mcp_enabled` in server version/status metadata
-    - [ ] Create `internal/cli/mcp.go` implementing `agy-cost-board mcp` stdio transport and register `--mcp-enabled` persistent flag in `internal/cli/root.go`
-    - [ ] Run Go test suite (`go test ./...`) and verify >80% coverage
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: HTTP `/mcp` Endpoint & CLI `agy-cost-board mcp` Subcommand' (Protocol in workflow.md)
+- [x] 2b01c9b Task: Wire HTTP `/mcp` Route and `agy-cost-board mcp` Cobra Command (TDD Green)
+    - [x] Update `internal/server/server.go` to mount `/mcp` when `MCPEnabled` is enabled and expose `mcp_enabled` in server version/status metadata
+    - [x] Create `internal/cli/mcp.go` implementing `agy-cost-board mcp` stdio transport and register `--mcp-enabled` persistent flag in `internal/cli/root.go`
+    - [x] Run Go test suite (`go test ./...`) and verify >80% coverage
+- [~] Task: Conductor - User Manual Verification 'Phase 2: HTTP `/mcp` Endpoint & CLI `agy-cost-board mcp` Subcommand' (Protocol in workflow.md)
 
 ## Phase 3: Antigravity Plugin Bundle & Web UI Quota/MCP Integration
 - [ ] Task: Frontend Component Tests & Plugin Manifest Validation (TDD Red)
