@@ -12,6 +12,23 @@ export interface ChangelogRelease {
 
 export const CHANGELOG_DATA: ChangelogRelease[] = [
   {
+    version: 'v0.6.1',
+    date: 'October 16, 2026',
+    title: 'Navigation layout polish & responsive header alignment',
+    items: [
+      {
+        title: 'Single-Line Navigation Tabs',
+        description:
+          'Prevent navigation items, brand header, and theme selector controls from wrapping across multiple lines on compact viewports.',
+      },
+      {
+        title: 'Brand Header Alignment',
+        description:
+          'Improved vertical alignment and line-height spacing for the application title, subtitle, and horizontally scrollable navigation bar.',
+      },
+    ],
+  },
+  {
     version: 'v0.6.0',
     date: 'October 13, 2026',
     title: 'Native Currency Support & Release Changelog Popup',
