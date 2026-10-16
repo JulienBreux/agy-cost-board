@@ -45,3 +45,10 @@ The main goal is to track the allocation of Gemini Enterprise licenses for a pro
 - Shows developer spend (` · cost $123`) in the terminal status bar with zero terminal latency.
 - Features subshell asynchronous background refresh, local file caching with configurable TTL, stampede lock prevention, and automatic Cloud Run IAM Bearer token authentication.
 
+### 7. Model Context Protocol (MCP) Server & Antigravity Plugin
+- Built-in JSON-RPC 2.0 MCP server (`2025-03-26`) supporting both Streamable HTTP (`POST /mcp` on `serve`) and Stdio (`agy-cost-board mcp`).
+- Exposes 4 FinOps & quota tools (`get_overview_metrics`, `get_license_status`, `get_users_costs`, `get_user_dashboard`) backed by `attribution.Engine`.
+- Runtime toggleable via `_MCP_ENABLED` (plus `AGY_COST_BOARD_MCP_ENABLED`, `MCP_ENABLED`, YAML `mcp_enabled`, and `--mcp-enabled`).
+- Ships a native Antigravity plugin bundle (`.agents/plugins/agy-cost-board/`) and an interactive **MCP & Quotas** modal in the Web UI.
+
+

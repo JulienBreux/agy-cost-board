@@ -86,6 +86,14 @@ describe('App Component Navigation', () => {
             commit: 'a3fefe9',
             build_date: '2026-10-10T19:40:54Z'
         });
+        vi.spyOn(api, 'fetchMcpStatus').mockResolvedValue({
+            name: 'agy-cost-board',
+            version: 'v0.4.0-dirty',
+            protocol_version: '2025-03-26',
+            mcp_enabled: true,
+            endpoint: '/mcp',
+            tools: ['get_overview_metrics', 'get_license_status', 'get_users_costs', 'get_user_dashboard']
+        });
         vi.spyOn(changelogStorage, 'getLastSeenVersion').mockReturnValue('v0.4.0-dirty');
         vi.spyOn(changelogStorage, 'setLastSeenVersion').mockImplementation(() => {});
         vi.spyOn(api, 'fetchSetupStatus').mockResolvedValue({
@@ -216,6 +224,20 @@ describe('App Component Navigation', () => {
         fireEvent.click(versionLink);
 
         expect(await screen.findByRole('dialog', { name: /what's new in agy cost board/i })).toBeInTheDocument();
+    });
+
+    it('opens MCP & Quotas modal from Navbar trigger', async () => {
+        render(<App />);
+
+        await waitFor(() => {
+            expect(screen.getByText('v0.4.0-dirty')).toBeInTheDocument();
+        });
+
+        const mcpBtn = screen.getByRole('button', { name: /mcp & quotas/i });
+        fireEvent.click(mcpBtn);
+
+        expect(await screen.findByRole('dialog', { name: /antigravity plugin & mcp server/i })).toBeInTheDocument();
+        expect(screen.getByTestId('mcp-status-badge')).toHaveTextContent(/mcp enabled/i);
     });
 });
 

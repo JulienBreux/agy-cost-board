@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layers, DollarSign, ShieldCheck, Zap, Activity, User, Sparkles } from 'lucide-react';
+import { Layers, DollarSign, ShieldCheck, Zap, Activity, User, Sparkles, Cpu } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 
 interface NavbarProps {
@@ -8,6 +8,8 @@ interface NavbarProps {
   days: number;
   setDays: (days: number) => void;
   onOpenChangelog?: () => void;
+  onOpenMcpModal?: () => void;
+  mcpEnabled?: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -16,6 +18,8 @@ export const Navbar: React.FC<NavbarProps> = ({
   days,
   setDays,
   onOpenChangelog,
+  onOpenMcpModal,
+  mcpEnabled = true,
 }) => {
   return (
     <header className="border-b border-[#202530] bg-[#14171f]/80 backdrop-blur-md sticky top-0 z-40">
@@ -122,6 +126,25 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </button>
               ))}
             </div>
+
+            {/* MCP & Quotas Trigger */}
+            {onOpenMcpModal && (
+              <button
+                type="button"
+                onClick={onOpenMcpModal}
+                className="flex items-center space-x-1.5 bg-[#1a1e28] hover:bg-[#202530] border border-[#282f40] rounded-lg px-2.5 py-1.5 text-xs font-medium text-emerald-400 hover:text-emerald-300 transition-all shadow-sm focus:outline-none focus:ring-1 focus:ring-emerald-400 whitespace-nowrap flex-shrink-0"
+                title="MCP & Quotas"
+                aria-label="MCP & Quotas"
+              >
+                <Cpu className="h-4 w-4 flex-shrink-0" />
+                <span className="hidden xl:inline font-medium text-google-gray-300">MCP &amp; Quotas</span>
+                <span
+                  className={`h-1.5 w-1.5 rounded-full ${
+                    mcpEnabled ? 'bg-emerald-400' : 'bg-rose-400'
+                  }`}
+                />
+              </button>
+            )}
 
             {/* What's new Changelog Trigger */}
             {onOpenChangelog && (

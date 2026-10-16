@@ -63,6 +63,33 @@ describe('User Personal Consumption API & Persistence', () => {
         });
     });
 
+    describe('fetchMcpStatus', () => {
+        it('fetches MCP status info from /api/v1/mcp/status', async () => {
+            const mockMcpStatus = {
+                name: 'agy-cost-board',
+                version: 'v0.5.0',
+                protocol_version: '2025-03-26',
+                mcp_enabled: true,
+                endpoint: '/mcp',
+                tools: [
+                    'get_overview_metrics',
+                    'get_license_status',
+                    'get_users_costs',
+                    'get_user_dashboard',
+                ],
+            };
+
+            vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+                ok: true,
+                json: async () => mockMcpStatus,
+            } as Response);
+
+            const result = await (await import('./api')).fetchMcpStatus();
+            expect(result).toEqual(mockMcpStatus);
+            expect(fetch).toHaveBeenCalledWith('/api/v1/mcp/status');
+        });
+    });
+
     describe('fetchUserActivity', () => {
         it('fetches user activity logs with query params', async () => {
             const mockActivity = [

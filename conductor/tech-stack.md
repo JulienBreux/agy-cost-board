@@ -33,3 +33,6 @@
 
 ## 7. Developer Tooling & Integrations
 - **Antigravity CLI Statusline:** Dynamic POSIX/bash 3.2+ compatible statusline script served via `GET /statusline.sh`, with zero-latency `/tmp` caching, background asynchronous subshell refresh, stampede locking, and Cloud Run IAM Bearer token authentication.
+- **Model Context Protocol (MCP) Server (`internal/mcp`):** Pure Go JSON-RPC 2.0 MCP (`2025-03-26`) implementation supporting Streamable HTTP (`POST /mcp`) and Stdio (`agy-cost-board mcp`), toggleable via `_MCP_ENABLED`.
+- **Antigravity Plugin Bundle (`.agents/plugins/agy-cost-board/`):** Declarative `plugin.json`, `mcp_config.json`, `rules/AGENTS.md`, and `skills/cost-and-quota-advisor/SKILL.md`.
+

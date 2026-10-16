@@ -6,6 +6,7 @@ import {
   fetchUserSummary,
   fetchSetupStatus,
   fetchVersion,
+  fetchMcpStatus,
   OverviewMetrics,
   AllocatedUserCost,
   LicenseGovernance,
@@ -22,6 +23,7 @@ import { UserModal } from './components/UserModal';
 import { UserDashboardView } from './components/UserDashboardView';
 import { Footer } from './components/Footer';
 import { ChangelogModal } from './components/ChangelogModal';
+import { McpPluginModal } from './components/McpPluginModal';
 import { getLastSeenVersion, setLastSeenVersion, hasNewVersion } from './utils/changelogStorage';
 import { ThemeProvider } from './context/ThemeContext';
 import { RefreshCw, AlertTriangle } from 'lucide-react';
@@ -49,6 +51,8 @@ export function App() {
   const [days, setDays] = useState<number>(30);
   const [appVersion, setAppVersion] = useState<string>('');
   const [showChangelog, setShowChangelog] = useState<boolean>(false);
+  const [showMcpModal, setShowMcpModal] = useState<boolean>(false);
+  const [mcpEnabled, setMcpEnabled] = useState<boolean>(true);
 
   const [overview, setOverview] = useState<OverviewMetrics | null>(null);
   const [costs, setCosts] = useState<AllocatedUserCost[]>([]);
@@ -113,6 +117,16 @@ export function App() {
       })
       .catch((err: unknown) => {
         console.debug('Failed to load application version:', err);
+      });
+
+    fetchMcpStatus()
+      .then((status) => {
+        if (typeof status?.mcp_enabled === 'boolean') {
+          setMcpEnabled(status.mcp_enabled);
+        }
+      })
+      .catch((err: unknown) => {
+        console.debug('Failed to load MCP status:', err);
       });
   }, []);
 
@@ -181,6 +195,8 @@ export function App() {
         days={days}
         setDays={setDays}
         onOpenChangelog={() => setShowChangelog(true)}
+        onOpenMcpModal={() => setShowMcpModal(true)}
+        mcpEnabled={mcpEnabled}
       />
 
       {/* Main Content Area */}
@@ -301,6 +317,15 @@ export function App() {
       <ChangelogModal
         isOpen={showChangelog}
         onClose={handleCloseChangelog}
+      />
+
+      {/* Antigravity MCP & Quotas Modal */}
+      <McpPluginModal
+        isOpen={showMcpModal}
+        onClose={() => setShowMcpModal(false)}
+        mcpEnabled={mcpEnabled}
+        overview={overview}
+        governance={governance}
       />
 
       {/* Footer */}

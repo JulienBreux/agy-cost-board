@@ -182,7 +182,8 @@ Once configured in `.agy-cost-board.yaml` (or via environment variables):
 | `user <email>` | Drill down into an individual developer's token history and spend | `agy-cost-board user julienbreux@google.com`   |
 | `doctor`       | Fast connectivity and configuration sanity check                  | `agy-cost-board doctor`                        |
 | `tui`          | Launch interactive full-screen terminal dashboard                 | `agy-cost-board tui`                           |
-| `serve`        | Start web dashboard HTTP server with embedded React SPA           | `agy-cost-board serve --port=8080`             |
+| `serve`        | Start web dashboard HTTP server with embedded React SPA & `/mcp`  | `agy-cost-board serve --port=8080`             |
+| `mcp`          | Start Model Context Protocol (MCP) JSON-RPC server over `stdio`   | `agy-cost-board mcp --demo`                    |
 
 ---
 
@@ -198,7 +199,67 @@ The built-in HTTP server exposes clean JSON APIs consumed by the embedded fronte
 | `GET`  | `/api/v1/licenses/status?days=30`      | Seat quota, active/dormant status, and estimated monthly savings  |
 | `GET`  | `/api/v1/users/{id}?days=30`           | Developer drilldown, historical spend, and model breakdown        |
 | `GET`  | `/api/v1/setup/status`                 | Real-time 5-point GCP telemetry diagnostic status                 |
+| `GET`  | `/api/v1/mcp/status`                   | MCP server status (`mcp_enabled`), protocol version, & tool list  |
+| `POST` | `/mcp`                                 | Model Context Protocol (MCP `2025-03-26`) Streamable HTTP JSON-RPC|
 | `GET`  | `/statusline.sh?user=&days=30&ttl=300` | Dynamic Antigravity CLI statusline script with user spend display |
+
+---
+
+## Antigravity MCP Server & Plugin Integration
+
+`agy-cost-board` includes a built-in **Model Context Protocol (MCP)** server (`2025-03-26`) and a native **Antigravity Plugin** bundle (`.agents/plugins/agy-cost-board/`), allowing AI agents in Antigravity IDE and CLI to query real-time AI costs, budget burn rates, and Gemini Enterprise seat quotas directly.
+
+### Exposed MCP Tools
+
+| Tool Name              | Arguments                                                   | Description                                                                                      |
+| ---------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `get_overview_metrics` | `days?: number` (default `30`)                              | Organization-wide spend, token count, active users, seat utilization %, and model breakdown.     |
+| `get_license_status`   | `days?: number` (default `30`)                              | Gemini Enterprise seat quota, assigned/active/dormant seats, and reclaimable license savings.    |
+| `get_users_costs`      | `days?: number` (default `30`), `model?: string`            | Proportional per-user, per-model, per-day cost attribution rows reconciled with Cloud Billing.   |
+| `get_user_dashboard`   | `user_id: string`, `days?: number`, `monthly_budget?: number` | Personal developer burn rate, projected month-end spend, budget status, and FinOps optimization. |
+
+### Dual Transport Modes
+
+1. **Streamable HTTP (`POST /mcp`)**: Automatically mounted on `agy-cost-board serve`:
+   ```json
+   {
+     "mcpServers": {
+       "agy-cost-board": {
+         "url": "http://localhost:8080/mcp"
+       }
+     }
+   }
+   ```
+2. **Stdio CLI (`agy-cost-board mcp`)**: Zero-port subprocess mode for local Antigravity sessions:
+   ```json
+   {
+     "mcpServers": {
+       "agy-cost-board": {
+         "command": "agy-cost-board",
+         "args": ["mcp", "--demo"],
+         "env": {
+           "_MCP_ENABLED": "true"
+         }
+       }
+     }
+   }
+   ```
+
+### Disabling MCP (`_MCP_ENABLED`)
+
+MCP is **enabled by default** (`true`). To disable the MCP server (causing `POST /mcp` and `GET /mcp` to return `404 Not Found` and `agy-cost-board mcp` to exit immediately), set `_MCP_ENABLED=false`:
+
+```bash
+# Disable via _MCP_ENABLED environment variable
+_MCP_ENABLED=false ./bin/agy-cost-board serve --demo
+
+# Or via CLI flag
+./bin/agy-cost-board serve --mcp-enabled=false
+```
+
+### Web UI Quota & MCP Integration (`MCP & Quotas`)
+
+Click the **MCP & Quotas** button in the top navigation bar of the Web UI to inspect live seat quota telemetry, verify whether `_MCP_ENABLED` is active, browse the exposed MCP tools, and copy ready-to-use `mcp_config.json` snippets for Streamable HTTP or Stdio.
 
 ---
 

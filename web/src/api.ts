@@ -129,6 +129,21 @@ export const fetchVersion = async (): Promise<AppVersionInfo> => {
   return res.json();
 };
 
+export interface McpStatusInfo {
+  name: string;
+  version: string;
+  protocol_version: string;
+  mcp_enabled: boolean;
+  endpoint: string;
+  tools: string[];
+}
+
+export const fetchMcpStatus = async (): Promise<McpStatusInfo> => {
+  const res = await fetch('/api/v1/mcp/status');
+  if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch MCP status`);
+  return res.json();
+};
+
 export interface CurrentUserIdentity {
   email: string;
   displayName: string;

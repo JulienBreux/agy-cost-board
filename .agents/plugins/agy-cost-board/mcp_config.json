@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "agy-cost-board": {
+      "command": "agy-cost-board",
+      "args": ["mcp", "--demo"],
+      "env": {
+        "_MCP_ENABLED": "true"
+      }
+    }
+  }
+}
