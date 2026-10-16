@@ -1,6 +1,6 @@
 # Implementation Plan: MCP Server for Cost & Quota Tools with Antigravity Plugin & UI Integration
 
-## Phase 1: Configuration & Core MCP JSON-RPC Engine (`internal/mcp`)
+## Phase 1: Configuration & Core MCP JSON-RPC Engine (`internal/mcp`) [checkpoint: dc0bd9e]
 - [x] e3f3699 Task: Unit Tests for `_MCP_ENABLED` Configuration & MCP Protocol Engine (TDD Red)
     - [x] Add tests in `internal/config/config_test.go` verifying default `MCPEnabled: true` and overrides via `AGY_COST_BOARD_MCP_ENABLED=false`, `_MCP_ENABLED=false`, and `MCP_ENABLED=false`
     - [x] Create `internal/mcp/server_test.go` testing JSON-RPC 2.0 `initialize`, `notifications/initialized`, `ping`, `tools/list`, and `tools/call` across all 4 tools (`get_overview_metrics`, `get_license_status`, `get_users_costs`, `get_user_dashboard`)
@@ -10,10 +10,10 @@
     - [x] Implement `internal/mcp/server.go` with JSON-RPC 2.0 request/response types, tool schemas, and tool handlers backed by `attribution.Engine`
     - [x] Implement both `ServeStdio(ctx, io.Reader, io.Writer)` and `ServeHTTP(http.ResponseWriter, *http.Request)` on `mcp.Server`
     - [x] Verify all unit tests pass with >80% coverage
-- [~] Task: Conductor - User Manual Verification 'Phase 1: Configuration & Core MCP JSON-RPC Engine (`internal/mcp`)' (Protocol in workflow.md)
+- [x] dc0bd9e Task: Conductor - User Manual Verification 'Phase 1: Configuration & Core MCP JSON-RPC Engine (`internal/mcp`)' (Protocol in workflow.md)
 
 ## Phase 2: HTTP `/mcp` Endpoint & CLI `agy-cost-board mcp` Subcommand
-- [ ] Task: HTTP & CLI Integration Tests for MCP Transports and `_MCP_ENABLED` Toggle (TDD Red)
+- [~] Task: HTTP & CLI Integration Tests for MCP Transports and `_MCP_ENABLED` Toggle (TDD Red)
     - [ ] Add HTTP tests in `internal/server/mcp_test.go` verifying `POST /mcp` executes `initialize`, `tools/list`, and `tools/call` when `MCPEnabled` is `true`, and returns `404 Not Found` when `MCPEnabled` is `false`
     - [ ] Assert `/api/v1/version` (or `/api/v1/mcp/status`) exposes `mcp_enabled` boolean for UI discovery
     - [ ] Add CLI tests in `internal/cli/mcp_test.go` verifying `agy-cost-board mcp --demo` processes JSON-RPC messages over stdin/stdout and returns an error when `--mcp-enabled=false` or `_MCP_ENABLED=false`
