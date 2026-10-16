@@ -82,6 +82,25 @@ describe('Navbar Component', () => {
     expect(onOpenChangelog).toHaveBeenCalledTimes(1);
   });
 
+  it('renders "MCP & Quotas" button and invokes onOpenMcpModal when clicked', () => {
+    const onOpenMcpModal = vi.fn();
+
+    renderNavbar({
+      activeTab: 'overview',
+      setActiveTab: vi.fn(),
+      days: 30,
+      setDays: vi.fn(),
+      onOpenMcpModal,
+      mcpEnabled: true,
+    });
+
+    const mcpButton = screen.getByRole('button', { name: /mcp & quotas/i });
+    expect(mcpButton).toBeInTheDocument();
+
+    fireEvent.click(mcpButton);
+    expect(onOpenMcpModal).toHaveBeenCalledTimes(1);
+  });
+
   it('prevents navigation items from wrapping onto multiple lines', () => {
     renderNavbar({
       activeTab: 'overview',
