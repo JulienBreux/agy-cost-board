@@ -57,6 +57,7 @@ func newServeCommand(v *viper.Viper) *cobra.Command {
 			billingTable := flagBillingTable
 			seatQuota := flagSeatQuota
 			demo := flagDemo
+			mcpEnabled := flagMCPEnabled
 
 			if cfg != nil {
 				projectID = cfg.ProjectID
@@ -64,6 +65,7 @@ func newServeCommand(v *viper.Viper) *cobra.Command {
 				billingTable = cfg.BillingTable
 				seatQuota = cfg.SeatQuota
 				demo = cfg.Demo
+				mcpEnabled = cfg.MCPEnabled
 				if !cmd.Flags().Changed("port") && cfg.Port > 0 {
 					port = cfg.Port
 				}
@@ -85,6 +87,7 @@ func newServeCommand(v *viper.Viper) *cobra.Command {
 				Commit:    Commit,
 				BuildDate: BuildDate,
 			})
+			srv.SetMCPEnabled(mcpEnabled)
 			addr := fmt.Sprintf("%s:%d", host, port)
 
 			httpServer := &http.Server{
@@ -95,16 +98,22 @@ func newServeCommand(v *viper.Viper) *cobra.Command {
 				IdleTimeout:  60 * time.Second,
 			}
 
+			mcpBanner := "disabled (_MCP_ENABLED=false)"
+			if mcpEnabled {
+				mcpBanner = fmt.Sprintf("http://localhost:%d/mcp", port)
+			}
+
 			cmd.Printf("┌────────────────────────────────────────────────────────┐\n")
 			cmd.Printf("│ AGY & Gemini Enterprise Cost Attribution Board         │\n")
 			cmd.Printf("├────────────────────────────────────────────────────────┤\n")
 			cmd.Printf("│ Data Source : %-41s│\n", source)
 			cmd.Printf("│ Dashboard   : http://localhost:%-25d│\n", port)
+			cmd.Printf("│ MCP Server  : %-41s│\n", mcpBanner)
 			cmd.Printf("│ Healthz     : http://localhost:%-25s│\n", fmt.Sprintf("%d/healthz", port))
 			cmd.Printf("└────────────────────────────────────────────────────────┘\n\n")
 
 			// Setup graceful shutdown channel using signal.NotifyContext
-			shutdownCtx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+			shutdownCtx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 			defer stop()
 
 			serverErr := make(chan error, 1)

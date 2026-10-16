@@ -14,6 +14,7 @@ import (
 	"github.com/go-chi/cors"
 	"github.com/julienbreux/agy-cost-board/internal/attribution"
 	"github.com/julienbreux/agy-cost-board/internal/domain"
+	"github.com/julienbreux/agy-cost-board/internal/mcp"
 	"github.com/julienbreux/agy-cost-board/internal/setup"
 )
 
@@ -32,6 +33,8 @@ type Server struct {
 	setupCfg    setup.Config
 	setupRunner setup.Runner
 	versionInfo VersionInfo
+	mcpServer   *mcp.Server
+	mcpEnabled  bool
 }
 
 // NewServer initializes the Chi router with middleware, API routes, and embedded SPA handler.
@@ -55,6 +58,8 @@ func NewServerWithSetup(engine *attribution.Engine, staticFS fs.FS, cfg setup.Co
 		router:      chi.NewRouter(),
 		setupCfg:    cfg,
 		setupRunner: runner,
+		mcpServer:   mcp.NewServer(engine, "dev"),
+		mcpEnabled:  true,
 	}
 
 	s.setupRoutes()
@@ -64,11 +69,24 @@ func NewServerWithSetup(engine *attribution.Engine, staticFS fs.FS, cfg setup.Co
 // SetVersionInfo sets the application build version metadata.
 func (s *Server) SetVersionInfo(v VersionInfo) {
 	s.versionInfo = v
+	if s.engine != nil {
+		s.mcpServer = mcp.NewServer(s.engine, v.Version)
+	}
 }
 
 // VersionInfo returns the application build version metadata.
 func (s *Server) VersionInfo() VersionInfo {
 	return s.versionInfo
+}
+
+// SetMCPEnabled enables or disables the /mcp endpoint at runtime.
+func (s *Server) SetMCPEnabled(enabled bool) {
+	s.mcpEnabled = enabled
+}
+
+// MCPEnabled reports whether the /mcp endpoint is enabled.
+func (s *Server) MCPEnabled() bool {
+	return s.mcpEnabled
 }
 
 // Router returns the underlying Chi router.
@@ -111,6 +129,7 @@ func (s *Server) setupRoutes() {
 		api.Get("/version", func(w http.ResponseWriter, r *http.Request) {
 			respondJSON(w, http.StatusOK, s.versionInfo)
 		})
+		api.Get("/mcp/status", s.handleMCPStatus)
 		api.Get("/me", s.handleCurrentUser)
 		api.Get("/metrics/overview", s.handleOverviewMetrics)
 		api.Get("/costs/users", s.handleAttributedCosts)
@@ -121,6 +140,10 @@ func (s *Server) setupRoutes() {
 		api.Get("/setup/status", s.handleSetupStatus)
 	})
 
+	// Model Context Protocol (MCP) Streamable HTTP endpoint
+	r.Post("/mcp", s.handleMCP)
+	r.Get("/mcp", s.handleMCP)
+
 	// Antigravity CLI statusline dynamic script
 	r.Get("/statusline.sh", s.handleStatuslineScript)
 
@@ -128,6 +151,28 @@ func (s *Server) setupRoutes() {
 	if s.staticFS != nil {
 		s.setupStaticSPA(r)
 	}
+}
+
+func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
+	if !s.mcpEnabled || s.mcpServer == nil {
+		http.NotFound(w, r)
+		return
+	}
+	s.mcpServer.ServeHTTP(w, r)
+}
+
+func (s *Server) handleMCPStatus(w http.ResponseWriter, r *http.Request) {
+	var tools []mcp.Tool
+	if s.mcpServer != nil {
+		tools = s.mcpServer.Tools()
+	}
+	respondJSON(w, http.StatusOK, map[string]any{
+		"mcp_enabled":      s.mcpEnabled,
+		"protocol_version": mcp.ProtocolVersion,
+		"endpoint":         "/mcp",
+		"transports":       []string{"http", "stdio"},
+		"tools":            tools,
+	})
 }
 
 func (s *Server) handleOverviewMetrics(w http.ResponseWriter, r *http.Request) {

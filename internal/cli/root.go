@@ -30,6 +30,7 @@ var (
 	flagBillingTable   string
 	flagSeatQuota      int
 	flagFormat         string
+	flagMCPEnabled     = true
 )
 
 // ResetFlags restores default flag values across unit test runs.
@@ -41,6 +42,7 @@ func ResetFlags() {
 	flagBillingTable = ""
 	flagSeatQuota = 10
 	flagFormat = "table"
+	flagMCPEnabled = true
 	flagSetupSave = false
 	flagSetupCreate = false
 	flagSetupDryRun = false
@@ -54,6 +56,7 @@ func SyncFlags(cfg *config.Config) {
 		return
 	}
 	flagDemo = cfg.Demo
+	flagMCPEnabled = cfg.MCPEnabled
 	if cfg.ProjectID != "" {
 		flagProjectID = cfg.ProjectID
 	}
@@ -118,6 +121,7 @@ to compute proportional, per-user AI costs and track Gemini Enterprise seat util
 	rootCmd.PersistentFlags().StringVar(&flagBillingTable, "billing-table", "", "BigQuery table for GCP billing export")
 	rootCmd.PersistentFlags().IntVar(&flagSeatQuota, "seat-quota", 10, "Gemini Enterprise seat quota")
 	rootCmd.PersistentFlags().StringVar(&flagFormat, "format", "table", "Output format: table, json, or csv")
+	rootCmd.PersistentFlags().BoolVar(&flagMCPEnabled, "mcp-enabled", true, "Enable Model Context Protocol (MCP) server (or set _MCP_ENABLED)")
 
 	// Bind persistent Cobra flags directly to Viper keys
 	_ = v.BindPFlag("demo", rootCmd.PersistentFlags().Lookup("demo"))
@@ -130,6 +134,8 @@ to compute proportional, per-user AI costs and track Gemini Enterprise seat util
 	_ = v.BindPFlag("seat_quota", rootCmd.PersistentFlags().Lookup("seat-quota"))
 	_ = v.BindPFlag("seat-quota", rootCmd.PersistentFlags().Lookup("seat-quota"))
 	_ = v.BindPFlag("format", rootCmd.PersistentFlags().Lookup("format"))
+	_ = v.BindPFlag("mcp_enabled", rootCmd.PersistentFlags().Lookup("mcp-enabled"))
+	_ = v.BindPFlag("mcp-enabled", rootCmd.PersistentFlags().Lookup("mcp-enabled"))
 
 	rootCmd.AddCommand(newSetupCommand(v))
 	rootCmd.AddCommand(newCostCommand(v))
@@ -138,6 +144,7 @@ to compute proportional, per-user AI costs and track Gemini Enterprise seat util
 	rootCmd.AddCommand(newDoctorCommand(v))
 	rootCmd.AddCommand(newTUICommand(v))
 	rootCmd.AddCommand(newServeCommand(v))
+	rootCmd.AddCommand(newMCPCommand(v))
 
 	return rootCmd
 }
