@@ -34,3 +34,9 @@
 
 - [x] **Track: Implement a popup to display changelog from the last visit/release (cookie)**
   *Link: [./tracks/changelog_popup_20261013/index.md](./tracks/changelog_popup_20261013/index.md)*
+
+---
+
+- [ ] **Track: Implement a MCP server to propose tools to request about costs, disableable via _MCP_ENABLED, with an Antigravity plugin and UI integration to display quotas**
+  *Link: [./tracks/mcp_cost_server_20261016/index.md](./tracks/mcp_cost_server_20261016/index.md)*
+
