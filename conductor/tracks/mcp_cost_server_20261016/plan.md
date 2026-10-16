@@ -24,10 +24,10 @@
 - [x] 2b01c9b Task: Conductor - User Manual Verification 'Phase 2: HTTP `/mcp` Endpoint & CLI `agy-cost-board mcp` Subcommand' (Protocol in workflow.md)
 
 ## Phase 3: Antigravity Plugin Bundle & Web UI Quota/MCP Integration
-- [~] Task: Frontend Component Tests & Plugin Manifest Validation (TDD Red)
-    - [ ] Create frontend tests in `web/src/components/McpPluginModal.test.tsx` (or equivalent integration view test) verifying rendering of MCP status badge (`Enabled`/`Disabled`), quota telemetry preview, and copyable `mcp_config.json` snippets for Streamable HTTP and Stdio
-    - [ ] Add test assertions verifying header button triggers the Antigravity Plugin / MCP Quota modal
-- [ ] Task: Scaffold Antigravity Plugin & Implement Web UI Integration (TDD Green)
+- [x] e1246b6 Task: Frontend Component Tests & Plugin Manifest Validation (TDD Red)
+    - [x] Create frontend tests in `web/src/components/McpPluginModal.test.tsx` (or equivalent integration view test) verifying rendering of MCP status badge (`Enabled`/`Disabled`), quota telemetry preview, and copyable `mcp_config.json` snippets for Streamable HTTP and Stdio
+    - [x] Add test assertions verifying header button triggers the Antigravity Plugin / MCP Quota modal
+- [~] Task: Scaffold Antigravity Plugin & Implement Web UI Integration (TDD Green)
     - [ ] Create `.agents/plugins/agy-cost-board/plugin.json`, `.agents/plugins/agy-cost-board/mcp_config.json`, `.agents/plugins/agy-cost-board/rules/AGENTS.md`, and `.agents/plugins/agy-cost-board/skills/cost-and-quota-advisor/SKILL.md`
     - [ ] Implement the Antigravity MCP & Quota Plugin integration component in `web/src/` and wire it into the main application header/dashboard
     - [ ] Update `README.md`, `conductor/product.md`, and `conductor/tech-stack.md` to document the MCP server, `_MCP_ENABLED` variable, and Antigravity plugin
