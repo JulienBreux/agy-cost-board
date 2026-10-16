@@ -1,16 +1,16 @@
 # Implementation Plan: MCP Server for Cost & Quota Tools with Antigravity Plugin & UI Integration
 
 ## Phase 1: Configuration & Core MCP JSON-RPC Engine (`internal/mcp`)
-- [ ] Task: Unit Tests for `_MCP_ENABLED` Configuration & MCP Protocol Engine (TDD Red)
-    - [ ] Add tests in `internal/config/config_test.go` verifying default `MCPEnabled: true` and overrides via `AGY_COST_BOARD_MCP_ENABLED=false`, `_MCP_ENABLED=false`, and `MCP_ENABLED=false`
-    - [ ] Create `internal/mcp/server_test.go` testing JSON-RPC 2.0 `initialize`, `notifications/initialized`, `ping`, `tools/list`, and `tools/call` across all 4 tools (`get_overview_metrics`, `get_license_status`, `get_users_costs`, `get_user_dashboard`)
-    - [ ] Test error handling for unknown methods, invalid tool arguments, and missing `user_id`
-- [ ] Task: Implement Configuration Toggle & Core MCP Server (`internal/mcp`) (TDD Green)
-    - [ ] Add `MCPEnabled bool` to `config.Config` in `internal/config/config.go` with Viper env bindings (`AGY_COST_BOARD_MCP_ENABLED`, `_MCP_ENABLED`, `MCP_ENABLED`) and default `true`
-    - [ ] Implement `internal/mcp/server.go` with JSON-RPC 2.0 request/response types, tool schemas, and tool handlers backed by `attribution.Engine`
-    - [ ] Implement both `ServeStdio(ctx, io.Reader, io.Writer)` and `ServeHTTP(http.ResponseWriter, *http.Request)` on `mcp.Server`
-    - [ ] Verify all unit tests pass with >80% coverage
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Configuration & Core MCP JSON-RPC Engine (`internal/mcp`)' (Protocol in workflow.md)
+- [x] e3f3699 Task: Unit Tests for `_MCP_ENABLED` Configuration & MCP Protocol Engine (TDD Red)
+    - [x] Add tests in `internal/config/config_test.go` verifying default `MCPEnabled: true` and overrides via `AGY_COST_BOARD_MCP_ENABLED=false`, `_MCP_ENABLED=false`, and `MCP_ENABLED=false`
+    - [x] Create `internal/mcp/server_test.go` testing JSON-RPC 2.0 `initialize`, `notifications/initialized`, `ping`, `tools/list`, and `tools/call` across all 4 tools (`get_overview_metrics`, `get_license_status`, `get_users_costs`, `get_user_dashboard`)
+    - [x] Test error handling for unknown methods, invalid tool arguments, and missing `user_id`
+- [x] dc0bd9e Task: Implement Configuration Toggle & Core MCP Server (`internal/mcp`) (TDD Green)
+    - [x] Add `MCPEnabled bool` to `config.Config` in `internal/config/config.go` with Viper env bindings (`AGY_COST_BOARD_MCP_ENABLED`, `_MCP_ENABLED`, `MCP_ENABLED`) and default `true`
+    - [x] Implement `internal/mcp/server.go` with JSON-RPC 2.0 request/response types, tool schemas, and tool handlers backed by `attribution.Engine`
+    - [x] Implement both `ServeStdio(ctx, io.Reader, io.Writer)` and `ServeHTTP(http.ResponseWriter, *http.Request)` on `mcp.Server`
+    - [x] Verify all unit tests pass with >80% coverage
+- [~] Task: Conductor - User Manual Verification 'Phase 1: Configuration & Core MCP JSON-RPC Engine (`internal/mcp`)' (Protocol in workflow.md)
 
 ## Phase 2: HTTP `/mcp` Endpoint & CLI `agy-cost-board mcp` Subcommand
 - [ ] Task: HTTP & CLI Integration Tests for MCP Transports and `_MCP_ENABLED` Toggle (TDD Red)
