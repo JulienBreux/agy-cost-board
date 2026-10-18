@@ -132,6 +132,7 @@ func (s *Server) setupRoutes() {
 		api.Get("/mcp/status", s.handleMCPStatus)
 		api.Get("/me", s.handleCurrentUser)
 		api.Get("/metrics/overview", s.handleOverviewMetrics)
+		api.Get("/leaderboard", s.handleLeaderboard)
 		api.Get("/costs/users", s.handleAttributedCosts)
 		api.Get("/licenses/status", s.handleLicenseGovernance)
 		api.Get("/users/{id}", s.handleUserSummary)
@@ -183,6 +184,16 @@ func (s *Server) handleOverviewMetrics(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	respondJSON(w, http.StatusOK, overview)
+}
+
+func (s *Server) handleLeaderboard(w http.ResponseWriter, r *http.Request) {
+	days := parseIntQuery(r, "days", 30)
+	entries, err := s.engine.GetLeaderboard(r.Context(), days)
+	if err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	respondJSON(w, http.StatusOK, entries)
 }
 
 func (s *Server) handleAttributedCosts(w http.ResponseWriter, r *http.Request) {

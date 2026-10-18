@@ -12,7 +12,7 @@ const renderNavbar = (props: Parameters<typeof Navbar>[0]) => {
 };
 
 describe('Navbar Component', () => {
-  it('renders brand and navigation tabs correctly', () => {
+  it('renders brand on top line and 6 navigation tabs in order on second line', () => {
     const setActiveTab = vi.fn();
     const setDays = vi.fn();
 
@@ -24,14 +24,22 @@ describe('Navbar Component', () => {
     });
 
     expect(screen.getByText('Usage and Spend')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /overview/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /my consumption/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /attributed costs/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /seat governance/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /setup & health/i })).toBeInTheDocument();
+    expect(screen.getByTestId('navbar-top-row')).toBeInTheDocument();
+    expect(screen.getByTestId('navbar-second-row')).toBeInTheDocument();
+
+    const nav = screen.getByRole('navigation', { name: /main navigation/i });
+    const navButtons = Array.from(nav.querySelectorAll('button'));
+    expect(navButtons.map((b) => b.textContent?.trim())).toEqual([
+      'Overview',
+      'Leaderboard',
+      'My Consumption',
+      'Attributed Costs',
+      'Seat Governance',
+      'Setup & Health',
+    ]);
   });
 
-  it('triggers setActiveTab when a navigation button is clicked', () => {
+  it('triggers setActiveTab when Leaderboard or other navigation buttons are clicked', () => {
     const setActiveTab = vi.fn();
     const setDays = vi.fn();
 
@@ -41,6 +49,9 @@ describe('Navbar Component', () => {
       days: 30,
       setDays,
     });
+
+    fireEvent.click(screen.getByRole('button', { name: /leaderboard/i }));
+    expect(setActiveTab).toHaveBeenCalledWith('leaderboard');
 
     fireEvent.click(screen.getByRole('button', { name: /seat governance/i }));
     expect(setActiveTab).toHaveBeenCalledWith('licenses');
@@ -114,6 +125,7 @@ describe('Navbar Component', () => {
 
     const navButtons = [
       screen.getByRole('button', { name: /overview/i }),
+      screen.getByRole('button', { name: /leaderboard/i }),
       screen.getByRole('button', { name: /my consumption/i }),
       screen.getByRole('button', { name: /attributed costs/i }),
       screen.getByRole('button', { name: /seat governance/i }),

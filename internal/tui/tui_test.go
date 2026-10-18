@@ -59,6 +59,12 @@ func TestTUIModelNavigation(t *testing.T) {
 
 		updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyTab})
 		m = updated.(tui.Model)
+		if m.ActiveTab != 3 {
+			t.Errorf("expected tab 3 after third tab, got %d", m.ActiveTab)
+		}
+
+		updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyTab})
+		m = updated.(tui.Model)
 		if m.ActiveTab != 0 {
 			t.Errorf("expected wrap-around to tab 0, got %d", m.ActiveTab)
 		}
@@ -66,11 +72,11 @@ func TestTUIModelNavigation(t *testing.T) {
 		// Test shift-tab
 		updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyShiftTab})
 		m = updated.(tui.Model)
-		if m.ActiveTab != 2 {
-			t.Errorf("expected shift-tab to wrap to tab 2, got %d", m.ActiveTab)
+		if m.ActiveTab != 3 {
+			t.Errorf("expected shift-tab to wrap to tab 3, got %d", m.ActiveTab)
 		}
 
-		// Test numeric tab switching (1, 2, 3)
+		// Test numeric tab switching (1, 2, 3, 4)
 		updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'1'}})
 		m = updated.(tui.Model)
 		if m.ActiveTab != 0 {
@@ -87,6 +93,12 @@ func TestTUIModelNavigation(t *testing.T) {
 		m = updated.(tui.Model)
 		if m.ActiveTab != 2 {
 			t.Errorf("expected tab 2 on '3', got %d", m.ActiveTab)
+		}
+
+		updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'4'}})
+		m = updated.(tui.Model)
+		if m.ActiveTab != 3 {
+			t.Errorf("expected tab 3 on '4', got %d", m.ActiveTab)
 		}
 	})
 
@@ -124,7 +136,7 @@ func TestTUIModelNavigation(t *testing.T) {
 		}
 	})
 
-	t.Run("Enter key selects developer and opens breakdown tab", func(t *testing.T) {
+	t.Run("Enter key selects developer on Costs and Leaderboard and opens breakdown tab", func(t *testing.T) {
 		m.ActiveTab = 0
 		viewCosts := m.View()
 		if !strings.Contains(viewCosts, "ATTRIBUTED COSTS") {
@@ -132,9 +144,15 @@ func TestTUIModelNavigation(t *testing.T) {
 		}
 
 		m.ActiveTab = 1
+		viewLeaderboard := m.View()
+		if !strings.Contains(viewLeaderboard, "LEADERBOARD") || !strings.Contains(viewLeaderboard, "#1") {
+			t.Errorf("expected tab 1 view to contain LEADERBOARD and #1, got: %s", viewLeaderboard)
+		}
+
+		m.ActiveTab = 2
 		viewGov := m.View()
 		if !strings.Contains(viewGov, "LICENSE GOVERNANCE") {
-			t.Errorf("expected tab 1 view to contain LICENSE GOVERNANCE")
+			t.Errorf("expected tab 2 view to contain LICENSE GOVERNANCE")
 		}
 
 		m.ActiveTab = 0
@@ -142,8 +160,8 @@ func TestTUIModelNavigation(t *testing.T) {
 		updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 		m = updated.(tui.Model)
 
-		if m.ActiveTab != 2 {
-			t.Errorf("expected enter to switch to tab 2 (User Breakdown), got %d", m.ActiveTab)
+		if m.ActiveTab != 3 {
+			t.Errorf("expected enter to switch to tab 3 (User Breakdown), got %d", m.ActiveTab)
 		}
 		if m.SelectedUser == nil {
 			t.Fatalf("expected SelectedUser to be populated")
@@ -159,6 +177,25 @@ func TestTUIModelNavigation(t *testing.T) {
 		m = updated.(tui.Model)
 		if m.ActiveTab != 0 {
 			t.Errorf("expected esc to return to tab 0, got %d", m.ActiveTab)
+		}
+
+		// Navigate and drill down from Leaderboard tab (tab 1)
+		m.ActiveTab = 1
+		m.Cursor = 0
+		updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyDown})
+		m = updated.(tui.Model)
+		if m.Cursor != 1 {
+			t.Errorf("expected cursor 1 on Leaderboard tab, got %d", m.Cursor)
+		}
+		updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+		m = updated.(tui.Model)
+		if m.ActiveTab != 3 {
+			t.Errorf("expected enter on Leaderboard tab to switch to tab 3, got %d", m.ActiveTab)
+		}
+		updated, _ = m.Update(tea.KeyMsg{Type: tea.KeyEsc})
+		m = updated.(tui.Model)
+		if m.ActiveTab != 1 {
+			t.Errorf("expected esc from Breakdown to return to Leaderboard tab 1, got %d", m.ActiveTab)
 		}
 	})
 

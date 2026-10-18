@@ -200,5 +200,61 @@ func TestAttributionEngine(t *testing.T) {
 			t.Errorf("expected overview currency EUR, got %s", overview.Currency)
 		}
 	})
+
+	t.Run("GetLeaderboard computes ranked developer entries with spend share, efficiency, and model mix", func(t *testing.T) {
+		entries, err := engine.GetLeaderboard(ctx, 30)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(entries) == 0 {
+			t.Fatalf("expected non-empty leaderboard entries")
+		}
+
+		var totalSpendShare float64
+		for i, entry := range entries {
+			expectedRank := i + 1
+			if entry.Rank != expectedRank {
+				t.Errorf("expected rank %d, got %d", expectedRank, entry.Rank)
+			}
+			if entry.UserID == "" {
+				t.Errorf("expected non-empty UserID at rank %d", entry.Rank)
+			}
+			if entry.TotalCost <= 0 {
+				t.Errorf("expected positive TotalCost for %s, got %f", entry.UserID, entry.TotalCost)
+			}
+			if entry.TotalTokens <= 0 {
+				t.Errorf("expected positive TotalTokens for %s, got %d", entry.UserID, entry.TotalTokens)
+			}
+			if entry.ActiveDays <= 0 {
+				t.Errorf("expected positive ActiveDays for %s, got %d", entry.UserID, entry.ActiveDays)
+			}
+			if entry.CostPer1KTokens <= 0 {
+				t.Errorf("expected positive CostPer1KTokens for %s, got %f", entry.UserID, entry.CostPer1KTokens)
+			}
+			if entry.TopModel == "" {
+				t.Errorf("expected TopModel to be set for %s", entry.UserID)
+			}
+			if len(entry.ModelBreakdown) == 0 {
+				t.Errorf("expected ModelBreakdown to be non-empty for %s", entry.UserID)
+			}
+			if entry.Currency != "EUR" {
+				t.Errorf("expected Currency EUR for %s, got %s", entry.UserID, entry.Currency)
+			}
+			if i > 0 && entry.TotalCost > entries[i-1].TotalCost {
+				t.Errorf("leaderboard not sorted by TotalCost descending: rank %d (%f) > rank %d (%f)",
+					entry.Rank, entry.TotalCost, entries[i-1].Rank, entries[i-1].TotalCost)
+			}
+			csvRow := entry.ToCSVRow()
+			if len(csvRow) != 9 {
+				t.Errorf("expected CSV row length 9, got %d", len(csvRow))
+			}
+			totalSpendShare += entry.ShareOfSpend
+		}
+
+		if totalSpendShare < 99.0 || totalSpendShare > 101.0 {
+			t.Errorf("expected total spend share around 100%%, got %.2f%%", totalSpendShare)
+		}
+	})
 }
+
 

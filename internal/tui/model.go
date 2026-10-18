@@ -76,9 +76,11 @@ type Model struct {
 	Engine       *attribution.Engine
 	Days         int
 	ActiveTab    int
+	PreviousTab  int
 	Cursor       int
 	SortMode     int
 	Costs        []domain.AllocatedUserCost
+	Leaderboard  []domain.LeaderboardEntry
 	Governance   *domain.LicenseGovernanceSummary
 	Overview     *domain.OverviewMetrics
 	SelectedUser *domain.UserCostSummary
@@ -108,16 +110,23 @@ func (m *Model) SetData(costs []domain.AllocatedUserCost, gov *domain.LicenseGov
 	m.Costs = costs
 	m.Governance = gov
 	m.Overview = overview
+	if len(m.Leaderboard) == 0 && m.Engine != nil {
+		if lb, err := m.Engine.GetLeaderboard(context.Background(), m.Days); err == nil {
+			m.Leaderboard = lb
+		}
+	}
 	m.Loading = false
 	m.sortCosts()
+	m.sortLeaderboard()
 }
 
 // DataLoadedMsg represents async completion of data loading.
 type DataLoadedMsg struct {
-	Costs    []domain.AllocatedUserCost
-	Gov      *domain.LicenseGovernanceSummary
-	Overview *domain.OverviewMetrics
-	Err      error
+	Costs       []domain.AllocatedUserCost
+	Leaderboard []domain.LeaderboardEntry
+	Gov         *domain.LicenseGovernanceSummary
+	Overview    *domain.OverviewMetrics
+	Err         error
 }
 
 // Init triggers initial async data loading.
@@ -131,6 +140,10 @@ func (m Model) Init() tea.Cmd {
 		if err != nil {
 			return DataLoadedMsg{Err: err}
 		}
+		leaderboard, err := m.Engine.GetLeaderboard(ctx, m.Days)
+		if err != nil {
+			return DataLoadedMsg{Err: err}
+		}
 		gov, err := m.Engine.GetLicenseGovernance(ctx, m.Days)
 		if err != nil {
 			return DataLoadedMsg{Err: err}
@@ -140,9 +153,10 @@ func (m Model) Init() tea.Cmd {
 			return DataLoadedMsg{Err: err}
 		}
 		return DataLoadedMsg{
-			Costs:    costs,
-			Gov:      gov,
-			Overview: overview,
+			Costs:       costs,
+			Leaderboard: leaderboard,
+			Gov:         gov,
+			Overview:    overview,
 		}
 	}
 }
@@ -161,6 +175,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.Loading = false
 			return m, nil
 		}
+		m.Leaderboard = msg.Leaderboard
 		m.SetData(msg.Costs, msg.Gov, msg.Overview)
 		return m, nil
 
@@ -170,12 +185,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 
 		case "tab":
-			m.ActiveTab = (m.ActiveTab + 1) % 3
+			m.ActiveTab = (m.ActiveTab + 1) % 4
 			m.Cursor = 0
 			return m, nil
 
 		case "shift+tab":
-			m.ActiveTab = (m.ActiveTab + 2) % 3
+			m.ActiveTab = (m.ActiveTab + 3) % 4
 			m.Cursor = 0
 			return m, nil
 
@@ -194,14 +209,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.Cursor = 0
 			return m, nil
 
+		case "4":
+			m.ActiveTab = 3
+			m.Cursor = 0
+			return m, nil
+
 		case "down", "j":
 			if m.ActiveTab == 0 && m.Cursor < len(m.Costs)-1 {
+				m.Cursor++
+			} else if m.ActiveTab == 1 && m.Cursor < len(m.Leaderboard)-1 {
 				m.Cursor++
 			}
 			return m, nil
 
 		case "up", "k":
-			if m.ActiveTab == 0 && m.Cursor > 0 {
+			if (m.ActiveTab == 0 || m.ActiveTab == 1) && m.Cursor > 0 {
 				m.Cursor--
 			}
 			return m, nil
@@ -209,24 +231,29 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "s":
 			m.SortMode = (m.SortMode + 1) % 3
 			m.sortCosts()
+			m.sortLeaderboard()
 			return m, nil
 
 		case "enter":
+			var selectedEmail string
 			if m.ActiveTab == 0 && len(m.Costs) > m.Cursor {
-				selectedEmail := m.Costs[m.Cursor].UserID
-				if m.Engine != nil {
-					summary, err := m.Engine.GetUserSummary(context.Background(), selectedEmail, m.Days)
-					if err == nil {
-						m.SelectedUser = summary
-						m.ActiveTab = 2
-					}
+				selectedEmail = m.Costs[m.Cursor].UserID
+			} else if m.ActiveTab == 1 && len(m.Leaderboard) > m.Cursor {
+				selectedEmail = m.Leaderboard[m.Cursor].UserID
+			}
+			if selectedEmail != "" && m.Engine != nil {
+				summary, err := m.Engine.GetUserSummary(context.Background(), selectedEmail, m.Days)
+				if err == nil {
+					m.SelectedUser = summary
+					m.PreviousTab = m.ActiveTab
+					m.ActiveTab = 3
 				}
 			}
 			return m, nil
 
 		case "esc", "b":
-			if m.ActiveTab == 2 {
-				m.ActiveTab = 0
+			if m.ActiveTab == 3 {
+				m.ActiveTab = m.PreviousTab
 			}
 			return m, nil
 		}
@@ -255,6 +282,29 @@ func (m *Model) sortCosts() {
 	}
 }
 
+func (m *Model) sortLeaderboard() {
+	if len(m.Leaderboard) == 0 {
+		return
+	}
+	switch m.SortMode {
+	case SortByCostDesc:
+		slices.SortFunc(m.Leaderboard, func(a, b domain.LeaderboardEntry) int {
+			if a.TotalCost != b.TotalCost {
+				return cmp.Compare(b.TotalCost, a.TotalCost)
+			}
+			return cmp.Compare(a.Rank, b.Rank)
+		})
+	case SortByTokensDesc:
+		slices.SortFunc(m.Leaderboard, func(a, b domain.LeaderboardEntry) int {
+			return cmp.Compare(b.TotalTokens, a.TotalTokens)
+		})
+	case SortByUserAsc:
+		slices.SortFunc(m.Leaderboard, func(a, b domain.LeaderboardEntry) int {
+			return cmp.Compare(a.UserID, b.UserID)
+		})
+	}
+}
+
 // View renders the terminal dashboard.
 func (m Model) View() string {
 	var sb strings.Builder
@@ -264,7 +314,7 @@ func (m Model) View() string {
 	sb.WriteString("\n")
 
 	// Tabs Bar
-	tabs := []string{"[1] ATTRIBUTED COSTS", "[2] LICENSE GOVERNANCE", "[3] DEVELOPER BREAKDOWN"}
+	tabs := []string{"[1] ATTRIBUTED COSTS", "[2] LEADERBOARD", "[3] LICENSE GOVERNANCE", "[4] DEVELOPER BREAKDOWN"}
 	var renderedTabs []string
 	for i, t := range tabs {
 		if i == m.ActiveTab {
@@ -291,8 +341,10 @@ func (m Model) View() string {
 	case 0:
 		sb.WriteString(m.renderCostsView())
 	case 1:
-		sb.WriteString(m.renderGovernanceView())
+		sb.WriteString(m.renderLeaderboardView())
 	case 2:
+		sb.WriteString(m.renderGovernanceView())
+	case 3:
 		sb.WriteString(m.renderUserBreakdownView())
 	}
 
@@ -340,6 +392,46 @@ func (m Model) renderCostsView() string {
 	return sb.String()
 }
 
+func (m Model) renderLeaderboardView() string {
+	var sb strings.Builder
+	sb.WriteString(tableHeaderStyle.Render(fmt.Sprintf("%-6s %-28s %-14s %-10s %-14s %-8s %-12s %-20s",
+		"RANK", "DEVELOPER", "TOTAL SPEND", "SHARE %", "TOKENS", "DAYS", "COST / 1K", "TOP MODEL")))
+	sb.WriteString("\n")
+
+	if len(m.Leaderboard) == 0 {
+		sb.WriteString("  No developer leaderboard entries found.\n")
+		return sb.String()
+	}
+
+	maxRows := 12
+	start := 0
+	if m.Cursor >= maxRows {
+		start = m.Cursor - maxRows + 1
+	}
+	end := min(start+maxRows, len(m.Leaderboard))
+
+	for i := start; i < end; i++ {
+		e := m.Leaderboard[i]
+		prefix := "  "
+		if i == m.Cursor {
+			prefix = "> "
+		}
+		rowStr := fmt.Sprintf("%s#%-3d %-28s %-14s %-10s %-14d %-8s %-12s %s",
+			prefix, e.Rank, e.UserID, domain.FormatCost(e.TotalCost, e.Currency),
+			fmt.Sprintf("%.1f%%", e.ShareOfSpend), e.TotalTokens, fmt.Sprintf("%dd", e.ActiveDays),
+			fmt.Sprintf("%s%.4f", domain.CurrencySymbol(e.Currency), e.CostPer1KTokens), e.TopModel)
+
+		if i == m.Cursor {
+			sb.WriteString(selectedRowStyle.Render(rowStr))
+		} else {
+			sb.WriteString(rowStr)
+		}
+		sb.WriteString("\n")
+	}
+
+	return sb.String()
+}
+
 func (m Model) renderGovernanceView() string {
 	var sb strings.Builder
 	if m.Governance == nil {
@@ -375,7 +467,7 @@ func (m Model) renderGovernanceView() string {
 func (m Model) renderUserBreakdownView() string {
 	var sb strings.Builder
 	if m.SelectedUser == nil {
-		sb.WriteString("  No developer selected. Return to [1] Costs view and press [Enter] on a user row.\n")
+		sb.WriteString("  No developer selected. Return to [1] Costs or [2] Leaderboard view and press [Enter] on a user row.\n")
 		return sb.String()
 	}
 
@@ -395,3 +487,4 @@ func (m Model) renderUserBreakdownView() string {
 
 	return sb.String()
 }
+

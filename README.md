@@ -178,6 +178,7 @@ Once configured in `.agy-cost-board.yaml` (or via environment variables):
 | -------------- | ----------------------------------------------------------------- | ---------------------------------------------- |
 | `setup`        | Diagnose GCP requirements and optionally provision datasets/sinks | `agy-cost-board setup --project=my-prj --save` |
 | `cost`         | Display proportional per-developer AI spend attribution           | `agy-cost-board cost --days=30 --format=json`  |
+| `leaderboard`  | Display ranked developer leaderboard by spend, tokens & efficiency| `agy-cost-board leaderboard --days=30`         |
 | `license`      | Analyze Gemini Enterprise seat utilization and dormant licenses   | `agy-cost-board license --days=30`             |
 | `user <email>` | Drill down into an individual developer's token history and spend | `agy-cost-board user julienbreux@google.com`   |
 | `doctor`       | Fast connectivity and configuration sanity check                  | `agy-cost-board doctor`                        |
@@ -196,6 +197,7 @@ The built-in HTTP server exposes clean JSON APIs consumed by the embedded fronte
 | `GET`  | `/healthz`                             | Liveness and readiness probe for Cloud Run / Kubernetes           |
 | `GET`  | `/api/v1/metrics/overview?days=30`     | High-level FinOps KPIs, total spend, tokens, and daily trends     |
 | `GET`  | `/api/v1/costs/users?days=30&model=`   | Attributed cost records per developer and model                   |
+| `GET`  | `/api/v1/leaderboard?days=30`          | Ranked developer leaderboard with spend share, tokens & model mix |
 | `GET`  | `/api/v1/licenses/status?days=30`      | Seat quota, active/dormant status, and estimated monthly savings  |
 | `GET`  | `/api/v1/users/{id}?days=30`           | Developer drilldown, historical spend, and model breakdown        |
 | `GET`  | `/api/v1/setup/status`                 | Real-time 5-point GCP telemetry diagnostic status                 |

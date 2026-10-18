@@ -130,6 +130,57 @@ func TestCLICommandsWithDemo(t *testing.T) {
 		}
 	})
 
+	t.Run("leaderboard command executes with --demo and returns table", func(t *testing.T) {
+		buf := new(bytes.Buffer)
+		rootCmd := cli.NewRootCommand()
+		rootCmd.SetOut(buf)
+		rootCmd.SetErr(buf)
+		rootCmd.SetArgs([]string{"leaderboard", "--demo", "--format=table"})
+
+		if err := rootCmd.Execute(); err != nil {
+			t.Fatalf("command failed: %v", err)
+		}
+
+		out := buf.String()
+		if !strings.Contains(out, "RANK") || !strings.Contains(out, "#1") || !strings.Contains(out, "alex.turner@google.com") {
+			t.Errorf("expected leaderboard table with ranks and demo users, got: %s", out)
+		}
+	})
+
+	t.Run("leaderboard command executes with --format=json", func(t *testing.T) {
+		buf := new(bytes.Buffer)
+		rootCmd := cli.NewRootCommand()
+		rootCmd.SetOut(buf)
+		rootCmd.SetErr(buf)
+		rootCmd.SetArgs([]string{"leaderboard", "--demo", "--format=json"})
+
+		if err := rootCmd.Execute(); err != nil {
+			t.Fatalf("command failed: %v", err)
+		}
+
+		out := buf.String()
+		if !strings.Contains(out, `"rank": 1`) || !strings.Contains(out, `"user_id"`) {
+			t.Errorf("expected JSON with rank and user_id, got: %s", out)
+		}
+	})
+
+	t.Run("leaderboard command executes with --format=csv", func(t *testing.T) {
+		buf := new(bytes.Buffer)
+		rootCmd := cli.NewRootCommand()
+		rootCmd.SetOut(buf)
+		rootCmd.SetErr(buf)
+		rootCmd.SetArgs([]string{"leaderboard", "--demo", "--format=csv"})
+
+		if err := rootCmd.Execute(); err != nil {
+			t.Fatalf("command failed: %v", err)
+		}
+
+		out := buf.String()
+		if !strings.Contains(out, "RANK,USER,TOTAL_COST") {
+			t.Errorf("expected CSV header for leaderboard, got: %s", out)
+		}
+	})
+
 	t.Run("license command executes with --demo", func(t *testing.T) {
 		buf := new(bytes.Buffer)
 		rootCmd := cli.NewRootCommand()

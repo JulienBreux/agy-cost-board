@@ -42,6 +42,39 @@ func TestEndToEndCLIFlows(t *testing.T) {
 		}
 	})
 
+	t.Run("E2E CLI leaderboard command with table and JSON output", func(t *testing.T) {
+		buf := new(bytes.Buffer)
+		rootCmd := cli.NewRootCommand()
+		rootCmd.SetOut(buf)
+		rootCmd.SetErr(buf)
+		rootCmd.SetArgs([]string{"leaderboard", "--demo", "--format=table", "--days=30"})
+
+		if err := rootCmd.Execute(); err != nil {
+			t.Fatalf("CLI leaderboard command failed: %v", err)
+		}
+
+		out := buf.String()
+		if !strings.Contains(out, "RANK") || !strings.Contains(out, "#1") || !strings.Contains(out, "€") {
+			t.Errorf("expected RANK, #1, and € in leaderboard table output, got: %s", out)
+		}
+
+		jsonBuf := new(bytes.Buffer)
+		jsonCmd := cli.NewRootCommand()
+		jsonCmd.SetOut(jsonBuf)
+		jsonCmd.SetErr(jsonBuf)
+		jsonCmd.SetArgs([]string{"leaderboard", "--demo", "--format=json", "--days=30"})
+		if err := jsonCmd.Execute(); err != nil {
+			t.Fatalf("CLI leaderboard json command failed: %v", err)
+		}
+		var entries []domain.LeaderboardEntry
+		if err := json.Unmarshal(jsonBuf.Bytes(), &entries); err != nil {
+			t.Fatalf("failed to unmarshal leaderboard JSON: %v", err)
+		}
+		if len(entries) == 0 || entries[0].Rank != 1 {
+			t.Errorf("expected ranked entries in leaderboard JSON, got: %+v", entries)
+		}
+	})
+
 	t.Run("E2E CLI license command with JSON output", func(t *testing.T) {
 		buf := new(bytes.Buffer)
 		rootCmd := cli.NewRootCommand()

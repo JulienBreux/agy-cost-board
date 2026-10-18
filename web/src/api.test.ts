@@ -226,4 +226,44 @@ describe('User Personal Consumption API & Persistence', () => {
             expect(getUserBudget('alex.turner@google.com')).toBe(150);
         });
     });
+
+    describe('fetchLeaderboard', () => {
+        it('normalizes Go backend LeaderboardEntry payload (share_of_spend and numeric model_breakdown)', async () => {
+            const rawGoPayload = [
+                {
+                    rank: 1,
+                    user_id: 'elena.rostova@google.com',
+                    total_cost: 460.24,
+                    share_of_spend: 19.32,
+                    total_tokens: 1088425,
+                    share_of_tokens: 18.97,
+                    active_days: 30,
+                    cost_per_1k_tokens: 0.4228,
+                    top_model: 'claude-5.5-sonnet-medium',
+                    model_breakdown: {
+                        'claude-5.5-sonnet-medium': 60.0,
+                        'gemini-4.0-pro': 40.0,
+                    },
+                    currency: 'EUR',
+                },
+            ];
+
+            vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+                ok: true,
+                json: async () => rawGoPayload,
+            } as Response);
+
+            const { fetchLeaderboard } = await import('./api');
+            const result = await fetchLeaderboard(30);
+            expect(result).toHaveLength(1);
+            expect(result[0].spend_share_pct).toBe(19.32);
+            expect(result[0].token_share_pct).toBe(18.97);
+            const sonnet = result[0].model_breakdown['claude-5.5-sonnet-medium'];
+            expect(typeof sonnet).toBe('object');
+            if (typeof sonnet === 'object') {
+                expect(sonnet.share).toBeCloseTo(0.6);
+            }
+        });
+    });
 });
+

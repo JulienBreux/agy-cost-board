@@ -3,6 +3,8 @@ import {
   fetchOverview,
   fetchAttributedCosts,
   fetchLicenseGovernance,
+  fetchLeaderboard,
+  aggregateLeaderboardFromCosts,
   fetchUserSummary,
   fetchSetupStatus,
   fetchVersion,
@@ -10,13 +12,15 @@ import {
   OverviewMetrics,
   AllocatedUserCost,
   LicenseGovernance,
+  LeaderboardEntry,
   UserSummary,
   DiagnosticReport,
 } from './api';
-import { Navbar } from './components/Navbar';
+import { Navbar, NavTab } from './components/Navbar';
 import { KPICards } from './components/KPICards';
 import { CostChart } from './components/CostChart';
 import { CostTable } from './components/CostTable';
+import { LeaderboardView } from './components/LeaderboardView';
 import { LicenseTable } from './components/LicenseTable';
 import { SetupHealthView } from './components/SetupHealthView';
 import { UserModal } from './components/UserModal';
@@ -29,12 +33,11 @@ import { ThemeProvider } from './context/ThemeContext';
 import { RefreshCw, AlertTriangle } from 'lucide-react';
 
 export function App() {
-  const [activeTab, setActiveTab] = useState<
-    'overview' | 'costs' | 'licenses' | 'setup' | 'my-consumption'
-  >(() => {
+  const [activeTab, setActiveTab] = useState<NavTab>(() => {
     const params = new URLSearchParams(window.location.search);
     const tabParam = params.get('tab');
     if (
+      tabParam === 'leaderboard' ||
       tabParam === 'my-consumption' ||
       tabParam === 'costs' ||
       tabParam === 'licenses' ||
@@ -56,6 +59,7 @@ export function App() {
 
   const [overview, setOverview] = useState<OverviewMetrics | null>(null);
   const [costs, setCosts] = useState<AllocatedUserCost[]>([]);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [governance, setGovernance] = useState<LicenseGovernance | null>(null);
   const [setupReport, setSetupReport] = useState<DiagnosticReport | null>(null);
   const [setupLoading, setSetupLoading] = useState<boolean>(false);
@@ -68,14 +72,16 @@ export function App() {
     setLoading(true);
     setError(null);
     try {
-      const [ov, c, gov] = await Promise.all([
+      const [ov, c, gov, lb] = await Promise.all([
         fetchOverview(days),
         fetchAttributedCosts(days),
         fetchLicenseGovernance(days),
+        fetchLeaderboard(days).catch(() => [] as LeaderboardEntry[]),
       ]);
       setOverview(ov);
       setCosts(c);
       setGovernance(gov);
+      setLeaderboard(lb && lb.length > 0 ? lb : aggregateLeaderboardFromCosts(c));
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
@@ -242,11 +248,11 @@ export function App() {
           />
         )}
 
-        {/* Dashboard Content (Overview, Costs, Licenses) */}
+        {/* Dashboard Content (Overview, Leaderboard, Costs, Licenses) */}
         {activeTab !== 'setup' && activeTab !== 'my-consumption' && overview && (
           <>
             {/* Top KPIs */}
-            <KPICards metrics={overview} />
+            {activeTab !== 'leaderboard' && <KPICards metrics={overview} />}
 
             {/* Tab: Overview */}
             {activeTab === 'overview' && (
@@ -271,6 +277,15 @@ export function App() {
                   <CostTable costs={costs} onSelectUser={handleSelectUser} />
                 </div>
               </div>
+            )}
+
+            {/* Tab: Leaderboard */}
+            {activeTab === 'leaderboard' && (
+              <LeaderboardView
+                entries={leaderboard}
+                onSelectUser={handleSelectUser}
+                days={days}
+              />
             )}
 
             {/* Tab: Costs */}

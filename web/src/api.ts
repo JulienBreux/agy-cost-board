@@ -66,6 +66,161 @@ export interface UserSummary {
   model_breakdown: Record<string, ModelDetail>;
 }
 
+export interface LeaderboardEntry {
+  rank: number;
+  user_id: string;
+  total_cost: number;
+  spend_share_pct: number;
+  share_of_spend?: number;
+  total_tokens: number;
+  token_share_pct: number;
+  share_of_tokens?: number;
+  active_days: number;
+  cost_per_1k_tokens: number;
+  top_model: string;
+  model_breakdown: Record<string, ModelDetail | number>;
+  currency: string;
+}
+
+export const normalizeLeaderboardEntry = (raw: any, idx = 0): LeaderboardEntry => {
+  const totalTokens = Number(raw?.total_tokens ?? 0);
+  const totalCost = Number(raw?.total_cost ?? 0);
+  const spendShare = Number(raw?.spend_share_pct ?? raw?.share_of_spend ?? 0);
+  const tokenShare = Number(raw?.token_share_pct ?? raw?.share_of_tokens ?? 0);
+
+  const normalizedBreakdown: Record<string, ModelDetail> = {};
+  if (raw?.model_breakdown && typeof raw.model_breakdown === 'object') {
+    for (const [model, val] of Object.entries(raw.model_breakdown)) {
+      if (typeof val === 'number') {
+        // Go backend sends percentage 0..100 (e.g., 23.2 for 23.2%)
+        const ratio = val > 1 ? val / 100 : val;
+        normalizedBreakdown[model] = {
+          tokens: Math.round(totalTokens * ratio),
+          cost: Number((totalCost * ratio).toFixed(2)),
+          share: ratio,
+        };
+      } else if (val && typeof val === 'object') {
+        const md = val as Partial<ModelDetail>;
+        const rawShare = Number(md.share ?? 0);
+        const ratio = rawShare > 1 ? rawShare / 100 : rawShare;
+        normalizedBreakdown[model] = {
+          tokens: Number(md.tokens ?? Math.round(totalTokens * ratio)),
+          cost: Number(md.cost ?? Number((totalCost * ratio).toFixed(2))),
+          share: ratio,
+        };
+      }
+    }
+  }
+
+  return {
+    rank: Number(raw?.rank ?? idx + 1),
+    user_id: String(raw?.user_id ?? 'unknown'),
+    total_cost: totalCost,
+    spend_share_pct: spendShare,
+    share_of_spend: spendShare,
+    total_tokens: totalTokens,
+    token_share_pct: tokenShare,
+    share_of_tokens: tokenShare,
+    active_days: Number(raw?.active_days ?? 0),
+    cost_per_1k_tokens: Number(raw?.cost_per_1k_tokens ?? 0),
+    top_model: String(raw?.top_model ?? ''),
+    model_breakdown: normalizedBreakdown,
+    currency: String(raw?.currency || 'USD'),
+  };
+};
+
+export const aggregateLeaderboardFromCosts = (costs: AllocatedUserCost[]): LeaderboardEntry[] => {
+  if (!costs || costs.length === 0) return [];
+  const byUser = new Map<
+    string,
+    {
+      totalCost: number;
+      totalTokens: number;
+      days: Set<string>;
+      models: Record<string, ModelDetail>;
+      currency: string;
+    }
+  >();
+  let orgCost = 0;
+  let orgTokens = 0;
+
+  for (const c of costs) {
+    orgCost += c.allocated_cost;
+    orgTokens += c.user_tokens;
+    let u = byUser.get(c.user_id);
+    if (!u) {
+      u = {
+        totalCost: 0,
+        totalTokens: 0,
+        days: new Set<string>(),
+        models: {},
+        currency: c.currency || 'USD',
+      };
+      byUser.set(c.user_id, u);
+    }
+    u.totalCost += c.allocated_cost;
+    u.totalTokens += c.user_tokens;
+    if (c.usage_date) u.days.add(c.usage_date);
+    const md = u.models[c.model] || { tokens: 0, cost: 0, share: 0 };
+    md.tokens += c.user_tokens;
+    md.cost += c.allocated_cost;
+    u.models[c.model] = md;
+  }
+
+  const entries: LeaderboardEntry[] = [];
+  for (const [userId, u] of byUser.entries()) {
+    let topModel = '';
+    let topCost = -1;
+    let topTokens = -1;
+    for (const [m, md] of Object.entries(u.models)) {
+      md.share = u.totalTokens > 0 ? md.tokens / u.totalTokens : 0;
+      if (md.cost > topCost || (md.cost === topCost && md.tokens > topTokens)) {
+        topCost = md.cost;
+        topTokens = md.tokens;
+        topModel = m;
+      }
+    }
+    const spendShare = orgCost > 0 ? Number(((u.totalCost / orgCost) * 100).toFixed(2)) : 0;
+    const tokenShare = orgTokens > 0 ? Number(((u.totalTokens / orgTokens) * 100).toFixed(2)) : 0;
+    entries.push({
+      rank: 0,
+      user_id: userId,
+      total_cost: Number(u.totalCost.toFixed(2)),
+      spend_share_pct: spendShare,
+      share_of_spend: spendShare,
+      total_tokens: u.totalTokens,
+      token_share_pct: tokenShare,
+      share_of_tokens: tokenShare,
+      active_days: u.days.size,
+      cost_per_1k_tokens:
+        u.totalTokens > 0 ? Number(((u.totalCost * 1000) / u.totalTokens).toFixed(4)) : 0,
+      top_model: topModel,
+      model_breakdown: u.models,
+      currency: u.currency,
+    });
+  }
+
+  entries.sort((a, b) => {
+    if (b.total_cost !== a.total_cost) return b.total_cost - a.total_cost;
+    if (b.total_tokens !== a.total_tokens) return b.total_tokens - a.total_tokens;
+    return a.user_id.localeCompare(b.user_id);
+  });
+
+  entries.forEach((e, idx) => {
+    e.rank = idx + 1;
+  });
+
+  return entries;
+};
+
+export const fetchLeaderboard = async (days = 30): Promise<LeaderboardEntry[]> => {
+  const res = await fetch(`/api/v1/leaderboard?days=${days}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch developer leaderboard`);
+  const data = await res.json();
+  if (!Array.isArray(data)) return [];
+  return data.map((item, idx) => normalizeLeaderboardEntry(item, idx));
+};
+
 export const fetchOverview = async (days = 30): Promise<OverviewMetrics> => {
   const res = await fetch(`/api/v1/metrics/overview?days=${days}`);
   if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch overview metrics`);

@@ -139,6 +139,7 @@ to compute proportional, per-user AI costs and track Gemini Enterprise seat util
 
 	rootCmd.AddCommand(newSetupCommand(v))
 	rootCmd.AddCommand(newCostCommand(v))
+	rootCmd.AddCommand(newLeaderboardCommand(v))
 	rootCmd.AddCommand(newLicenseCommand(v))
 	rootCmd.AddCommand(newUserCommand(v))
 	rootCmd.AddCommand(newDoctorCommand(v))

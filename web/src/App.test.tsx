@@ -239,5 +239,41 @@ describe('App Component Navigation', () => {
         expect(await screen.findByRole('dialog', { name: /antigravity plugin & mcp server/i })).toBeInTheDocument();
         expect(screen.getByTestId('mcp-status-badge')).toHaveTextContent(/mcp enabled/i);
     });
+
+    it('navigates to Leaderboard tab and syncs ?tab=leaderboard URL parameter', async () => {
+        vi.spyOn(api, 'fetchLeaderboard').mockResolvedValue([
+            {
+                rank: 1,
+                user_id: 'alice@google.com',
+                total_cost: 25.0,
+                spend_share_pct: 100.0,
+                total_tokens: 500000,
+                token_share_pct: 100.0,
+                active_days: 1,
+                cost_per_1k_tokens: 0.05,
+                top_model: 'gemini-2.5-pro',
+                model_breakdown: {
+                    'gemini-2.5-pro': { tokens: 500000, cost: 25.0, share: 1.0 }
+                },
+                currency: 'USD'
+            }
+        ]);
+
+        render(<App />);
+
+        const leaderboardTab = screen.getByRole('button', { name: /leaderboard/i });
+        expect(leaderboardTab).toBeInTheDocument();
+
+        fireEvent.click(leaderboardTab);
+
+        await waitFor(() => {
+            expect(screen.getByText('Developer Consumption Leaderboard')).toBeInTheDocument();
+            expect(screen.getByTestId('podium-card-1')).toBeInTheDocument();
+        });
+
+        expect(screen.queryByText('Total Billed Cost')).not.toBeInTheDocument();
+        expect(window.location.search).toContain('tab=leaderboard');
+    });
 });
+
 

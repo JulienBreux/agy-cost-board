@@ -162,6 +162,27 @@ func TestAPIEndpoints(t *testing.T) {
 		}
 	})
 
+	t.Run("GET /api/v1/leaderboard returns ranked developer entries", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/leaderboard?days=30", nil)
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusOK {
+			t.Fatalf("expected 200 OK, got %d", rec.Code)
+		}
+		var entries []domain.LeaderboardEntry
+		if err := json.NewDecoder(rec.Body).Decode(&entries); err != nil {
+			t.Fatalf("failed to decode leaderboard entries: %v", err)
+		}
+		if len(entries) == 0 {
+			t.Fatalf("expected non-empty leaderboard entries")
+		}
+		if entries[0].Rank != 1 || entries[0].UserID == "" || entries[0].TotalCost <= 0 {
+			t.Errorf("unexpected top leaderboard entry: %+v", entries[0])
+		}
+	})
+
+
 	t.Run("GET /api/v1/licenses/status returns license governance metrics", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/api/v1/licenses/status?days=30", nil)
 		rec := httptest.NewRecorder()

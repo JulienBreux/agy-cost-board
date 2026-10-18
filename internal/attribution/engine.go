@@ -245,6 +245,122 @@ func (e *Engine) GetUserSummary(ctx context.Context, userID string, days int) (*
 	return summary, nil
 }
 
+// GetLeaderboard computes ranked developer entries ordered by total attributed spend descending.
+func (e *Engine) GetLeaderboard(ctx context.Context, days int) ([]domain.LeaderboardEntry, error) {
+	if days <= 0 {
+		days = 30
+	}
+	cacheKey := fmt.Sprintf("leaderboard_%d", days)
+	if val, ok := e.getFromCache(cacheKey); ok {
+		return val.([]domain.LeaderboardEntry), nil
+	}
+
+	allCosts, err := e.GetAttributedCosts(ctx, days, "")
+	if err != nil {
+		return nil, err
+	}
+
+	currency := "USD"
+	if len(allCosts) > 0 && allCosts[0].Currency != "" {
+		currency = allCosts[0].Currency
+	} else if billedCosts, err := e.provider.FetchBilledCosts(ctx, days); err == nil {
+		currency = resolveCurrency(billedCosts)
+	}
+
+	type userLeaderboardAgg struct {
+		userID      string
+		totalCost   float64
+		totalTokens int64
+		activeDates map[string]bool
+		modelTokens map[string]int64
+	}
+
+	aggMap := make(map[string]*userLeaderboardAgg)
+	var orgTotalCost float64
+	var orgTotalTokens int64
+
+	for _, c := range allCosts {
+		u, ok := aggMap[c.UserID]
+		if !ok {
+			u = &userLeaderboardAgg{
+				userID:      c.UserID,
+				activeDates: make(map[string]bool),
+				modelTokens: make(map[string]int64),
+			}
+			aggMap[c.UserID] = u
+		}
+		u.totalCost += c.AllocatedCost
+		u.totalTokens += c.UserTokens
+		if c.UsageDate != "" {
+			u.activeDates[c.UsageDate] = true
+		}
+		u.modelTokens[c.Model] += c.UserTokens
+
+		orgTotalCost += c.AllocatedCost
+		orgTotalTokens += c.UserTokens
+	}
+
+	entries := make([]domain.LeaderboardEntry, 0, len(aggMap))
+	for _, u := range aggMap {
+		var shareOfSpend float64
+		if orgTotalCost > 0 {
+			shareOfSpend = math.Round((u.totalCost/orgTotalCost)*10000) / 100
+		}
+		var shareOfTokens float64
+		if orgTotalTokens > 0 {
+			shareOfTokens = math.Round((float64(u.totalTokens)/float64(orgTotalTokens))*10000) / 100
+		}
+		var costPer1K float64
+		if u.totalTokens > 0 {
+			costPer1K = math.Round(((u.totalCost/float64(u.totalTokens))*1000)*10000) / 10000
+		}
+
+		topModel := ""
+		var maxModelTokens int64 = -1
+		modelBreakdown := make(map[string]float64, len(u.modelTokens))
+		for m, mTokens := range u.modelTokens {
+			if mTokens > maxModelTokens || (mTokens == maxModelTokens && (topModel == "" || m < topModel)) {
+				maxModelTokens = mTokens
+				topModel = m
+			}
+			if u.totalTokens > 0 {
+				modelBreakdown[m] = math.Round((float64(mTokens)/float64(u.totalTokens))*1000) / 10
+			}
+		}
+
+		entries = append(entries, domain.LeaderboardEntry{
+			UserID:          u.userID,
+			TotalCost:       math.Round(u.totalCost*100) / 100,
+			ShareOfSpend:    shareOfSpend,
+			TotalTokens:     u.totalTokens,
+			ShareOfTokens:   shareOfTokens,
+			ActiveDays:      len(u.activeDates),
+			CostPer1KTokens: costPer1K,
+			TopModel:        topModel,
+			ModelBreakdown:  modelBreakdown,
+			Currency:        currency,
+		})
+	}
+
+	slices.SortFunc(entries, func(a, b domain.LeaderboardEntry) int {
+		if a.TotalCost != b.TotalCost {
+			return cmp.Compare(b.TotalCost, a.TotalCost)
+		}
+		if a.TotalTokens != b.TotalTokens {
+			return cmp.Compare(b.TotalTokens, a.TotalTokens)
+		}
+		return cmp.Compare(a.UserID, b.UserID)
+	})
+
+	for i := range entries {
+		entries[i].Rank = i + 1
+	}
+
+	e.setToCache(cacheKey, entries)
+	return entries, nil
+}
+
+
 // GetLicenseGovernance computes seat quotas, active vs dormant licenses, and potential savings.
 func (e *Engine) GetLicenseGovernance(ctx context.Context, windowDays int) (*domain.LicenseGovernanceSummary, error) {
 	cacheKey := fmt.Sprintf("governance_%d", windowDays)

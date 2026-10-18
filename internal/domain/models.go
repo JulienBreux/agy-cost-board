@@ -83,6 +83,37 @@ type ModelCostDetail struct {
 	Share  float64 `json:"share"`
 }
 
+// LeaderboardEntry represents a ranked developer's aggregated spend, token efficiency, and model usage.
+type LeaderboardEntry struct {
+	Rank            int                `json:"rank"`
+	UserID          string             `json:"user_id"`
+	TotalCost       float64            `json:"total_cost"`
+	ShareOfSpend    float64            `json:"share_of_spend"`
+	TotalTokens     int64              `json:"total_tokens"`
+	ShareOfTokens   float64            `json:"share_of_tokens"`
+	ActiveDays      int                `json:"active_days"`
+	CostPer1KTokens float64            `json:"cost_per_1k_tokens"`
+	TopModel        string             `json:"top_model"`
+	ModelBreakdown  map[string]float64 `json:"model_breakdown"`
+	Currency        string             `json:"currency"`
+}
+
+// ToCSVRow converts the leaderboard entry to a slice of strings for CSV output.
+func (l LeaderboardEntry) ToCSVRow() []string {
+	return []string{
+		strconv.Itoa(l.Rank),
+		l.UserID,
+		fmt.Sprintf("%.4f", l.TotalCost),
+		fmt.Sprintf("%.2f", l.ShareOfSpend),
+		strconv.FormatInt(l.TotalTokens, 10),
+		strconv.Itoa(l.ActiveDays),
+		fmt.Sprintf("%.4f", l.CostPer1KTokens),
+		l.TopModel,
+		l.Currency,
+	}
+}
+
+
 // LicenseSeat tracks the assignment and activity for a developer's seat.
 type LicenseSeat struct {
 	UserID              string     `json:"user_id"`
