@@ -62,7 +62,7 @@
 
 ---
 
-- [~] **Track: Phase 3 (v0.12.0) — 30-Day Window-Aware Forecast, Cloud Monitoring Quota Meter Sync & Multi-Project Support**
+- [x] **Track: Phase 3 (v0.12.0) — 30-Day Window-Aware Forecast, Cloud Monitoring Quota Meter Sync & Multi-Project Support**
   *Link: [./tracks/finops_phase3_forecast_monitoring_multiproject_20261018/index.md](./tracks/finops_phase3_forecast_monitoring_multiproject_20261018/index.md)*
 
 

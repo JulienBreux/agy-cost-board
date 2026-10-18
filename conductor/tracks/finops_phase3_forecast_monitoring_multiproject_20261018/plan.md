@@ -21,6 +21,6 @@
 - [x] Task: Add Multi-Project Selector to `Navbar.tsx` and integrate `ForecastCard` and `selectedProject` state into `App.tsx`
     - [x] Add unit tests in `web/src/App.test.tsx` verifying project selector filtering and 30-day forecast card rendering.
     - [x] Update `web/src/components/Navbar.tsx` and `web/src/App.tsx`.
-- [~] Task: Rebuild embedded frontend (`web/dist`), run full Go & Web test suites, and restart `--demo` server on port `8080`
-    - [ ] Run `go test ./...` and `npm --prefix web test -- --run && npm --prefix web run build`.
-    - [ ] Restart `--demo` server on port `8080` and verify Phase 3 features end-to-end.
+- [x] Task: Rebuild embedded frontend (`web/dist`), run full Go & Web test suites, and restart `--demo` server on port `8080`
+    - [x] Run `go test ./...` and `npm --prefix web test -- --run && npm --prefix web run build`.
+    - [x] Restart `--demo` server on port `8080` and verify Phase 3 features end-to-end.
