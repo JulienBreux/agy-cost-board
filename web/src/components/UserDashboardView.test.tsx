@@ -104,4 +104,21 @@ describe('UserDashboardView', () => {
             expect(api.fetchUserDashboard).toHaveBeenCalledWith('other@google.com', 30, expect.any(Number));
         });
     });
+
+    it('passes selectedProject to fetchUserDashboard and fetchUserActivity when a project is selected', async () => {
+        render(
+            <UserDashboardView
+                days={30}
+                selectedProject="julienbreux-ai"
+                availableUsers={['testuser@google.com']}
+                initialUserId="testuser@google.com"
+            />
+        );
+
+        await waitFor(() => {
+            expect(api.fetchUserDashboard).toHaveBeenCalledWith('testuser@google.com', 30, expect.any(Number), 'julienbreux-ai');
+            expect(api.fetchUserActivity).toHaveBeenCalledWith('testuser@google.com', 30, 20, 'julienbreux-ai');
+        });
+    });
 });
+

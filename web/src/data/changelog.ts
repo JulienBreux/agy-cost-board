@@ -12,6 +12,23 @@ export interface ChangelogRelease {
 
 export const CHANGELOG_DATA: ChangelogRelease[] = [
   {
+    version: 'v0.10.2',
+    date: 'October 18, 2026',
+    title: 'Project Filter Resilience & My Consumption Zero-Activity Support',
+    items: [
+      {
+        title: 'Null-Safe Empty Project Cost Serialization & Frontend Guards',
+        description:
+          'Initialized attributed cost slices in the attribution engine so projects with zero telemetry logs serialize as [] instead of null, and added defensive Array.isArray guards across API clients and table views.',
+      },
+      {
+        title: 'Project-Scoped My Consumption Dashboard',
+        description:
+          'Propagated the active project filter to the My Consumption dashboard and user activity feeds, with graceful zero-spend fallback when a developer has no activity in the selected GCP project.',
+      },
+    ],
+  },
+  {
     version: 'v0.10.1',
     date: 'October 18, 2026',
     title: 'BigQuery Schema Resilience, Cloud Logging & Distributed Tracing',

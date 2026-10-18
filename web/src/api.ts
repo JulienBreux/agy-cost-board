@@ -488,7 +488,8 @@ export const fetchAttributedCosts = async (
   }${projectParam}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch attributed costs`);
-  return res.json();
+  const data = await res.json();
+  return Array.isArray(data) ? data : [];
 };
 
 export const fetchLicenseGovernance = async (days = 30, project?: string): Promise<LicenseGovernance> => {
@@ -498,8 +499,9 @@ export const fetchLicenseGovernance = async (days = 30, project?: string): Promi
   return res.json();
 };
 
-export const fetchUserSummary = async (userId: string, days = 30): Promise<UserSummary> => {
-  const res = await fetch(`/api/v1/users/${encodeURIComponent(userId)}?days=${days}`);
+export const fetchUserSummary = async (userId: string, days = 30, project?: string): Promise<UserSummary> => {
+  const projectParam = project && project !== 'all' ? `&project=${encodeURIComponent(project)}` : '';
+  const res = await fetch(`/api/v1/users/${encodeURIComponent(userId)}?days=${days}${projectParam}`);
   if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch user summary`);
   return res.json();
 };
@@ -634,10 +636,12 @@ export const fetchCurrentUser = async (): Promise<CurrentUserIdentity> => {
 export const fetchUserActivity = async (
   userId: string,
   days = 30,
-  limit = 20
+  limit = 20,
+  project?: string
 ): Promise<UserActivityLog[]> => {
+  const projectParam = project && project !== 'all' ? `&project=${encodeURIComponent(project)}` : '';
   const res = await fetch(
-    `/api/v1/users/${encodeURIComponent(userId)}/activity?days=${days}&limit=${limit}`
+    `/api/v1/users/${encodeURIComponent(userId)}/activity?days=${days}&limit=${limit}${projectParam}`
   );
   if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch user activity logs`);
   const rawList = await res.json();
@@ -657,10 +661,12 @@ export const fetchUserActivity = async (
 export const fetchUserDashboard = async (
   userId: string,
   days = 30,
-  monthlyBudget = 100
+  monthlyBudget = 100,
+  project?: string
 ): Promise<UserConsumptionDriving> => {
+  const projectParam = project && project !== 'all' ? `&project=${encodeURIComponent(project)}` : '';
   const res = await fetch(
-    `/api/v1/users/${encodeURIComponent(userId)}/dashboard?days=${days}&monthlyBudget=${monthlyBudget}`
+    `/api/v1/users/${encodeURIComponent(userId)}/dashboard?days=${days}&monthlyBudget=${monthlyBudget}${projectParam}`
   );
   if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch user consumption dashboard`);
   const raw = await res.json();
@@ -676,7 +682,7 @@ export const fetchUserDashboard = async (
     total_tokens?: number;
     tokens?: number;
     by_model?: Record<string, number>;
-  }> = raw.daily_trends || [];
+  }> = Array.isArray(raw?.daily_trends) ? raw.daily_trends : [];
 
   const modelDist: Record<string, ModelDetail> = {};
   let totalModelCost = 0;
@@ -708,7 +714,7 @@ export const fetchUserDashboard = async (
     by_model: t.by_model || {},
   }));
 
-  const recommendations = raw.recommendations || [];
+  const recommendations = Array.isArray(raw?.recommendations) ? raw.recommendations : [];
   const optimizationTips: OptimizationTip[] = recommendations.map((r: any) => ({
     type: r.id || 'optimization',
     title: r.title || 'Optimization Insight',

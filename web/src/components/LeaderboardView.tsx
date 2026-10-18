@@ -90,13 +90,15 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
     return entry.fair_share_payg_cost ?? entry.payg_cost ?? 0;
   };
 
+  const safeEntries = Array.isArray(entries) ? entries : [];
+
   const topThree = useMemo(() => {
-    const byCost = [...entries].sort((a, b) => a.rank - b.rank);
+    const byCost = [...safeEntries].sort((a, b) => a.rank - b.rank);
     return byCost.slice(0, 3);
-  }, [entries]);
+  }, [safeEntries]);
 
   const filteredAndSorted = useMemo(() => {
-    return entries
+    return safeEntries
       .filter((e) => (e.user_id || '').toLowerCase().includes(search.toLowerCase()))
       .sort((a, b) => {
         let diff = 0;
@@ -110,7 +112,7 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
         }
         return sortOrder === 'desc' ? -diff : diff;
       });
-  }, [entries, search, sortBy, sortOrder]);
+  }, [safeEntries, search, sortBy, sortOrder]);
 
   const toggleSort = (col: SortField) => {
     if (sortBy === col) {

@@ -85,10 +85,11 @@ export function App() {
         fetchLicenseGovernance(days, selectedProject),
         fetchLeaderboard(days, undefined, selectedProject).catch(() => [] as LeaderboardEntry[]),
       ]);
+      const safeCosts = Array.isArray(c) ? c : [];
       setOverview(ov);
-      setCosts(c);
+      setCosts(safeCosts);
       setGovernance(gov);
-      setLeaderboard(lb && lb.length > 0 ? lb : aggregateLeaderboardFromCosts(c));
+      setLeaderboard(lb && lb.length > 0 ? lb : aggregateLeaderboardFromCosts(safeCosts));
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
@@ -178,18 +179,21 @@ export function App() {
 
   const availableUsers = useMemo(() => {
     const set = new Set<string>();
-    costs.forEach((c) => {
-      if (c.user_id) set.add(c.user_id);
+    (Array.isArray(costs) ? costs : []).forEach((c) => {
+      if (c?.user_id) set.add(c.user_id);
     });
-    governance?.dormant_users?.forEach((u) => {
-      if (u.user_id) set.add(u.user_id);
+    (Array.isArray(governance?.dormant_users) ? governance.dormant_users : []).forEach((u) => {
+      if (u?.user_id) set.add(u.user_id);
+    });
+    (Array.isArray(governance?.all_seats) ? governance.all_seats : []).forEach((u) => {
+      if (u?.user_id) set.add(u.user_id);
     });
     return Array.from(set).sort();
   }, [costs, governance]);
 
   const handleSelectUser = async (userId: string) => {
     try {
-      const summary = await fetchUserSummary(userId, days);
+      const summary = await fetchUserSummary(userId, days, selectedProject);
       setSelectedUser(summary);
     } catch (err) {
       console.error('Failed to load user summary:', err);
@@ -248,6 +252,7 @@ export function App() {
         {activeTab === 'my-consumption' && (
           <UserDashboardView
             days={days}
+            selectedProject={selectedProject}
             availableUsers={availableUsers}
             initialUserId={dashboardUserId}
             onUserChange={setDashboardUserId}

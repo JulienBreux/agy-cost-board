@@ -506,4 +506,29 @@ func TestEngineFilterByProject(t *testing.T) {
 			t.Errorf("expected all scoped costs to have ProjectID='gcp-ai-platform-prod', got %q", c.ProjectID)
 		}
 	}
+
+	// Verify filtering by a project with zero telemetry logs returns non-nil empty slices and zero-spend dashboard
+	emptyScopedEngine := engine.FilterByProject("julienbreux-ai")
+	emptyCosts, err := emptyScopedEngine.GetAttributedCosts(ctx, 30, "")
+	if err != nil {
+		t.Fatalf("unexpected error for empty project costs: %v", err)
+	}
+	if emptyCosts == nil {
+		t.Errorf("expected non-nil empty slice for GetAttributedCosts on project with zero logs, got nil")
+	}
+	if len(emptyCosts) != 0 {
+		t.Errorf("expected 0 costs for empty project, got %d", len(emptyCosts))
+	}
+
+	driving, err := emptyScopedEngine.GetUserConsumptionDriving(ctx, "alice@example.com", 30, 100.0)
+	if err != nil {
+		t.Fatalf("expected GetUserConsumptionDriving to succeed on empty project, got error: %v", err)
+	}
+	if driving.TotalSpendInWindow != 0 {
+		t.Errorf("expected TotalSpendInWindow=0 on empty project, got %f", driving.TotalSpendInWindow)
+	}
+	if driving.DailyTrends == nil {
+		t.Errorf("expected non-nil DailyTrends slice on empty project")
+	}
 }
+

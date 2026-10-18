@@ -19,6 +19,7 @@ import { RefreshCw, AlertTriangle } from 'lucide-react';
 
 interface UserDashboardViewProps {
     days: number;
+    selectedProject?: string;
     availableUsers?: string[];
     initialUserId?: string;
     onUserChange?: (userId: string) => void;
@@ -26,6 +27,7 @@ interface UserDashboardViewProps {
 
 export const UserDashboardView: FC<UserDashboardViewProps> = ({
     days,
+    selectedProject,
     availableUsers = [],
     initialUserId,
     onUserChange,
@@ -92,9 +94,14 @@ export const UserDashboardView: FC<UserDashboardViewProps> = ({
             }
 
             try {
+                const projectArg = selectedProject && selectedProject !== 'all' ? selectedProject : undefined;
                 const [dash, activity] = await Promise.all([
-                    fetchUserDashboard(selectedUserId, days, monthlyBudget),
-                    fetchUserActivity(selectedUserId, days, 20),
+                    projectArg
+                        ? fetchUserDashboard(selectedUserId, days, monthlyBudget, projectArg)
+                        : fetchUserDashboard(selectedUserId, days, monthlyBudget),
+                    projectArg
+                        ? fetchUserActivity(selectedUserId, days, 20, projectArg)
+                        : fetchUserActivity(selectedUserId, days, 20),
                 ]);
                 setDashboardData(dash);
                 setActivityLogs(activity);
@@ -112,7 +119,7 @@ export const UserDashboardView: FC<UserDashboardViewProps> = ({
                 setActivityLoading(false);
             }
         },
-        [selectedUserId, days, monthlyBudget]
+        [selectedUserId, days, monthlyBudget, selectedProject]
     );
 
     useEffect(() => {

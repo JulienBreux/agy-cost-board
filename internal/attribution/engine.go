@@ -3,6 +3,7 @@ package attribution
 import (
 	"cmp"
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"math"
@@ -960,6 +961,8 @@ func (e *Engine) GetAttributedCosts(ctx context.Context, days int, modelFilter s
 	}
 	span.AddAttrs(slog.Bool("cache_hit", false))
 
+	results = make([]domain.AllocatedUserCost, 0)
+
 	logs, err := e.provider.FetchTelemetryLogs(ctx, days)
 	if err != nil {
 		return nil, fmt.Errorf("fetch telemetry: %w", err)
@@ -1888,14 +1891,23 @@ func (e *Engine) GetUserConsumptionDriving(ctx context.Context, userID string, d
 		monthlyBudget = 150.0
 	}
 
-	summary, err := e.GetUserSummary(ctx, userID, days)
+	overview, err := e.GetOverviewMetrics(ctx, days)
 	if err != nil {
 		return nil, err
 	}
 
-	overview, err := e.GetOverviewMetrics(ctx, days)
+	summary, err := e.GetUserSummary(ctx, userID, days)
 	if err != nil {
-		return nil, err
+		if errors.Is(err, domain.ErrUserNotFound) && e.selectedProject != "" && !strings.EqualFold(e.selectedProject, "all") {
+			summary = &domain.UserCostSummary{
+				UserID:         userID,
+				Currency:       cmp.Or(overview.Currency, "USD"),
+				SeatStatus:     domain.SeatStatusDormant,
+				ModelBreakdown: make(map[string]domain.ModelCostDetail),
+			}
+		} else {
+			return nil, err
+		}
 	}
 
 	allCosts, err := e.GetAttributedCosts(ctx, days, "")

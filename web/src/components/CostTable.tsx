@@ -33,17 +33,21 @@ export const CostTable: React.FC<CostTableProps> = ({ costs, onSelectUser }) => 
     return r.fair_share_payg_cost ?? r.payg_cost ?? 0;
   };
 
+  const safeCosts = Array.isArray(costs) ? costs : [];
+
   const models = useMemo(() => {
     const set = new Set<string>();
-    costs.forEach((c) => set.add(c.model));
+    safeCosts.forEach((c) => {
+      if (c?.model) set.add(c.model);
+    });
     return Array.from(set);
-  }, [costs]);
+  }, [safeCosts]);
 
   const filteredAndSorted = useMemo(() => {
-    return costs
+    return safeCosts
       .filter((c) => {
-        const matchesUser = c.user_id.toLowerCase().includes(search.toLowerCase());
-        const matchesModel = selectedModel === 'all' || c.model === selectedModel;
+        const matchesUser = (c?.user_id || '').toLowerCase().includes(search.toLowerCase());
+        const matchesModel = selectedModel === 'all' || c?.model === selectedModel;
         return matchesUser && matchesModel;
       })
       .sort((a, b) => {
@@ -53,7 +57,7 @@ export const CostTable: React.FC<CostTableProps> = ({ costs, onSelectUser }) => 
         if (sortBy === 'date') diff = a.usage_date.localeCompare(b.usage_date);
         return sortOrder === 'desc' ? -diff : diff;
       });
-  }, [costs, search, selectedModel, sortBy, sortOrder]);
+  }, [safeCosts, search, selectedModel, sortBy, sortOrder]);
 
   const totalPages = Math.ceil(filteredAndSorted.length / pageSize) || 1;
   const paginatedRows = filteredAndSorted.slice((page - 1) * pageSize, page * pageSize);
