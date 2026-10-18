@@ -28,19 +28,29 @@ func NewDemoDataProviderWithQuota(quota int) *DemoDataProvider {
 	}
 }
 
+// DemoProjects lists the synthetic GCP projects used in --demo mode.
+var DemoProjects = []string{
+	"gcp-ai-platform-prod",
+	"gcp-finops-analytics",
+	"gcp-agent-sandbox",
+}
+
 // FetchTelemetryLogs generates synthetic inference logs over the requested day window.
 func (d *DemoDataProvider) FetchTelemetryLogs(ctx context.Context, days int) ([]domain.TelemetryLog, error) {
 	days = cmp.Or(days, 30)
 
 	// #nosec G404 -- pseudo-random numbers sufficient and deterministic for demo data generator
 	rng := rand.New(rand.NewPCG(uint64(d.seed), 0))
-	users := []string{
-		"alex.turner@google.com",
-		"sophia.chen@google.com",
-		"marcus.vance@google.com",
-		"elena.rostova@google.com",
-		"liam.oconnor@google.com",
-		"dev.intern@google.com",
+	users := []struct {
+		id             string
+		primaryProject string
+	}{
+		{"alex.turner@google.com", "gcp-ai-platform-prod"},
+		{"sophia.chen@google.com", "gcp-ai-platform-prod"},
+		{"marcus.vance@google.com", "gcp-finops-analytics"},
+		{"elena.rostova@google.com", "gcp-finops-analytics"},
+		{"liam.oconnor@google.com", "gcp-agent-sandbox"},
+		{"dev.intern@google.com", "gcp-agent-sandbox"},
 	}
 
 	models := []string{
@@ -72,7 +82,7 @@ func (d *DemoDataProvider) FetchTelemetryLogs(ctx context.Context, days int) ([]
 		// Each active user generates multiple inference calls per day
 		for _, u := range users {
 			// dev.intern only active on rare days
-			if u == "dev.intern@google.com" && rng.Float64() > 0.25 {
+			if u.id == "dev.intern@google.com" && rng.Float64() > 0.25 {
 				continue
 			}
 
@@ -95,11 +105,15 @@ func (d *DemoDataProvider) FetchTelemetryLogs(ctx context.Context, days int) ([]
 				}
 
 				client := clients[rng.IntN(len(clients))]
+				projectID := u.primaryProject
+				if rng.Float64() < 0.20 {
+					projectID = DemoProjects[rng.IntN(len(DemoProjects))]
+				}
 
 				logs = append(logs, domain.TelemetryLog{
 					Timestamp:        dayTime.Add(time.Duration(rng.IntN(24*3600)) * time.Second),
-					ProjectID:        "agy-prod",
-					UserID:           u,
+					ProjectID:        projectID,
+					UserID:           u.id,
 					Model:            model,
 					TotalTokens:      promptTokens + completionTokens + thoughtsTokens,
 					PromptTokens:     promptTokens,
@@ -132,6 +146,14 @@ func (d *DemoDataProvider) FetchBilledCosts(ctx context.Context, days int) ([]do
 		{"Gemini 3.8 Flash Inference - Net Invoiced", 12.20},
 		{"Antigravity Workspace Cloud Seats & Inference", 35.00},
 	}
+	projectWeights := []struct {
+		id     string
+		weight float64
+	}{
+		{"gcp-ai-platform-prod", 0.50},
+		{"gcp-finops-analytics", 0.30},
+		{"gcp-agent-sandbox", 0.20},
+	}
 
 	now := time.Now().UTC()
 	var costs []domain.BilledCost
@@ -140,14 +162,17 @@ func (d *DemoDataProvider) FetchBilledCosts(ctx context.Context, days int) ([]do
 		dateStr := now.AddDate(0, 0, -i).Format("2006-01-02")
 		for _, s := range skus {
 			variation := (rng.Float64() * 0.4) + 0.8 // 80% to 120% of base
-			netCost := float64(int(s.baseCost*variation*100)) / 100.0
-
-			costs = append(costs, domain.BilledCost{
-				UsageDate:      dateStr,
-				SKUDescription: s.desc,
-				NetCost:        netCost,
-				Currency:       "EUR",
-			})
+			dayNetCost := s.baseCost * variation
+			for _, pw := range projectWeights {
+				netCost := float64(int(dayNetCost*pw.weight*100)) / 100.0
+				costs = append(costs, domain.BilledCost{
+					UsageDate:      dateStr,
+					ProjectID:      pw.id,
+					SKUDescription: s.desc,
+					NetCost:        netCost,
+					Currency:       "EUR",
+				})
+			}
 		}
 	}
 
@@ -162,6 +187,7 @@ func (d *DemoDataProvider) FetchLicenseSeats(ctx context.Context, windowDays int
 
 	rawSeats := []domain.LicenseSeat{
 		{
+			ProjectID:           "gcp-ai-platform-prod",
 			UserID:              "alex.turner@google.com",
 			Assigned:            true,
 			Status:              domain.SeatStatusActive,
@@ -171,6 +197,7 @@ func (d *DemoDataProvider) FetchLicenseSeats(ctx context.Context, windowDays int
 			Location:            "global",
 		},
 		{
+			ProjectID:           "gcp-ai-platform-prod",
 			UserID:              "sophia.chen@google.com",
 			Assigned:            true,
 			Status:              domain.SeatStatusActive,
@@ -180,6 +207,7 @@ func (d *DemoDataProvider) FetchLicenseSeats(ctx context.Context, windowDays int
 			Location:            "us",
 		},
 		{
+			ProjectID:           "gcp-finops-analytics",
 			UserID:              "marcus.vance@google.com",
 			Assigned:            true,
 			Status:              domain.SeatStatusActive,
@@ -189,6 +217,7 @@ func (d *DemoDataProvider) FetchLicenseSeats(ctx context.Context, windowDays int
 			Location:            "eu",
 		},
 		{
+			ProjectID:           "gcp-finops-analytics",
 			UserID:              "elena.rostova@google.com",
 			Assigned:            true,
 			Status:              domain.SeatStatusActive,
@@ -198,6 +227,7 @@ func (d *DemoDataProvider) FetchLicenseSeats(ctx context.Context, windowDays int
 			Location:            "eu",
 		},
 		{
+			ProjectID:           "gcp-agent-sandbox",
 			UserID:              "liam.oconnor@google.com",
 			Assigned:            true,
 			Status:              domain.SeatStatusActive,
@@ -207,6 +237,7 @@ func (d *DemoDataProvider) FetchLicenseSeats(ctx context.Context, windowDays int
 			Location:            "us",
 		},
 		{
+			ProjectID:           "gcp-agent-sandbox",
 			UserID:              "dev.intern@google.com",
 			Assigned:            true,
 			Status:              domain.SeatStatusAtRisk,
@@ -218,6 +249,7 @@ func (d *DemoDataProvider) FetchLicenseSeats(ctx context.Context, windowDays int
 			TrialEndsAt:         trialEnd,
 		},
 		{
+			ProjectID:           "gcp-ai-platform-prod",
 			UserID:              "inactive.dev1@google.com",
 			Assigned:            true,
 			Status:              domain.SeatStatusDormant,
@@ -227,6 +259,7 @@ func (d *DemoDataProvider) FetchLicenseSeats(ctx context.Context, windowDays int
 			Location:            "global",
 		},
 		{
+			ProjectID:           "gcp-finops-analytics",
 			UserID:              "inactive.dev2@google.com",
 			Assigned:            true,
 			Status:              domain.SeatStatusDormant,

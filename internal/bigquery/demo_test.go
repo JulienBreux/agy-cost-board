@@ -128,6 +128,46 @@ func TestDemoDataProvider(t *testing.T) {
 		if locations["global"] == 0 || locations["eu"] == 0 || locations["us"] == 0 {
 			t.Errorf("expected global, eu, and us locations in demo data, got %v", locations)
 		}
+
+		seatProjects := make(map[string]int)
+		for _, s := range seats {
+			seatProjects[s.ProjectID]++
+		}
+		for _, p := range bigquery.DemoProjects {
+			if seatProjects[p] == 0 {
+				t.Errorf("expected demo license seats in project %s, got %v", p, seatProjects)
+			}
+		}
+	})
+
+	t.Run("Distributes demo logs and billed costs across all 3 DemoProjects", func(t *testing.T) {
+		logs, err := provider.FetchTelemetryLogs(ctx, 14)
+		if err != nil {
+			t.Fatalf("FetchTelemetryLogs: %v", err)
+		}
+		logProjects := make(map[string]int)
+		for _, l := range logs {
+			logProjects[l.ProjectID]++
+		}
+		for _, p := range bigquery.DemoProjects {
+			if logProjects[p] == 0 {
+				t.Errorf("expected telemetry logs for project %s, got %v", p, logProjects)
+			}
+		}
+
+		costs, err := provider.FetchBilledCosts(ctx, 14)
+		if err != nil {
+			t.Fatalf("FetchBilledCosts: %v", err)
+		}
+		costProjects := make(map[string]int)
+		for _, c := range costs {
+			costProjects[c.ProjectID]++
+		}
+		for _, p := range bigquery.DemoProjects {
+			if costProjects[p] == 0 {
+				t.Errorf("expected billed costs for project %s, got %v", p, costProjects)
+			}
+		}
 	})
 }
 

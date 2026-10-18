@@ -190,6 +190,7 @@ func TestRowMappers(t *testing.T) {
 	t.Run("MapBillingRow maps fields accurately", func(t *testing.T) {
 		raw := bigquery.BillingRow{
 			UsageDate:      "2026-09-22",
+			ProjectID:      "gcp-finops-analytics",
 			SKUDescription: "Gemini 1.5 Pro",
 			NetCost:        12.34,
 			Currency:       "USD",
@@ -198,6 +199,9 @@ func TestRowMappers(t *testing.T) {
 		mapped := bigquery.MapBillingRow(raw)
 		if mapped.UsageDate != "2026-09-22" {
 			t.Errorf("expected date 2026-09-22, got %s", mapped.UsageDate)
+		}
+		if mapped.ProjectID != "gcp-finops-analytics" {
+			t.Errorf("expected project ID gcp-finops-analytics, got %s", mapped.ProjectID)
 		}
 		if mapped.NetCost != 12.34 {
 			t.Errorf("expected net cost 12.34, got %f", mapped.NetCost)

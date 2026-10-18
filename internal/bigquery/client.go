@@ -50,6 +50,7 @@ func BuildTelemetryQueryForField(table string, days int, payloadField string) st
 	payloadField = cmp.Or(payloadField, "jsonPayload")
 	return fmt.Sprintf(`SELECT
   timestamp,
+  IFNULL(resource.labels.project_id, '') AS project_id,
   labels.user_id AS user_id,
   labels.model AS model,
   IFNULL(CAST(%s.metadata.totalTokenCount AS INT64), 0) AS total_tokens,
@@ -77,6 +78,7 @@ func BuildBillingQuery(table string, days int) string {
 	}
 	return fmt.Sprintf(`SELECT
   FORMAT_DATE('%%Y-%%m-%%d', usage_start_time) AS usage_date,
+  IFNULL(project.id, '') AS project_id,
   sku.description AS sku_description,
   SUM(cost + IFNULL((SELECT SUM(c.amount) FROM UNNEST(credits) c), 0)) AS net_cost,
   currency
@@ -89,7 +91,7 @@ WHERE
     OR REGEXP_CONTAINS(service.description, r'(?i)gemini|antigravity')
   )
 GROUP BY
-  usage_date, sku_description, currency
+  usage_date, project_id, sku_description, currency
 ORDER BY
   usage_date DESC`, table, days)
 }
@@ -133,6 +135,7 @@ func (c *BigQueryClient) Close() error {
 // TelemetryRow represents a raw record read from BigQuery inference logs.
 type TelemetryRow struct {
 	Timestamp        time.Time `bigquery:"timestamp"`
+	ProjectID        string    `bigquery:"project_id"`
 	UserID           string    `bigquery:"user_id"`
 	Model            string    `bigquery:"model"`
 	TotalTokens      int64     `bigquery:"total_tokens"`
@@ -149,6 +152,7 @@ type TelemetryRow struct {
 // BillingRow represents a raw record read from BigQuery billing exports.
 type BillingRow struct {
 	UsageDate      string  `bigquery:"usage_date"`
+	ProjectID      string  `bigquery:"project_id"`
 	SKUDescription string  `bigquery:"sku_description"`
 	NetCost        float64 `bigquery:"net_cost"`
 	Currency       string  `bigquery:"currency"`
@@ -162,10 +166,11 @@ func MapTelemetryRow(projectID string, row TelemetryRow) domain.TelemetryLog {
 	}
 	quotaType := cmp.Or(strings.TrimSpace(row.QuotaType), "REGULAR_QUOTA")
 	clientName := cmp.Or(strings.TrimSpace(row.ClientName), "antigravity")
+	resolvedProject := cmp.Or(strings.TrimSpace(row.ProjectID), projectID)
 
 	return domain.TelemetryLog{
 		Timestamp:        row.Timestamp,
-		ProjectID:        projectID,
+		ProjectID:        resolvedProject,
 		UserID:           row.UserID,
 		Model:            row.Model,
 		TotalTokens:      row.TotalTokens,
@@ -184,6 +189,7 @@ func MapTelemetryRow(projectID string, row TelemetryRow) domain.TelemetryLog {
 func MapBillingRow(row BillingRow) domain.BilledCost {
 	return domain.BilledCost{
 		UsageDate:      row.UsageDate,
+		ProjectID:      strings.TrimSpace(row.ProjectID),
 		SKUDescription: row.SKUDescription,
 		NetCost:        row.NetCost,
 		Currency:       row.Currency,
@@ -198,6 +204,7 @@ func DeriveLicenseSeats(logs []domain.TelemetryLog, windowDays int, configuredQu
 		seat, exists := userMap[l.UserID]
 		if !exists {
 			seat = &domain.LicenseSeat{
+				ProjectID:          l.ProjectID,
 				UserID:             l.UserID,
 				Assigned:           true,
 				LastActivity:       l.Timestamp,
@@ -207,6 +214,8 @@ func DeriveLicenseSeats(logs []domain.TelemetryLog, windowDays int, configuredQu
 				Location:           "global",
 			}
 			userMap[l.UserID] = seat
+		} else if seat.ProjectID == "" && l.ProjectID != "" {
+			seat.ProjectID = l.ProjectID
 		}
 
 		seat.TotalTokensInWindow += l.TotalTokens
