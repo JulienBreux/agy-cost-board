@@ -666,7 +666,7 @@ func simulateForecastHorizon(base *domain.UsageForecast, pool *domain.WeeklyAllo
 	var total30dWTU int64
 	var total30dIncUSD, total30dPaygUSD float64
 
-	for d := 0; d < horizon; d++ {
+	for d := range horizon {
 		dayTime := today.AddDate(0, 0, d)
 		dateStr := dayTime.Format("2006-01-02")
 		wStart, wEnd, wKey, _ := weekWindowBounds(dayTime)
