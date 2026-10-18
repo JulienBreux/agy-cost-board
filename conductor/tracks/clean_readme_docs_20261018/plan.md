@@ -3,9 +3,9 @@
 ## Phase 1: Core Documentation Hub, Getting Started & FinOps Architecture (`docs/`)
 - [x] Task: Create `docs/README.md` (Documentation Hub & Index)
     - [x] Draft overview, persona-based navigation paths (Platform/FinOps, Engineering Managers, Developers), Mermaid system architecture diagram, and complete index table linking to all guides in `docs/`.
-- [~] Task: Create `docs/getting-started.md` (Installation, Demo Lab & GCP Setup)
-    - [ ] Document prerequisites, building from source (`make build`), exploring the 100% offline Synthetic Demo Lab (`--demo`), and connecting to Google Cloud & BigQuery with the 5-point automated verification and provisioning engine (`setup`, `setup --create`, `setup --save`, `doctor`).
-- [ ] Task: Create `docs/architecture-and-finops.md` (Proportional Attribution, WTU & FinOps Model)
+- [x] Task: Create `docs/getting-started.md` (Installation, Demo Lab & GCP Setup)
+    - [x] Document prerequisites, building from source (`make build`), exploring the 100% offline Synthetic Demo Lab (`--demo`), and connecting to Google Cloud & BigQuery with the 5-point automated verification and provisioning engine (`setup`, `setup --create`, `setup --save`, `doctor`).
+- [~] Task: Create `docs/architecture-and-finops.md` (Proportional Attribution, WTU & FinOps Model)
     - [ ] Document the Mathematical Proportional Attribution formula (`Allocated Cost(u, m, d)`), Dual Cost Model coexistence (`v0.10.0`: Reconciled Cloud Billing vs. Metered WTU / Included Seat Allowance vs. PAYG Overage), Token Cache Hit Rate & Thinking Effort levels (`minimal`..`max`), Client Telemetry (`vscode`, `jetbrains`, `agy-cli`), Gemini Enterprise Shelfware Reclamation, and Native Multi-Currency (ISO-4217 zero-FX ingestion).
 - [ ] Task: Conductor - User Manual Verification 'Phase 1: Core Documentation Hub, Getting Started & FinOps Architecture (`docs/`)' (Protocol in workflow.md)
 
