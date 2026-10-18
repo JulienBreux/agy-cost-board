@@ -13,7 +13,6 @@ const mockCosts: AllocatedUserCost[] = [
     cache_hit_rate: 64.2,
     total_model_tokens: 3000000,
     token_share: 0.5,
-    total_model_cost: 90.0,
     allocated_cost: 45.0,
     included_cost: 30.0,
     payg_cost: 15.0,

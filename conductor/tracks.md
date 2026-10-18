@@ -57,6 +57,6 @@
 
 ---
 
-- [~] **Track: Phase 2 (v0.11.0) — Weekly Allowance Pool Engine, Fair-Share vs. When-Used Chargeback & Multi-Tier License Discovery**
+- [x] **Track: Phase 2 (v0.11.0) — Weekly Allowance Pool Engine, Fair-Share vs. When-Used Chargeback & Multi-Tier License Discovery**
   *Link: [./tracks/finops_phase2_pool_chargeback_tiers_20261018/index.md](./tracks/finops_phase2_pool_chargeback_tiers_20261018/index.md)*
 
