@@ -12,6 +12,33 @@ export interface ChangelogRelease {
 
 export const CHANGELOG_DATA: ChangelogRelease[] = [
   {
+    version: 'v0.7.0',
+    date: 'October 18, 2026',
+    title: 'Model Context Protocol (MCP) Server & Antigravity Quota Plugin',
+    items: [
+      {
+        title: 'Dual-Transport MCP Server',
+        description:
+          'Expose FinOps cost attribution, Gemini Enterprise seat quotas, and personal budget tools via Streamable HTTP (/mcp) and stdio (agy-cost-board mcp).',
+      },
+      {
+        title: 'Runtime _MCP_ENABLED Toggle',
+        description:
+          'Control MCP server availability dynamically using the _MCP_ENABLED environment variable or --mcp-enabled CLI flag.',
+      },
+      {
+        title: 'Antigravity Native Plugin',
+        description:
+          'Bundled .agents/plugins/agy-cost-board plugin with MCP configuration, FinOps governance rules, and the cost-and-quota-advisor skill.',
+      },
+      {
+        title: 'Live Quota & MCP Setup Modal',
+        description:
+          'Interactive Navbar MCP status badge and modal displaying live Gemini Enterprise seat utilization, active developer quotas, and one-click Antigravity config snippets.',
+      },
+    ],
+  },
+  {
     version: 'v0.6.1',
     date: 'October 16, 2026',
     title: 'Navigation layout polish & responsive header alignment',

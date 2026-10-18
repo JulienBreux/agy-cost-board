@@ -1,6 +1,6 @@
 {
   "name": "agy-cost-board",
-  "version": "1.0.0",
+  "version": "0.7.0",
   "description": "Antigravity & Gemini Enterprise Cost Attribution, Seat Quota Governance, and Personal Consumption Advisor plugin powered by the agy-cost-board MCP server.",
   "author": {
     "name": "Julien Breux",

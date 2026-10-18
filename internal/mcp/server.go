@@ -286,7 +286,7 @@ func (s *Server) HandleMessage(ctx context.Context, raw []byte) (Response, bool)
 			ID:      req.ID,
 			Error: &RPCError{
 				Code:    -32601,
-				Message: fmt.Sprintf("Method not found: %s", req.Method),
+				Message: "Method not found: " + req.Method,
 			},
 		}, true
 	}
@@ -354,7 +354,7 @@ func (s *Server) handleToolCall(ctx context.Context, rawParams json.RawMessage) 
 		})
 
 	default:
-		return errorToolResult(fmt.Sprintf("unknown tool: %s", params.Name))
+		return errorToolResult("unknown tool: " + params.Name)
 	}
 }
 
