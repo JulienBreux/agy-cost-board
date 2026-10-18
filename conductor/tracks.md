@@ -52,7 +52,7 @@
 
 ---
 
-- [~] **Track: I want to clean the README and create a clean documentation in docs/**
+- [x] **Track: I want to clean the README and create a clean documentation in docs/**
   *Link: [./tracks/clean_readme_docs_20261018/index.md](./tracks/clean_readme_docs_20261018/index.md)*
 
 ---

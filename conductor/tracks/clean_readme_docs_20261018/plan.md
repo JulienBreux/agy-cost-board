@@ -19,8 +19,8 @@
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Interfaces, Integrations & Deployment Guides (`docs/`)' (Protocol in workflow.md)
 
 ## Phase 3: Streamline `README.md` & Verify Documentation Links
-- [~] Task: Refactor `README.md` into a concise, high-impact landing page (~120–160 lines)
-    - [ ] Keep Hero & badges, screenshots (`docs/assets/overview.png`, `docs/assets/consumption.png`), concise "Why agy-cost-board?" & "The Difference at a Glance" table, brief `v0.10.0`-updated Superpowers summary, 60-Second Quick Start, Documentation Map linking to `docs/*.md`, Development & Testing commands, and Community & License links.
-- [ ] Task: Verify relative links, image references, and formatting across `README.md` and `docs/*.md`
-    - [ ] Validate that all relative links between `README.md`, `docs/*.md`, `docs/assets/*.png`, and community files (`CONTRIBUTING.md`, `SECURITY.md`, etc.) resolve cleanly and `make test` passes.
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Streamline `README.md` & Verify Documentation Links' (Protocol in workflow.md)
+- [x] Task: Refactor `README.md` into a concise, high-impact landing page (~120–160 lines)
+    - [x] Keep Hero & badges, screenshots (`docs/assets/overview.png`, `docs/assets/consumption.png`), concise "Why agy-cost-board?" & "The Difference at a Glance" table, brief `v0.10.0`-updated Superpowers summary, 60-Second Quick Start, Documentation Map linking to `docs/*.md`, Development & Testing commands, and Community & License links.
+- [x] Task: Verify relative links, image references, and formatting across `README.md` and `docs/*.md`
+    - [x] Validate that all relative links between `README.md`, `docs/*.md`, `docs/assets/*.png`, and community files (`CONTRIBUTING.md`, `SECURITY.md`, etc.) resolve cleanly and `make test` passes.
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Streamline `README.md` & Verify Documentation Links' (Protocol in workflow.md)
