@@ -269,6 +269,18 @@ func TestViperConfigFeatures(t *testing.T) {
 			}
 		})
 	})
+
+	t.Run("monitored_projects parses comma-separated env var and deduplicates", func(t *testing.T) {
+		t.Setenv("AGY_COST_BOARD_MONITORED_PROJECTS", "proj-a, proj-b,proj-a, proj-c ")
+		cfg, err := config.Load(filepath.Join(t.TempDir(), "nonexistent.yaml"))
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(cfg.MonitoredProjects) != 3 {
+			t.Fatalf("expected 3 monitored projects, got %v", cfg.MonitoredProjects)
+		}
+		if cfg.MonitoredProjects[0] != "proj-a" || cfg.MonitoredProjects[1] != "proj-b" || cfg.MonitoredProjects[2] != "proj-c" {
+			t.Errorf("unexpected monitored projects: %v", cfg.MonitoredProjects)
+		}
+	})
 }
-
-

@@ -1,10 +1,10 @@
 # Implementation Plan: Phase 3 (`v0.12.0`) — 30-Day Window-Aware Forecast, Cloud Monitoring Quota Meter Sync & Multi-Project Support
 
 ## Phase 1: Backend Domain, Multi-Project Filtering, Cloud Monitoring Meter & 30-Day Forecast Engine
-- [ ] Task: Extend `internal/domain/models.go` and `internal/config/config.go` with `UsageForecast`, `ForecastDay`, `MonitoringQuotaMeter`, and `MonitoredProjects` / `ProjectID` fields
-    - [ ] Add unit tests in `internal/domain/models_test.go` and `internal/config/config_test.go`.
-    - [ ] Implement structs and configuration parsing (`--monitored-projects`, `AGY_COST_BOARD_MONITORED_PROJECTS`).
-- [ ] Task: Update `internal/bigquery/demo.go` and `internal/bigquery/client.go` with multi-project telemetry/billing/seat distribution (`gcp-ai-platform-prod`, `gcp-finops-analytics`, `gcp-agent-sandbox`)
+- [x] Task: Extend `internal/domain/models.go` and `internal/config/config.go` with `UsageForecast`, `ForecastDay`, `MonitoringQuotaMeter`, and `MonitoredProjects` / `ProjectID` fields
+    - [x] Add unit tests in `internal/domain/models_test.go` and `internal/config/config_test.go`.
+    - [x] Implement structs and configuration parsing (`--monitored-projects`, `AGY_COST_BOARD_MONITORED_PROJECTS`).
+- [~] Task: Update `internal/bigquery/demo.go` and `internal/bigquery/client.go` with multi-project telemetry/billing/seat distribution (`gcp-ai-platform-prod`, `gcp-finops-analytics`, `gcp-agent-sandbox`)
     - [ ] Add unit tests in `internal/bigquery/demo_test.go` verifying multi-project assignment on demo usage logs, billing rows, and license seats.
     - [ ] Update `internal/bigquery/demo.go` and `internal/bigquery/client.go`.
 - [ ] Task: Implement 30-Day Window-Aware Forecast, Cloud Monitoring Quota Meter comparison, and Project Filtering (`FilterByProject`) in `internal/attribution/engine.go`

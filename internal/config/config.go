@@ -17,17 +17,36 @@ const DefaultConfigFileName = ".agy-cost-board.yaml"
 
 // Config represents the strongly typed application configuration.
 type Config struct {
-	ProjectID      string `mapstructure:"project_id" yaml:"project_id" json:"project_id"`
-	TelemetryTable string `mapstructure:"telemetry_table" yaml:"telemetry_table" json:"telemetry_table"`
-	BillingTable   string `mapstructure:"billing_table" yaml:"billing_table" json:"billing_table"`
-	SinkName       string `mapstructure:"sink_name" yaml:"sink_name" json:"sink_name"`
-	DatasetName    string `mapstructure:"dataset" yaml:"dataset" json:"dataset"`
-	SeatQuota      int    `mapstructure:"seat_quota" yaml:"seat_quota" json:"seat_quota"`
-	Demo           bool   `mapstructure:"demo" yaml:"demo" json:"demo"`
-	Format         string `mapstructure:"format" yaml:"format" json:"format"`
-	Port           int    `mapstructure:"port" yaml:"port" json:"port"`
-	Host           string `mapstructure:"host" yaml:"host" json:"host"`
-	MCPEnabled     bool   `mapstructure:"mcp_enabled" yaml:"mcp_enabled" json:"mcp_enabled"`
+	ProjectID         string   `mapstructure:"project_id" yaml:"project_id" json:"project_id"`
+	MonitoredProjects []string `mapstructure:"monitored_projects" yaml:"monitored_projects,omitempty" json:"monitored_projects,omitempty"`
+	TelemetryTable    string   `mapstructure:"telemetry_table" yaml:"telemetry_table" json:"telemetry_table"`
+	BillingTable      string   `mapstructure:"billing_table" yaml:"billing_table" json:"billing_table"`
+	SinkName          string   `mapstructure:"sink_name" yaml:"sink_name" json:"sink_name"`
+	DatasetName       string   `mapstructure:"dataset" yaml:"dataset" json:"dataset"`
+	SeatQuota         int      `mapstructure:"seat_quota" yaml:"seat_quota" json:"seat_quota"`
+	Demo              bool     `mapstructure:"demo" yaml:"demo" json:"demo"`
+	Format            string   `mapstructure:"format" yaml:"format" json:"format"`
+	Port              int      `mapstructure:"port" yaml:"port" json:"port"`
+	Host              string   `mapstructure:"host" yaml:"host" json:"host"`
+	MCPEnabled        bool     `mapstructure:"mcp_enabled" yaml:"mcp_enabled" json:"mcp_enabled"`
+}
+
+// ParseMonitoredProjects splits and deduplicates comma- or whitespace-separated project IDs.
+func ParseMonitoredProjects(items ...string) []string {
+	seen := make(map[string]bool)
+	var out []string
+	for _, raw := range items {
+		for _, part := range strings.FieldsFunc(raw, func(r rune) bool {
+			return r == ',' || r == ' ' || r == '\t' || r == '\n'
+		}) {
+			trimmed := strings.TrimSpace(part)
+			if trimmed != "" && !seen[trimmed] {
+				seen[trimmed] = true
+				out = append(out, trimmed)
+			}
+		}
+	}
+	return out
 }
 
 // FileConfig is an alias for Config for backwards compatibility.
@@ -60,6 +79,7 @@ func SetupViper(v *viper.Viper) {
 
 	// Strictly AGY_COST_BOARD_ prefixed environment variables
 	_ = v.BindEnv("project_id", "AGY_COST_BOARD_PROJECT_ID", "AGY_COST_BOARD_PROJECT")
+	_ = v.BindEnv("monitored_projects", "AGY_COST_BOARD_MONITORED_PROJECTS")
 	_ = v.BindEnv("telemetry_table", "AGY_COST_BOARD_TELEMETRY_TABLE")
 	_ = v.BindEnv("billing_table", "AGY_COST_BOARD_BILLING_TABLE")
 	_ = v.BindEnv("seat_quota", "AGY_COST_BOARD_SEAT_QUOTA")
@@ -73,6 +93,7 @@ func SetupViper(v *viper.Viper) {
 
 	// Aliases for seamless flag name and config key resolution
 	v.RegisterAlias("project", "project_id")
+	v.RegisterAlias("monitored-projects", "monitored_projects")
 	v.RegisterAlias("telemetry-table", "telemetry_table")
 	v.RegisterAlias("billing-table", "billing_table")
 	v.RegisterAlias("seat-quota", "seat_quota")
@@ -113,6 +134,12 @@ func LoadViper(v *viper.Viper, path string) (*Config, error) {
 	var cfg Config
 	if err := v.Unmarshal(&cfg); err != nil {
 		return nil, fmt.Errorf("unmarshaling config: %w", err)
+	}
+
+	if len(cfg.MonitoredProjects) > 0 {
+		cfg.MonitoredProjects = ParseMonitoredProjects(cfg.MonitoredProjects...)
+	} else if raw := v.GetString("monitored_projects"); raw != "" {
+		cfg.MonitoredProjects = ParseMonitoredProjects(raw)
 	}
 
 	return &cfg, nil

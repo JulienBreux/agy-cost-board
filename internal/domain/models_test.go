@@ -387,4 +387,71 @@ func TestWeeklyAllowancePoolAndPhase2Fields(t *testing.T) {
 	}
 }
 
+func TestPhase3ForecastAndMonitoringModels(t *testing.T) {
+	overview := domain.OverviewMetrics{
+		TotalBilledCost:   120.50,
+		MonitoredProjects: []string{"gcp-ai-platform-prod", "gcp-finops-analytics", "gcp-agent-sandbox"},
+		SelectedProject:   "gcp-ai-platform-prod",
+		WeeklyPool: &domain.WeeklyAllowancePool{
+			WindowStart: "2026-10-12",
+			WindowEnd:   "2026-10-18",
+			MonitoringMeter: &domain.MonitoringQuotaMeter{
+				MetricType:      "discoveryengine.googleapis.com/quota/agentic_wtu_tier_pp_weekly_regional",
+				MeteredUsedWTU:  12400000,
+				MeteredUsedUSD:  24.80,
+				LogEstimatedWTU: 12250000,
+				LogEstimatedUSD: 24.50,
+				DriftWTU:        150000,
+				DriftPct:        1.2,
+				Status:          "synced",
+			},
+		},
+		Forecast: &domain.UsageForecast{
+			HorizonDays:                  30,
+			DailyVelocityWTU:             2200000,
+			DailyPoolEligibleWTU:         1900000,
+			DailyAlwaysPAYGWTU:           300000,
+			DailyVelocityUSD:             4.40,
+			Projected30dTotalWTU:         66000000,
+			Projected30dTotalUSD:         132.00,
+			Projected30dIncludedUSD:      105.00,
+			Projected30dPAYGUSD:          27.00,
+			WillSpilloverInCurrentWindow: true,
+			SpilloverDate:                "2026-10-17",
+			DaysUntilSpillover:           2,
+			ForecastDays: []domain.ForecastDay{
+				{
+					Date:               "2026-10-16",
+					WindowStart:        "2026-10-12",
+					WindowEnd:          "2026-10-18",
+					ProjectedWTU:       2200000,
+					IncludedWTU:        1900000,
+					PAYGOverageWTU:     300000,
+					IncludedCostUSD:    3.80,
+					PAYGOverageUSD:     0.60,
+					CumulativePoolWTU:  14150000,
+					PoolLimitWTU:       15000000,
+					SpilloverTriggered: false,
+				},
+			},
+		},
+	}
 
+	b, err := json.Marshal(overview)
+	if err != nil {
+		t.Fatalf("marshal OverviewMetrics: %v", err)
+	}
+	var decoded domain.OverviewMetrics
+	if err := json.Unmarshal(b, &decoded); err != nil {
+		t.Fatalf("unmarshal OverviewMetrics: %v", err)
+	}
+	if decoded.SelectedProject != "gcp-ai-platform-prod" || len(decoded.MonitoredProjects) != 3 {
+		t.Errorf("unexpected multi-project fields: %+v", decoded)
+	}
+	if decoded.WeeklyPool == nil || decoded.WeeklyPool.MonitoringMeter == nil || decoded.WeeklyPool.MonitoringMeter.Status != "synced" {
+		t.Errorf("unexpected monitoring meter: %+v", decoded.WeeklyPool)
+	}
+	if decoded.Forecast == nil || decoded.Forecast.SpilloverDate != "2026-10-17" || len(decoded.Forecast.ForecastDays) != 1 {
+		t.Errorf("unexpected forecast: %+v", decoded.Forecast)
+	}
+}

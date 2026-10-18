@@ -41,6 +41,7 @@ type TelemetryLog struct {
 // BilledCost represents net billed costs per SKU from Cloud Billing export.
 type BilledCost struct {
 	UsageDate      string  `json:"usage_date"`
+	ProjectID      string  `json:"project_id,omitempty"`
 	SKUDescription string  `json:"sku_description"`
 	NetCost        float64 `json:"net_cost"`
 	Currency       string  `json:"currency"`
@@ -48,6 +49,7 @@ type BilledCost struct {
 
 // AllocatedUserCost represents the calculated proportional cost for a single user, model, and date.
 type AllocatedUserCost struct {
+	ProjectID             string  `json:"project_id,omitempty"`
 	UserID                string  `json:"user_id"`
 	Model                 string  `json:"model"`
 	UsageDate             string  `json:"usage_date"`
@@ -188,6 +190,7 @@ type ClientStats struct {
 
 // LicenseSeat tracks the assignment, subscription tier, region, and activity for a developer's seat.
 type LicenseSeat struct {
+	ProjectID           string     `json:"project_id,omitempty"`
 	UserID              string     `json:"user_id"`
 	Assigned            bool       `json:"assigned"`
 	Status              SeatStatus `json:"status"`
@@ -199,6 +202,51 @@ type LicenseSeat struct {
 	TrialEndsAt         string     `json:"trial_ends_at,omitempty"`
 	LastActivity        time.Time  `json:"last_activity"`
 	TotalTokensInWindow int64      `json:"total_tokens_in_window"`
+}
+
+// MonitoringQuotaMeter compares the official Cloud Monitoring weekly WTU quota meter against log-derived WTU estimates.
+type MonitoringQuotaMeter struct {
+	MetricType      string  `json:"metric_type"`
+	MeteredUsedWTU  int64   `json:"metered_used_wtu"`
+	MeteredUsedUSD  float64 `json:"metered_used_usd"`
+	LogEstimatedWTU int64   `json:"log_estimated_wtu"`
+	LogEstimatedUSD float64 `json:"log_estimated_usd"`
+	DriftWTU        int64   `json:"drift_wtu"`
+	DriftPct        float64 `json:"drift_pct"`
+	Status          string  `json:"status"` // "synced", "minor_drift", "diverged", "unavailable"
+	LastSyncedAt    string  `json:"last_synced_at,omitempty"`
+}
+
+// ForecastDay represents a single day's projected WTU, Included vs. PAYG split, and pool accumulation over the 30-day forecast horizon.
+type ForecastDay struct {
+	Date               string  `json:"date"`
+	WindowStart        string  `json:"window_start"`
+	WindowEnd          string  `json:"window_end"`
+	ProjectedWTU       int64   `json:"projected_wtu"`
+	IncludedWTU        int64   `json:"included_wtu"`
+	PAYGOverageWTU     int64   `json:"payg_overage_wtu"`
+	IncludedCostUSD    float64 `json:"included_cost_usd"`
+	PAYGOverageUSD     float64 `json:"payg_overage_usd"`
+	CumulativePoolWTU  int64   `json:"cumulative_pool_wtu"`
+	PoolLimitWTU       int64   `json:"pool_limit_wtu"`
+	SpilloverTriggered bool    `json:"spillover_triggered"`
+}
+
+// UsageForecast represents a 30-day window-aware WTU & PAYG spillover forecast based on trailing 7-day velocity.
+type UsageForecast struct {
+	HorizonDays                  int           `json:"horizon_days"`
+	DailyVelocityWTU             int64         `json:"daily_velocity_wtu"`
+	DailyPoolEligibleWTU         int64         `json:"daily_pool_eligible_wtu"`
+	DailyAlwaysPAYGWTU           int64         `json:"daily_always_payg_wtu"`
+	DailyVelocityUSD             float64       `json:"daily_velocity_usd"`
+	Projected30dTotalWTU         int64         `json:"projected_30d_total_wtu"`
+	Projected30dTotalUSD         float64       `json:"projected_30d_total_usd"`
+	Projected30dIncludedUSD      float64       `json:"projected_30d_included_usd"`
+	Projected30dPAYGUSD          float64       `json:"projected_30d_payg_usd"`
+	WillSpilloverInCurrentWindow bool          `json:"will_spillover_in_current_window"`
+	SpilloverDate                string        `json:"spillover_date,omitempty"`
+	DaysUntilSpillover           int           `json:"days_until_spillover"`
+	ForecastDays                 []ForecastDay `json:"forecast_days"`
 }
 
 // WeeklyPoolWindow represents a single 7-day allowance window's limit vs. actual consumption.
@@ -248,6 +296,7 @@ type WeeklyAllowancePool struct {
 	RemainingUSD    float64                       `json:"remaining_usd"`
 	RemainingWTU    int64                         `json:"remaining_wtu"`
 	UtilizationPct  float64                       `json:"utilization_pct"`
+	MonitoringMeter *MonitoringQuotaMeter         `json:"monitoring_meter,omitempty"`
 	Windows         []WeeklyPoolWindow            `json:"windows,omitempty"`
 	Scenarios       map[string]PoolWhatIfScenario `json:"scenarios,omitempty"`
 }
@@ -268,6 +317,8 @@ type LicenseGovernanceSummary struct {
 	DormantUsers            []LicenseSeat        `json:"dormant_users"`
 	AllSeats                []LicenseSeat        `json:"all_seats,omitempty"`
 	WeeklyPool              *WeeklyAllowancePool `json:"weekly_pool,omitempty"`
+	MonitoredProjects       []string             `json:"monitored_projects,omitempty"`
+	SelectedProject         string               `json:"selected_project,omitempty"`
 }
 
 // OverviewMetrics holds top-level KPIs for the web dashboard and CLI summary.
@@ -290,6 +341,9 @@ type OverviewMetrics struct {
 	ModelEffortStats        []ModelEffortStats         `json:"model_effort_stats"`
 	ClientBreakdown         []ClientStats              `json:"client_breakdown"`
 	WeeklyPool              *WeeklyAllowancePool       `json:"weekly_pool,omitempty"`
+	Forecast                *UsageForecast             `json:"forecast,omitempty"`
+	MonitoredProjects       []string                   `json:"monitored_projects,omitempty"`
+	SelectedProject         string                     `json:"selected_project,omitempty"`
 	Currency                string                     `json:"currency"`
 }
 
