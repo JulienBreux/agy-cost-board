@@ -2,7 +2,7 @@
   "id": "finops_phase1_wtu_cache_effort_20261018",
   "title": "Phase 1 (v0.10.0) — Token Cache, Thinking Effort, Client Telemetry & Included vs. PAYG Coexistence",
   "type": "feature",
-  "status": "new",
+  "status": "in_progress",
   "created_at": "2026-10-18T14:28:50+02:00",
-  "updated_at": "2026-10-18T14:28:50+02:00"
+  "updated_at": "2026-10-18T14:31:20+02:00"
 }
