@@ -50,5 +50,7 @@
 - [~] **Track: Phase 1 (v0.10.0) — Token Cache, Thinking Effort, Client Telemetry & Included vs. PAYG Coexistence**
   *Link: [./tracks/finops_phase1_wtu_cache_effort_20261018/index.md](./tracks/finops_phase1_wtu_cache_effort_20261018/index.md)*
 
+---
 
-
+- [ ] **Track: I want to clean the README and create a clean documentation in docs/**
+  *Link: [./tracks/clean_readme_docs_20261018/index.md](./tracks/clean_readme_docs_20261018/index.md)*
