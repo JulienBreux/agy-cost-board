@@ -45,4 +45,10 @@
 - [x] **Track: Create a leaderboard of users, we gonna take the oppotunity to refine the navigation. Put Overview, Leaderboard, My Consumption and Attributed Cost to a second navigation line.**
   *Link: [./tracks/leaderboard_nav_20261018/index.md](./tracks/leaderboard_nav_20261018/index.md)*
 
+---
+
+- [ ] **Track: Phase 1 (v0.10.0) — Token Cache, Thinking Effort, Client Telemetry & Included vs. PAYG Coexistence**
+  *Link: [./tracks/finops_phase1_wtu_cache_effort_20261018/index.md](./tracks/finops_phase1_wtu_cache_effort_20261018/index.md)*
+
+
 
