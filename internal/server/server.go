@@ -183,6 +183,13 @@ func (s *Server) handleOverviewMetrics(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	poolMode := r.URL.Query().Get("pool_mode")
+	seatBasis := r.URL.Query().Get("seat_basis")
+	if (poolMode != "" || seatBasis != "") && overview != nil {
+		ovCopy := *overview
+		ovCopy.WeeklyPool = attribution.ApplyPoolWhatIf(overview.WeeklyPool, poolMode, seatBasis)
+		overview = &ovCopy
+	}
 	respondJSON(w, http.StatusOK, overview)
 }
 
@@ -192,6 +199,9 @@ func (s *Server) handleLeaderboard(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
+	}
+	if paygMode := r.URL.Query().Get("payg_mode"); paygMode != "" {
+		entries = attribution.ApplyPAYGModeToLeaderboard(entries, paygMode)
 	}
 	respondJSON(w, http.StatusOK, entries)
 }
@@ -205,6 +215,9 @@ func (s *Server) handleAttributedCosts(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	if paygMode := r.URL.Query().Get("payg_mode"); paygMode != "" {
+		costs = attribution.ApplyPAYGModeToCosts(costs, paygMode)
+	}
 	respondJSON(w, http.StatusOK, costs)
 }
 
@@ -214,6 +227,13 @@ func (s *Server) handleLicenseGovernance(w http.ResponseWriter, r *http.Request)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
+	}
+	poolMode := r.URL.Query().Get("pool_mode")
+	seatBasis := r.URL.Query().Get("seat_basis")
+	if (poolMode != "" || seatBasis != "") && gov != nil {
+		govCopy := *gov
+		govCopy.WeeklyPool = attribution.ApplyPoolWhatIf(gov.WeeklyPool, poolMode, seatBasis)
+		gov = &govCopy
 	}
 	respondJSON(w, http.StatusOK, gov)
 }

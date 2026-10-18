@@ -66,10 +66,13 @@ func newLicenseCommand(v *viper.Viper) *cobra.Command {
 				cmd.Print(out)
 
 			default:
-				headers := []string{"SEAT QUOTA", "ASSIGNED", "ACTIVE", "DORMANT", "UTILIZATION", "EST. MONTHLY SAVINGS"}
+				headers := []string{"SEAT QUOTA", "ASSIGNED", "STANDARD", "PLUS", "TRIAL", "ACTIVE", "DORMANT", "UTILIZATION", "EST. MONTHLY SAVINGS"}
 				rows := [][]string{{
 					strconv.Itoa(gov.SeatQuota),
 					strconv.Itoa(gov.AssignedSeats),
+					strconv.Itoa(gov.StandardSeats),
+					strconv.Itoa(gov.PlusSeats),
+					strconv.Itoa(gov.TrialSeats),
 					strconv.Itoa(gov.ActiveSeats),
 					strconv.Itoa(gov.DormantSeats),
 					fmt.Sprintf("%.1f%%", gov.UtilizationPct),
@@ -77,17 +80,34 @@ func newLicenseCommand(v *viper.Viper) *cobra.Command {
 				}}
 				cmd.Print(FormatTable(headers, rows))
 
+				if gov.WeeklyPool != nil {
+					cmd.Printf("\nWEEKLY ALLOWANCE POOL (%s / %s): %s / %s (%.1f%% drawdown) | Resets in %dh\n",
+						gov.WeeklyPool.PoolMode,
+						gov.WeeklyPool.SeatBasis,
+						domain.FormatCost(gov.WeeklyPool.IncludedUsedUSD, gov.Currency),
+						domain.FormatCost(gov.WeeklyPool.PoolLimitUSD, gov.Currency),
+						gov.WeeklyPool.UtilizationPct,
+						gov.WeeklyPool.ResetInHours,
+					)
+				}
+
 				if len(gov.DormantUsers) > 0 {
 					cmd.Println("\nDormant Licenses (Inactive for >30 days):")
-					dormantHeaders := []string{"USER ID", "STATUS", "LAST ACTIVITY"}
+					dormantHeaders := []string{"USER ID", "TIER", "LOCATION", "STATUS", "LAST ACTIVITY"}
 					var dormantRows [][]string
 					for _, u := range gov.DormantUsers {
 						lastAct := "Never"
 						if !u.LastActivity.IsZero() {
 							lastAct = u.LastActivity.Format("2006-01-02")
 						}
+						tier := u.Tier
+						if u.IsTrial {
+							tier += " (Trial)"
+						}
 						dormantRows = append(dormantRows, []string{
 							u.UserID,
+							tier,
+							u.Location,
 							string(u.Status),
 							lastAct,
 						})

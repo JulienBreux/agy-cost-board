@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/julienbreux/agy-cost-board/internal/attribution"
 	"github.com/julienbreux/agy-cost-board/internal/config"
 	"github.com/julienbreux/agy-cost-board/internal/domain"
 	"github.com/spf13/cobra"
@@ -15,6 +16,7 @@ import (
 func newCostCommand(v *viper.Viper) *cobra.Command {
 	var days int
 	var modelFilter string
+	var paygMode string
 
 	cmd := &cobra.Command{
 		Use:   "cost",
@@ -35,6 +37,7 @@ func newCostCommand(v *viper.Viper) *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("calculate attributed costs: %w", err)
 			}
+			costs = attribution.ApplyPAYGModeToCosts(costs, paygMode)
 
 			format := flagFormat
 			if cfg := config.FromContext(ctx); cfg != nil && cfg.Format != "" {
@@ -50,10 +53,24 @@ func newCostCommand(v *viper.Viper) *cobra.Command {
 				cmd.Println(out)
 
 			case "csv":
-				headers := []string{"USER", "MODEL", "USAGE_DATE", "USER_TOKENS", "TOKEN_SHARE", "ALLOCATED_COST", "CURRENCY"}
+				headers := []string{"USER", "MODEL", "USAGE_DATE", "USER_TOKENS", "TOTAL_MODEL_TOKENS", "TOKEN_SHARE", "ALLOCATED_COST", "WTU", "INCLUDED_COST", "PAYG_COST", "FAIR_SHARE_PAYG_COST", "WHEN_USED_PAYG_COST", "CURRENCY"}
 				var rows [][]string
 				for _, c := range costs {
-					rows = append(rows, c.ToCSVRow())
+					rows = append(rows, []string{
+						c.UserID,
+						c.Model,
+						c.UsageDate,
+						strconv.FormatInt(c.UserTokens, 10),
+						strconv.FormatInt(c.TotalModelTokens, 10),
+						fmt.Sprintf("%.4f", c.TokenShare),
+						fmt.Sprintf("%.4f", c.AllocatedCost),
+						strconv.FormatInt(c.WTU, 10),
+						fmt.Sprintf("%.4f", c.IncludedCost),
+						fmt.Sprintf("%.4f", c.PAYGCost),
+						fmt.Sprintf("%.4f", c.FairSharePAYGCost),
+						fmt.Sprintf("%.4f", c.WhenUsedPAYGCost),
+						c.Currency,
+					})
 				}
 				out, err := FormatCSV(headers, rows)
 				if err != nil {
@@ -87,6 +104,7 @@ func newCostCommand(v *viper.Viper) *cobra.Command {
 
 	cmd.Flags().IntVar(&days, "days", 30, "Time window in days")
 	cmd.Flags().StringVar(&modelFilter, "model", "", "Filter by AI model (e.g. gemini-1.5-pro)")
+	cmd.Flags().StringVar(&paygMode, "payg-mode", "fair_share", "PAYG attribution mode: fair_share or when_used")
 
 	return cmd
 }

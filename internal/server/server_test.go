@@ -201,6 +201,77 @@ func TestAPIEndpoints(t *testing.T) {
 		if gov.DormantSeats < 0 {
 			t.Errorf("unexpected dormant seats: %d", gov.DormantSeats)
 		}
+		if gov.WeeklyPool == nil {
+			t.Errorf("expected WeeklyPool in governance response")
+		}
+		if gov.StandardSeats == 0 && gov.PlusSeats == 0 {
+			t.Errorf("expected standard/plus seat counts in governance response")
+		}
+	})
+
+	t.Run("GET /api/v1/metrics/overview and /api/v1/licenses/status support pool_mode and seat_basis What-If parameters", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/metrics/overview?days=30&pool_mode=per_user&seat_basis=purchased", nil)
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+		if rec.Code != http.StatusOK {
+			t.Fatalf("expected 200 OK, got %d", rec.Code)
+		}
+		var metrics domain.OverviewMetrics
+		if err := json.NewDecoder(rec.Body).Decode(&metrics); err != nil {
+			t.Fatalf("decode err: %v", err)
+		}
+		if metrics.WeeklyPool == nil || metrics.WeeklyPool.PoolMode != "per_user" || metrics.WeeklyPool.SeatBasis != "purchased" {
+			t.Errorf("expected WeeklyPool with per_user + purchased, got %+v", metrics.WeeklyPool)
+		}
+
+		reqLic := httptest.NewRequest(http.MethodGet, "/api/v1/licenses/status?days=30&pool_mode=pooled&seat_basis=purchased", nil)
+		recLic := httptest.NewRecorder()
+		router.ServeHTTP(recLic, reqLic)
+		if recLic.Code != http.StatusOK {
+			t.Fatalf("expected 200 OK, got %d", recLic.Code)
+		}
+		var gov domain.LicenseGovernanceSummary
+		if err := json.NewDecoder(recLic.Body).Decode(&gov); err != nil {
+			t.Fatalf("decode err: %v", err)
+		}
+		if gov.WeeklyPool == nil || gov.WeeklyPool.PoolMode != "pooled" || gov.WeeklyPool.SeatBasis != "purchased" {
+			t.Errorf("expected governance WeeklyPool with pooled + purchased, got %+v", gov.WeeklyPool)
+		}
+	})
+
+	t.Run("GET /api/v1/costs/users and /api/v1/leaderboard support payg_mode=fair_share|when_used", func(t *testing.T) {
+		reqFS := httptest.NewRequest(http.MethodGet, "/api/v1/leaderboard?days=30&payg_mode=fair_share", nil)
+		recFS := httptest.NewRecorder()
+		router.ServeHTTP(recFS, reqFS)
+		var lbFS []domain.LeaderboardEntry
+		if err := json.NewDecoder(recFS.Body).Decode(&lbFS); err != nil {
+			t.Fatalf("decode err: %v", err)
+		}
+
+		reqWU := httptest.NewRequest(http.MethodGet, "/api/v1/leaderboard?days=30&payg_mode=when_used", nil)
+		recWU := httptest.NewRecorder()
+		router.ServeHTTP(recWU, reqWU)
+		var lbWU []domain.LeaderboardEntry
+		if err := json.NewDecoder(recWU.Body).Decode(&lbWU); err != nil {
+			t.Fatalf("decode err: %v", err)
+		}
+		if len(lbFS) == 0 || len(lbWU) == 0 {
+			t.Fatalf("expected non-empty leaderboard entries")
+		}
+		if lbWU[0].PAYGCost != lbWU[0].WhenUsedPAYGCost {
+			t.Errorf("expected when_used mode to set PAYGCost = WhenUsedPAYGCost (%.4f vs %.4f)", lbWU[0].PAYGCost, lbWU[0].WhenUsedPAYGCost)
+		}
+
+		reqCostsWU := httptest.NewRequest(http.MethodGet, "/api/v1/costs/users?days=30&payg_mode=when_used", nil)
+		recCostsWU := httptest.NewRecorder()
+		router.ServeHTTP(recCostsWU, reqCostsWU)
+		var costsWU []domain.AllocatedUserCost
+		if err := json.NewDecoder(recCostsWU.Body).Decode(&costsWU); err != nil {
+			t.Fatalf("decode err: %v", err)
+		}
+		if len(costsWU) == 0 || costsWU[0].PAYGCost != costsWU[0].WhenUsedPAYGCost {
+			t.Errorf("expected costs when_used mode to project WhenUsedPAYGCost")
+		}
 	})
 
 	t.Run("GET /api/v1/users/{id} returns user breakdown summary", func(t *testing.T) {

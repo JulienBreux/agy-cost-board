@@ -268,5 +268,23 @@ func TestTUIModelNavigation(t *testing.T) {
 			t.Errorf("expected TUI Developer Breakdown tab 3 to display WTU:, Cache Hit:, Included:, and PAYG:, got: %s", view3)
 		}
 	})
+
+	t.Run("TUI displays Weekly Pool, Multi-Tier seats, and toggles PAYG mode with 'p'", func(t *testing.T) {
+		m.ActiveTab = 2
+		viewGov := m.View()
+		if !strings.Contains(viewGov, "STANDARD:") || !strings.Contains(viewGov, "PLUS:") || !strings.Contains(viewGov, "WEEKLY ALLOWANCE POOL") {
+			t.Errorf("expected TUI License Governance tab to show STANDARD:, PLUS:, and WEEKLY ALLOWANCE POOL, got: %s", viewGov)
+		}
+
+		m.ActiveTab = 1
+		if m.PAYGMode != "fair_share" && m.PAYGMode != "" {
+			t.Errorf("expected default PAYGMode to be fair_share, got %s", m.PAYGMode)
+		}
+		updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune{'p'}})
+		m = updated.(tui.Model)
+		if m.PAYGMode != "when_used" {
+			t.Errorf("expected PAYGMode to toggle to when_used on 'p', got %s", m.PAYGMode)
+		}
+	})
 }
 

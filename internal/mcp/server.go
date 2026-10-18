@@ -78,7 +78,7 @@ func (s *Server) Tools() []Tool {
 	return []Tool{
 		{
 			Name:        "get_overview_metrics",
-			Description: "Retrieve project-wide Antigravity AI billed spend (Included seat allowance vs. PAYG overage), total token volumes, Weighted Token Units (WTU), overall Cache Hit Rate %, active users count, Gemini Enterprise seat quota utilization, per-model cost breakdown, token/cost share categories, thinking effort stats, and client breakdown.",
+			Description: "Retrieve project-wide Antigravity AI billed spend (Included seat allowance vs. PAYG overage), Weekly Allowance Pool & What-If simulation scenarios, total token volumes, Weighted Token Units (WTU), overall Cache Hit Rate %, active users count, Gemini Enterprise seat quota utilization, per-model cost breakdown, token/cost share categories, thinking effort stats, and client breakdown.",
 			InputSchema: map[string]any{
 				"type": "object",
 				"properties": map[string]any{
@@ -87,12 +87,20 @@ func (s *Server) Tools() []Tool {
 						"description": "Lookback telemetry window in days (default: 30).",
 						"default":     30,
 					},
+					"pool_mode": map[string]any{
+						"type":        "string",
+						"description": "Optional Weekly Allowance Pool What-If mode: 'pooled' or 'per_user'.",
+					},
+					"seat_basis": map[string]any{
+						"type":        "string",
+						"description": "Optional Weekly Allowance Pool seat basis: 'assigned' or 'purchased'.",
+					},
 				},
 			},
 		},
 		{
 			Name:        "get_license_status",
-			Description: "Retrieve Gemini Enterprise license seat quota, assigned vs. active/dormant seats, utilization rate, estimated monthly savings, and dormant users list.",
+			Description: "Retrieve Gemini Enterprise license seat quota, Multi-Tier (Standard vs. Plus) & Multi-Location (global, eu, us) seat discovery, Trial status, Weekly Allowance Pool drawdown, assigned vs. active/dormant seats, utilization rate, estimated monthly savings, and dormant users list.",
 			InputSchema: map[string]any{
 				"type": "object",
 				"properties": map[string]any{
@@ -101,12 +109,20 @@ func (s *Server) Tools() []Tool {
 						"description": "Lookback window in days to evaluate seat activity (default: 30).",
 						"default":     30,
 					},
+					"pool_mode": map[string]any{
+						"type":        "string",
+						"description": "Optional Weekly Allowance Pool What-If mode: 'pooled' or 'per_user'.",
+					},
+					"seat_basis": map[string]any{
+						"type":        "string",
+						"description": "Optional Weekly Allowance Pool seat basis: 'assigned' or 'purchased'.",
+					},
 				},
 			},
 		},
 		{
 			Name:        "get_users_costs",
-			Description: "List proportional per-user AI cost attributions (including Included vs. PAYG cost, WTU, and Cache Hit Rate %) across the project, with optional lookback days and model filters.",
+			Description: "List proportional per-user AI cost attributions (including Fair Share vs. When Used PAYG cost, Included cost, WTU, and Cache Hit Rate %) across the project, with optional lookback days, model, and payg_mode filters.",
 			InputSchema: map[string]any{
 				"type": "object",
 				"properties": map[string]any{
@@ -119,12 +135,16 @@ func (s *Server) Tools() []Tool {
 						"type":        "string",
 						"description": "Optional model identifier filter (e.g., gemini-2.5-pro, gemini-2.5-flash).",
 					},
+					"payg_mode": map[string]any{
+						"type":        "string",
+						"description": "Optional PAYG attribution mode: 'fair_share' (default) or 'when_used'.",
+					},
 				},
 			},
 		},
 		{
 			Name:        "get_user_dashboard",
-			Description: "Retrieve a developer's personal consumption driving dashboard, including total spend (Included vs. PAYG), WTU, Cache Hit Rate %, daily/weekly burn rate, monthly budget quota consumed percentage, projected month-end spend, model breakdown, thinking effort breakdown, client stats, and optimization tips.",
+			Description: "Retrieve a developer's personal consumption driving dashboard, including total spend (Included vs. Fair Share / When Used PAYG), WTU, Cache Hit Rate %, daily/weekly burn rate, monthly budget quota consumed percentage, projected month-end spend, model breakdown, thinking effort breakdown, client stats, and optimization tips.",
 			InputSchema: map[string]any{
 				"type":     "object",
 				"required": []string{"user_id"},
@@ -317,6 +337,13 @@ func (s *Server) handleToolCall(ctx context.Context, rawParams json.RawMessage) 
 		if err != nil {
 			return errorToolResult(fmt.Sprintf("failed to get overview metrics: %v", err))
 		}
+		poolMode := stringArg(args, "pool_mode", "")
+		seatBasis := stringArg(args, "seat_basis", "")
+		if (poolMode != "" || seatBasis != "") && metrics != nil {
+			ovCopy := *metrics
+			ovCopy.WeeklyPool = attribution.ApplyPoolWhatIf(metrics.WeeklyPool, poolMode, seatBasis)
+			metrics = &ovCopy
+		}
 		return jsonToolResult(metrics)
 
 	case "get_license_status":
@@ -325,14 +352,25 @@ func (s *Server) handleToolCall(ctx context.Context, rawParams json.RawMessage) 
 		if err != nil {
 			return errorToolResult(fmt.Sprintf("failed to get license governance: %v", err))
 		}
+		poolMode := stringArg(args, "pool_mode", "")
+		seatBasis := stringArg(args, "seat_basis", "")
+		if (poolMode != "" || seatBasis != "") && gov != nil {
+			govCopy := *gov
+			govCopy.WeeklyPool = attribution.ApplyPoolWhatIf(gov.WeeklyPool, poolMode, seatBasis)
+			gov = &govCopy
+		}
 		return jsonToolResult(gov)
 
 	case "get_users_costs":
 		days := intArg(args, "days", 30)
 		model := stringArg(args, "model", "")
+		paygMode := stringArg(args, "payg_mode", "")
 		costs, err := s.engine.GetAttributedCosts(ctx, days, model)
 		if err != nil {
 			return errorToolResult(fmt.Sprintf("failed to get attributed user costs: %v", err))
+		}
+		if paygMode != "" {
+			costs = attribution.ApplyPAYGModeToCosts(costs, paygMode)
 		}
 		return jsonToolResult(costs)
 

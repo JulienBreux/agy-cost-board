@@ -79,6 +79,7 @@ type Model struct {
 	PreviousTab  int
 	Cursor       int
 	SortMode     int
+	PAYGMode     string
 	Costs        []domain.AllocatedUserCost
 	Leaderboard  []domain.LeaderboardEntry
 	Governance   *domain.LicenseGovernanceSummary
@@ -101,6 +102,7 @@ func NewModel(engine *attribution.Engine, days int) Model {
 		ActiveTab: 0,
 		Cursor:    0,
 		SortMode:  SortByCostDesc,
+		PAYGMode:  "fair_share",
 		Loading:   true,
 	}
 }
@@ -234,6 +236,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.sortLeaderboard()
 			return m, nil
 
+		case "p":
+			if m.PAYGMode == "when_used" {
+				m.PAYGMode = "fair_share"
+			} else {
+				m.PAYGMode = "when_used"
+			}
+			m.Costs = attribution.ApplyPAYGModeToCosts(m.Costs, m.PAYGMode)
+			m.Leaderboard = attribution.ApplyPAYGModeToLeaderboard(m.Leaderboard, m.PAYGMode)
+			m.sortCosts()
+			m.sortLeaderboard()
+			return m, nil
+
 		case "enter":
 			var selectedEmail string
 			if m.ActiveTab == 0 && len(m.Costs) > m.Cursor {
@@ -351,12 +365,17 @@ func (m Model) View() string {
 	}
 
 	// Footer Help
-	sb.WriteString(helpStyle.Render("\n[Tab] Next View | [↑/↓] Navigate | [Enter] Drilldown | [s] Cycle Sort | [q] Quit"))
+	sb.WriteString(helpStyle.Render("\n[Tab] Next View | [↑/↓] Navigate | [Enter] Drilldown | [s] Cycle Sort | [p] PAYG Mode | [q] Quit"))
 	return sb.String()
 }
 
 func (m Model) renderCostsView() string {
 	var sb strings.Builder
+	modeLabel := m.PAYGMode
+	if modeLabel == "" {
+		modeLabel = "fair_share"
+	}
+	sb.WriteString(fmt.Sprintf("PAYG Attribution Mode: %s (press 'p' to toggle)\n", modeLabel))
 	sb.WriteString(tableHeaderStyle.Render(fmt.Sprintf("%-26s %-18s %-12s %-12s %-10s %-10s %-10s %-12s",
 		"USER", "MODEL", "DATE", "TOKENS", "WTU", "CACHE %", "SHARE %", "COST")))
 	sb.WriteString("\n")
@@ -397,6 +416,11 @@ func (m Model) renderCostsView() string {
 
 func (m Model) renderLeaderboardView() string {
 	var sb strings.Builder
+	modeLabel := m.PAYGMode
+	if modeLabel == "" {
+		modeLabel = "fair_share"
+	}
+	sb.WriteString(fmt.Sprintf("PAYG Attribution Mode: %s (press 'p' to toggle)\n", modeLabel))
 	sb.WriteString(tableHeaderStyle.Render(fmt.Sprintf("%-6s %-26s %-14s %-10s %-12s %-10s %-10s %-8s %-12s %-18s %-10s",
 		"RANK", "DEVELOPER", "TOTAL SPEND", "SHARE %", "TOKENS", "WTU", "CACHE %", "DAYS", "COST / 1K", "TOP MODEL", "EFFORT")))
 	sb.WriteString("\n")
@@ -449,12 +473,23 @@ func (m Model) renderGovernanceView() string {
 	}
 
 	sb.WriteString(fmt.Sprintf("GEMINI ENTERPRISE SEAT QUOTA: %d\n", m.Governance.SeatQuota))
-	sb.WriteString(fmt.Sprintf("ASSIGNED SEATS: %d | ACTIVE: %d | DORMANT: %d\n",
-		m.Governance.AssignedSeats, m.Governance.ActiveSeats, m.Governance.DormantSeats))
-	sb.WriteString(fmt.Sprintf("SEAT UTILIZATION: %.1f%%\n\n", m.Governance.UtilizationPct))
+	sb.WriteString(fmt.Sprintf("ASSIGNED SEATS: %d | STANDARD: %d | PLUS: %d | TRIAL: %d\n",
+		m.Governance.AssignedSeats, m.Governance.StandardSeats, m.Governance.PlusSeats, m.Governance.TrialSeats))
+	sb.WriteString(fmt.Sprintf("ACTIVE: %d | DORMANT: %d | SEAT UTILIZATION: %.1f%%\n",
+		m.Governance.ActiveSeats, m.Governance.DormantSeats, m.Governance.UtilizationPct))
+	if m.Governance.WeeklyPool != nil {
+		sb.WriteString(fmt.Sprintf("WEEKLY ALLOWANCE POOL (%s / %s): %s / %s (%.1f%% drawdown) | Resets in %dh\n",
+			m.Governance.WeeklyPool.PoolMode,
+			m.Governance.WeeklyPool.SeatBasis,
+			domain.FormatCost(m.Governance.WeeklyPool.IncludedUsedUSD, m.Governance.Currency),
+			domain.FormatCost(m.Governance.WeeklyPool.PoolLimitUSD, m.Governance.Currency),
+			m.Governance.WeeklyPool.UtilizationPct,
+			m.Governance.WeeklyPool.ResetInHours))
+	}
+	sb.WriteString("\n")
 
-	sb.WriteString(tableHeaderStyle.Render(fmt.Sprintf("%-32s %-12s %-16s %-12s",
-		"USER ID", "STATUS", "LAST ACTIVITY", "ACTION")))
+	sb.WriteString(tableHeaderStyle.Render(fmt.Sprintf("%-30s %-14s %-10s %-12s %-16s %-12s",
+		"USER ID", "TIER", "LOCATION", "STATUS", "LAST ACTIVITY", "ACTION")))
 	sb.WriteString("\n")
 
 	if len(m.Governance.DormantUsers) == 0 {
@@ -465,8 +500,12 @@ func (m Model) renderGovernanceView() string {
 			if !u.LastActivity.IsZero() {
 				lastAct = u.LastActivity.Format("2006-01-02")
 			}
-			sb.WriteString(fmt.Sprintf("  %-30s %-12s %-16s %-12s\n",
-				u.UserID, string(u.Status), lastAct, "Reclaim Seat"))
+			tier := u.Tier
+			if u.IsTrial {
+				tier += " (Trial)"
+			}
+			sb.WriteString(fmt.Sprintf("  %-28s %-14s %-10s %-12s %-16s %-12s\n",
+				u.UserID, tier, u.Location, string(u.Status), lastAct, "Reclaim Seat"))
 		}
 	}
 
@@ -484,10 +523,12 @@ func (m Model) renderUserBreakdownView() string {
 	sb.WriteString(fmt.Sprintf("DEVELOPER BREAKDOWN: %s\n", u.UserID))
 	sb.WriteString(fmt.Sprintf("Status: %s | Total Tokens: %d | WTU: %d | Cache Hit: %.1f%%\n",
 		u.SeatStatus, u.TotalTokens, u.WTU, u.CacheHitRate))
-	sb.WriteString(fmt.Sprintf("Total Attributed Cost: %s (Included: %s | PAYG: %s)\n\n",
+	sb.WriteString(fmt.Sprintf("Total Attributed Cost: %s (Included: %s | PAYG: %s | Fair Share PAYG: %s | When Used PAYG: %s)\n\n",
 		domain.FormatCost(u.TotalCost, u.Currency),
 		domain.FormatCost(u.IncludedCost, u.Currency),
-		domain.FormatCost(u.PAYGCost, u.Currency)))
+		domain.FormatCost(u.PAYGCost, u.Currency),
+		domain.FormatCost(u.FairSharePAYGCost, u.Currency),
+		domain.FormatCost(u.WhenUsedPAYGCost, u.Currency)))
 
 	sb.WriteString(tableHeaderStyle.Render(fmt.Sprintf("%-24s %-16s %-12s %-12s",
 		"MODEL", "TOKENS", "TOKEN SHARE", "COST")))

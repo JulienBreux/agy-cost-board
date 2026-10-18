@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/julienbreux/agy-cost-board/internal/attribution"
 	"github.com/julienbreux/agy-cost-board/internal/config"
 	"github.com/julienbreux/agy-cost-board/internal/domain"
 	"github.com/spf13/cobra"
@@ -14,6 +15,7 @@ import (
 
 func newLeaderboardCommand(v *viper.Viper) *cobra.Command {
 	var days int
+	var paygMode string
 
 	cmd := &cobra.Command{
 		Use:   "leaderboard",
@@ -34,6 +36,7 @@ func newLeaderboardCommand(v *viper.Viper) *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("calculate developer leaderboard: %w", err)
 			}
+			entries = attribution.ApplyPAYGModeToLeaderboard(entries, paygMode)
 
 			format := flagFormat
 			if cfg := config.FromContext(ctx); cfg != nil && cfg.Format != "" {
@@ -92,6 +95,7 @@ func newLeaderboardCommand(v *viper.Viper) *cobra.Command {
 	}
 
 	cmd.Flags().IntVar(&days, "days", 30, "Time window in days")
+	cmd.Flags().StringVar(&paygMode, "payg-mode", "fair_share", "PAYG attribution mode: fair_share or when_used")
 
 	return cmd
 }

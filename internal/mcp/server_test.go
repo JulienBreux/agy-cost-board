@@ -30,7 +30,7 @@ func TestMCPStdioLifecycleAndTools(t *testing.T) {
 		`{"jsonrpc":"2.0","id":3,"method":"tools/list"}`,
 		`{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"get_overview_metrics","arguments":{"days":30}}}`,
 		`{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"get_license_status","arguments":{"days":30}}}`,
-		`{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"get_users_costs","arguments":{"days":14,"model":"gemini-2.5-pro"}}}`,
+		`{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"get_users_costs","arguments":{"days":14,"model":"gemini-4.0-pro"}}}`,
 		`{"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"get_user_dashboard","arguments":{"user_id":"alex.turner@google.com","days":30,"monthly_budget":200}}}`,
 	}
 
@@ -101,9 +101,15 @@ func TestMCPStdioLifecycleAndTools(t *testing.T) {
 		}
 	}
 
-	// Verify FinOps Phase 1 fields in get_overview_metrics (line 3) and get_user_dashboard (line 6)
-	if !strings.Contains(lines[3], "total_wtu") || !strings.Contains(lines[3], "token_cost_shares") || !strings.Contains(lines[3], "model_effort_stats") || !strings.Contains(lines[3], "client_breakdown") {
-		t.Errorf("expected get_overview_metrics MCP output to include Phase 1 FinOps fields")
+	// Verify FinOps Phase 1 & Phase 2 fields in get_overview_metrics (line 3), get_license_status (line 4), and get_user_dashboard (line 6)
+	if !strings.Contains(lines[3], "total_wtu") || !strings.Contains(lines[3], "weekly_pool") || !strings.Contains(lines[3], "scenarios") {
+		t.Errorf("expected get_overview_metrics MCP output to include Phase 1 & Phase 2 FinOps fields (weekly_pool, scenarios)")
+	}
+	if !strings.Contains(lines[4], "standard_seats") || !strings.Contains(lines[4], "plus_seats") || !strings.Contains(lines[4], "weekly_pool") {
+		t.Errorf("expected get_license_status MCP output to include standard_seats, plus_seats, and weekly_pool")
+	}
+	if !strings.Contains(lines[5], "fair_share_payg_cost") || !strings.Contains(lines[5], "when_used_payg_cost") {
+		t.Errorf("expected get_users_costs MCP output to include fair_share_payg_cost and when_used_payg_cost")
 	}
 	if !strings.Contains(lines[6], "top_effort") || !strings.Contains(lines[6], "total_wtu") || !strings.Contains(lines[6], "cache_hit_rate") || !strings.Contains(lines[6], "included_cost") {
 		t.Errorf("expected get_user_dashboard MCP output to include Phase 1 FinOps fields")

@@ -193,8 +193,24 @@ func TestCLICommandsWithDemo(t *testing.T) {
 		}
 
 		out := buf.String()
-		if !strings.Contains(out, "SEAT QUOTA") || !strings.Contains(out, "DORMANT") {
-			t.Errorf("expected license quota and dormant stats, got: %s", out)
+		if !strings.Contains(out, "SEAT QUOTA") || !strings.Contains(out, "DORMANT") || !strings.Contains(out, "STANDARD") || !strings.Contains(out, "PLUS") || !strings.Contains(out, "WEEKLY ALLOWANCE POOL") {
+			t.Errorf("expected license quota, tier breakdown, and weekly allowance pool stats, got: %s", out)
+		}
+	})
+
+	t.Run("cost and leaderboard commands accept --payg-mode=when_used", func(t *testing.T) {
+		buf := new(bytes.Buffer)
+		rootCmd := cli.NewRootCommand()
+		rootCmd.SetOut(buf)
+		rootCmd.SetErr(buf)
+		rootCmd.SetArgs([]string{"leaderboard", "--demo", "--payg-mode=when_used"})
+
+		if err := rootCmd.Execute(); err != nil {
+			t.Fatalf("command failed: %v", err)
+		}
+		out := buf.String()
+		if !strings.Contains(out, "RANK") || !strings.Contains(out, "PAYG") {
+			t.Errorf("expected leaderboard output with when_used mode, got: %s", out)
 		}
 	})
 
