@@ -38,4 +38,26 @@ describe('KPICards Component', () => {
     expect(screen.getByText('£1,250.50')).toBeInTheDocument();
     expect(screen.getByText('£150.00')).toBeInTheDocument();
   });
+
+  it('renders Included vs PAYG coexistence, WTU, and Cache Hit Rate when provided', () => {
+    render(
+      <KPICards
+        metrics={{
+          ...baseMetrics,
+          included_cost: 900.5,
+          payg_cost: 350.0,
+          total_wtu: 180000,
+          cache_hit_rate: 45.5,
+        }}
+      />
+    );
+
+    expect(screen.getByText(/Included:/i)).toBeInTheDocument();
+    expect(screen.getByText('$900.50')).toBeInTheDocument();
+    expect(screen.getByText(/PAYG:/i)).toBeInTheDocument();
+    expect(screen.getByText('$350.00')).toBeInTheDocument();
+    expect(screen.getByText(/180,000 WTU/i)).toBeInTheDocument();
+    expect(screen.getByText(/45\.5% Cache/i)).toBeInTheDocument();
+  });
 });
+

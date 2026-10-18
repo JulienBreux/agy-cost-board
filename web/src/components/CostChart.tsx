@@ -60,7 +60,7 @@ export const CostChart: React.FC<CostChartProps> = ({
 }) => {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const [focusedModel, setFocusedModel] = useState<string | null>(null);
-  const [chartMode, setChartMode] = useState<'stacked' | 'aggregate'>('stacked');
+  const [chartMode, setChartMode] = useState<'stacked' | 'quota' | 'aggregate'>('stacked');
   const [metricMode, setMetricMode] = useState<'cost' | 'tokens'>('cost');
 
   const currencySymbol = getCurrencySymbol(currency);
@@ -143,7 +143,11 @@ export const CostChart: React.FC<CostChartProps> = ({
               <div className="flex items-center space-x-2">
                 <h3 className="text-sm font-semibold text-white">Daily Reconciled Cloud Spend</h3>
                 <span className="text-[10px] font-semibold tracking-wide uppercase px-1.5 py-0.5 rounded bg-google-blue/15 text-google-blue border border-google-blue/30">
-                  {chartMode === 'stacked' ? 'Model Breakdown' : 'Aggregate'}
+                  {chartMode === 'stacked'
+                    ? 'Model Breakdown'
+                    : chartMode === 'quota'
+                    ? 'Included vs PAYG'
+                    : 'Aggregate'}
                 </span>
               </div>
               <p className="text-xs text-google-gray-400 mt-0.5">
@@ -165,6 +169,18 @@ export const CostChart: React.FC<CostChartProps> = ({
                 >
                   <Layers className="h-3 w-3" />
                   <span className="hidden sm:inline">Stacked</span>
+                </button>
+                <button
+                  onClick={() => setChartMode('quota')}
+                  className={`px-2.5 py-1 rounded-md flex items-center space-x-1.5 transition-colors ${
+                    chartMode === 'quota'
+                      ? 'bg-google-blue text-white font-medium shadow-sm'
+                      : 'text-google-gray-400 hover:text-white'
+                  }`}
+                  title="Show daily cost stacked by Included Quota vs PAYG Overage"
+                >
+                  <Coins className="h-3 w-3" />
+                  <span className="hidden sm:inline">Quota</span>
                 </button>
                 <button
                   onClick={() => setChartMode('aggregate')}
@@ -221,6 +237,9 @@ export const CostChart: React.FC<CostChartProps> = ({
                 const heightPct = Math.min(Math.max((dayVal / maxVal) * 100, 4), 100);
                 const isHovered = hoveredIdx === idx;
                 const hasModelBreakdown = t.by_model && Object.keys(t.by_model).length > 0;
+                const hasQuotaBreakdown =
+                  (t.included_cost !== undefined && t.included_cost > 0) ||
+                  (t.payg_cost !== undefined && t.payg_cost > 0);
 
                 return (
                   <div
@@ -261,6 +280,33 @@ export const CostChart: React.FC<CostChartProps> = ({
                             />
                           );
                         })
+                      ) : chartMode === 'quota' && hasQuotaBreakdown ? (
+                        <>
+                          <div
+                            style={{
+                              height: `${
+                                getTrendCost(t) > 0
+                                  ? Math.max(((t.included_cost ?? 0) / getTrendCost(t)) * 100, 0)
+                                  : 0
+                              }%`,
+                              backgroundColor: '#34a853',
+                            }}
+                            className="w-full transition-all duration-200"
+                            title={`Included Quota: ${currencySymbol}${(t.included_cost ?? 0).toFixed(2)}`}
+                          />
+                          <div
+                            style={{
+                              height: `${
+                                getTrendCost(t) > 0
+                                  ? Math.max(((t.payg_cost ?? 0) / getTrendCost(t)) * 100, 0)
+                                  : 0
+                              }%`,
+                              backgroundColor: '#f59e0b',
+                            }}
+                            className="w-full transition-all duration-200"
+                            title={`PAYG Overage: ${currencySymbol}${(t.payg_cost ?? 0).toFixed(2)}`}
+                          />
+                        </>
                       ) : (
                         /* Aggregate Single Bar */
                         <div
@@ -323,6 +369,16 @@ export const CostChart: React.FC<CostChartProps> = ({
                       {currencySymbol}{getTrendCost(hoveredItem).toFixed(2)}
                     </span>
                   </div>
+                  {(hoveredItem.included_cost !== undefined || hoveredItem.payg_cost !== undefined) && (
+                    <div className="flex items-center space-x-2 border-l border-[#222836] pl-4 text-xs font-mono">
+                      <span className="text-google-green">
+                        Included: <strong>{currencySymbol}{(hoveredItem.included_cost ?? 0).toFixed(2)}</strong>
+                      </span>
+                      <span className="text-amber-400">
+                        PAYG: <strong>{currencySymbol}{(hoveredItem.payg_cost ?? 0).toFixed(2)}</strong>
+                      </span>
+                    </div>
+                  )}
                   <div className="text-right border-l border-[#222836] pl-4">
                     <span className="text-xs text-google-gray-400 mr-2">Tokens:</span>
                     <span className="text-xs font-semibold text-white font-mono">

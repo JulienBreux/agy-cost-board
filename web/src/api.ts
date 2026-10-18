@@ -2,6 +2,9 @@ export interface DailyTrend {
   date: string;
   cost?: number;
   total_cost?: number;
+  included_cost?: number;
+  payg_cost?: number;
+  wtu?: number;
   tokens?: number;
   total_tokens?: number;
   active_users?: number;
@@ -14,9 +17,44 @@ export interface ModelDetail {
   share: number;
 }
 
+export interface TokenCostShare {
+  category: string;
+  tokens: number;
+  token_share: number;
+  cost: number;
+  cost_share: number;
+}
+
+export interface ModelEffortStats {
+  model: string;
+  effort_level: string;
+  calls: number;
+  tokens: number;
+  cached_tokens: number;
+  cache_hit_rate: number;
+  wtu: number;
+  included_cost: number;
+  payg_cost: number;
+  total_cost: number;
+}
+
+export interface ClientStats {
+  client_name: string;
+  calls: number;
+  tokens: number;
+  wtu: number;
+  total_cost: number;
+  share_of_cost: number;
+}
+
 export interface OverviewMetrics {
   total_billed_cost: number;
+  total_wtu?: number;
+  included_cost?: number;
+  payg_cost?: number;
   total_tokens: number;
+  total_cached_tokens?: number;
+  cache_hit_rate?: number;
   active_users_count: number;
   seat_quota: number;
   assigned_seats: number;
@@ -24,6 +62,9 @@ export interface OverviewMetrics {
   estimated_monthly_savings: number;
   daily_trends: DailyTrend[];
   model_breakdown: Record<string, ModelDetail>;
+  token_cost_shares?: TokenCostShare[];
+  model_effort_stats?: ModelEffortStats[];
+  client_breakdown?: ClientStats[];
   currency: string;
 }
 
@@ -32,9 +73,14 @@ export interface AllocatedUserCost {
   model: string;
   usage_date: string;
   user_tokens: number;
+  cached_tokens?: number;
+  cache_hit_rate?: number;
   total_model_tokens: number;
   token_share: number;
   allocated_cost: number;
+  wtu?: number;
+  included_cost?: number;
+  payg_cost?: number;
   currency: string;
 }
 
@@ -70,14 +116,20 @@ export interface LeaderboardEntry {
   rank: number;
   user_id: string;
   total_cost: number;
+  included_cost?: number;
+  payg_cost?: number;
+  wtu?: number;
   spend_share_pct: number;
   share_of_spend?: number;
   total_tokens: number;
+  cached_tokens?: number;
+  cache_hit_rate?: number;
   token_share_pct: number;
   share_of_tokens?: number;
   active_days: number;
   cost_per_1k_tokens: number;
   top_model: string;
+  top_effort?: string;
   model_breakdown: Record<string, ModelDetail | number>;
   currency: string;
 }
@@ -87,6 +139,13 @@ export const normalizeLeaderboardEntry = (raw: any, idx = 0): LeaderboardEntry =
   const totalCost = Number(raw?.total_cost ?? 0);
   const spendShare = Number(raw?.spend_share_pct ?? raw?.share_of_spend ?? 0);
   const tokenShare = Number(raw?.token_share_pct ?? raw?.share_of_tokens ?? 0);
+  const cachedTokens = Number(raw?.cached_tokens ?? 0);
+  const cacheHitRate =
+    raw?.cache_hit_rate !== undefined
+      ? Number(raw.cache_hit_rate)
+      : totalTokens > 0
+      ? Number(((cachedTokens / totalTokens) * 100).toFixed(1))
+      : 0;
 
   const normalizedBreakdown: Record<string, ModelDetail> = {};
   if (raw?.model_breakdown && typeof raw.model_breakdown === 'object') {
@@ -116,14 +175,20 @@ export const normalizeLeaderboardEntry = (raw: any, idx = 0): LeaderboardEntry =
     rank: Number(raw?.rank ?? idx + 1),
     user_id: String(raw?.user_id ?? 'unknown'),
     total_cost: totalCost,
+    included_cost: Number(raw?.included_cost ?? 0),
+    payg_cost: Number(raw?.payg_cost ?? 0),
+    wtu: Number(raw?.wtu ?? 0),
     spend_share_pct: spendShare,
     share_of_spend: spendShare,
     total_tokens: totalTokens,
+    cached_tokens: cachedTokens,
+    cache_hit_rate: cacheHitRate,
     token_share_pct: tokenShare,
     share_of_tokens: tokenShare,
     active_days: Number(raw?.active_days ?? 0),
     cost_per_1k_tokens: Number(raw?.cost_per_1k_tokens ?? 0),
     top_model: String(raw?.top_model ?? ''),
+    top_effort: String(raw?.top_effort ?? ''),
     model_breakdown: normalizedBreakdown,
     currency: String(raw?.currency || 'USD'),
   };
@@ -135,7 +200,11 @@ export const aggregateLeaderboardFromCosts = (costs: AllocatedUserCost[]): Leade
     string,
     {
       totalCost: number;
+      includedCost: number;
+      paygCost: number;
+      wtu: number;
       totalTokens: number;
+      cachedTokens: number;
       days: Set<string>;
       models: Record<string, ModelDetail>;
       currency: string;
@@ -151,7 +220,11 @@ export const aggregateLeaderboardFromCosts = (costs: AllocatedUserCost[]): Leade
     if (!u) {
       u = {
         totalCost: 0,
+        includedCost: 0,
+        paygCost: 0,
+        wtu: 0,
         totalTokens: 0,
+        cachedTokens: 0,
         days: new Set<string>(),
         models: {},
         currency: c.currency || 'USD',
@@ -159,7 +232,11 @@ export const aggregateLeaderboardFromCosts = (costs: AllocatedUserCost[]): Leade
       byUser.set(c.user_id, u);
     }
     u.totalCost += c.allocated_cost;
+    u.includedCost += c.included_cost ?? 0;
+    u.paygCost += c.payg_cost ?? 0;
+    u.wtu += c.wtu ?? 0;
     u.totalTokens += c.user_tokens;
+    u.cachedTokens += c.cached_tokens ?? 0;
     if (c.usage_date) u.days.add(c.usage_date);
     const md = u.models[c.model] || { tokens: 0, cost: 0, share: 0 };
     md.tokens += c.user_tokens;
@@ -182,13 +259,20 @@ export const aggregateLeaderboardFromCosts = (costs: AllocatedUserCost[]): Leade
     }
     const spendShare = orgCost > 0 ? Number(((u.totalCost / orgCost) * 100).toFixed(2)) : 0;
     const tokenShare = orgTokens > 0 ? Number(((u.totalTokens / orgTokens) * 100).toFixed(2)) : 0;
+    const cacheHitRate =
+      u.totalTokens > 0 ? Number(((u.cachedTokens / u.totalTokens) * 100).toFixed(1)) : 0;
     entries.push({
       rank: 0,
       user_id: userId,
       total_cost: Number(u.totalCost.toFixed(2)),
+      included_cost: Number(u.includedCost.toFixed(2)),
+      payg_cost: Number(u.paygCost.toFixed(2)),
+      wtu: u.wtu,
       spend_share_pct: spendShare,
       share_of_spend: spendShare,
       total_tokens: u.totalTokens,
+      cached_tokens: u.cachedTokens,
+      cache_hit_rate: cacheHitRate,
       token_share_pct: tokenShare,
       share_of_tokens: tokenShare,
       active_days: u.days.size,
@@ -344,9 +428,15 @@ export interface UserBudgetMetrics {
 
 export interface UserConsumptionKPIs {
   mtd_spend: number;
+  included_cost?: number;
+  payg_cost?: number;
+  total_wtu?: number;
   daily_burn_rate: number;
   weekly_burn_rate: number;
   total_user_tokens: number;
+  cached_tokens?: number;
+  cache_hit_rate?: number;
+  top_effort?: string;
   org_spend_share_percent: number;
 }
 
@@ -467,9 +557,15 @@ export const fetchUserDashboard = async (
     currency: raw.currency || 'USD',
     kpis: {
       mtd_spend: mtdSpend,
+      included_cost: raw.included_cost ?? 0,
+      payg_cost: raw.payg_cost ?? 0,
+      total_wtu: raw.total_wtu ?? 0,
       daily_burn_rate: raw.daily_burn_rate ?? 0,
       weekly_burn_rate: raw.weekly_burn_rate ?? 0,
       total_user_tokens: raw.total_tokens_in_window ?? 0,
+      cached_tokens: raw.cached_tokens_in_window ?? 0,
+      cache_hit_rate: raw.cache_hit_rate ?? 0,
+      top_effort: raw.top_effort ?? '',
       org_spend_share_percent: raw.org_spend_share_pct ?? 0,
     },
     budget: {

@@ -181,4 +181,44 @@ describe('CostChart Component', () => {
     expect(screen.getByText('€18.50')).toBeInTheDocument();
     expect(screen.getAllByText('€45.50').length).toBeGreaterThanOrEqual(1);
   });
+
+  it('switches to Quota (Included / PAYG) stacking mode and renders Included vs PAYG segments', () => {
+    const quotaTrends: DailyTrend[] = [
+      {
+        date: '2026-10-08',
+        cost: 20.0,
+        included_cost: 14.0,
+        payg_cost: 6.0,
+        wtu: 12000,
+        tokens: 500000,
+        active_users: 5,
+        by_model: {
+          'gemini-2.5-pro': 12.0,
+          'claude-3-7-sonnet': 8.0,
+        },
+      },
+    ];
+
+    render(
+      <CostChart
+        trends={quotaTrends}
+        modelBreakdown={mockModelBreakdown}
+        currency="USD"
+      />
+    );
+
+    const quotaBtn = screen.getByRole('button', { name: /quota/i });
+    fireEvent.click(quotaBtn);
+
+    expect(screen.getByText('Included vs PAYG')).toBeInTheDocument();
+
+    const bars = screen.getAllByTestId('trend-bar');
+    fireEvent.mouseEnter(bars[0]);
+
+    expect(screen.getByText(/Included:/i)).toBeInTheDocument();
+    expect(screen.getByText('$14.00')).toBeInTheDocument();
+    expect(screen.getByText(/PAYG:/i)).toBeInTheDocument();
+    expect(screen.getByText('$6.00')).toBeInTheDocument();
+  });
 });
+

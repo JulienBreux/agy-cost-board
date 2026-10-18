@@ -264,6 +264,82 @@ describe('User Personal Consumption API & Persistence', () => {
                 expect(sonnet.share).toBeCloseTo(0.6);
             }
         });
+
+        it('normalizes WTU, Included/PAYG cost, cache hit rate, and top effort in Leaderboard and UserDashboard', async () => {
+            const rawGoPayload = [
+                {
+                    rank: 1,
+                    user_id: 'elena.rostova@google.com',
+                    total_cost: 460.24,
+                    included_cost: 300.00,
+                    payg_cost: 160.24,
+                    wtu: 85000,
+                    share_of_spend: 19.32,
+                    total_tokens: 1000000,
+                    cached_tokens: 450000,
+                    cache_hit_rate: 45.0,
+                    share_of_tokens: 18.97,
+                    active_days: 30,
+                    cost_per_1k_tokens: 0.4602,
+                    top_model: 'gemini-2.5-pro',
+                    top_effort: 'high',
+                    model_breakdown: {
+                        'gemini-2.5-pro': 100.0,
+                    },
+                    currency: 'USD',
+                },
+            ];
+
+            vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+                ok: true,
+                json: async () => rawGoPayload,
+            } as Response);
+
+            const { fetchLeaderboard } = await import('./api');
+            const lb = await fetchLeaderboard(30);
+            expect(lb[0].included_cost).toBe(300.00);
+            expect(lb[0].payg_cost).toBe(160.24);
+            expect(lb[0].wtu).toBe(85000);
+            expect(lb[0].cached_tokens).toBe(450000);
+            expect(lb[0].cache_hit_rate).toBe(45.0);
+            expect(lb[0].top_effort).toBe('high');
+
+            const flatUserDashboard = {
+                user_id: 'elena.rostova@google.com',
+                currency: 'USD',
+                total_spend_in_window: 460.24,
+                included_cost: 300.00,
+                payg_cost: 160.24,
+                total_wtu: 85000,
+                total_tokens_in_window: 1000000,
+                cached_tokens_in_window: 450000,
+                cache_hit_rate: 45.0,
+                top_effort: 'high',
+                daily_burn_rate: 15.34,
+                weekly_burn_rate: 107.38,
+                org_spend_share_pct: 19.32,
+                monthly_budget: 500,
+                projected_month_end_spend: 460.24,
+                budget_consumed_pct: 92.0,
+                budget_status: 'warning',
+                recommendations: [],
+                daily_trends: [],
+            };
+
+            vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce({
+                ok: true,
+                json: async () => flatUserDashboard,
+            } as Response);
+
+            const dash = await fetchUserDashboard('elena.rostova@google.com', 30, 500);
+            expect(dash.kpis.included_cost).toBe(300.00);
+            expect(dash.kpis.payg_cost).toBe(160.24);
+            expect(dash.kpis.total_wtu).toBe(85000);
+            expect(dash.kpis.cached_tokens).toBe(450000);
+            expect(dash.kpis.cache_hit_rate).toBe(45.0);
+            expect(dash.kpis.top_effort).toBe('high');
+        });
     });
 });
+
 

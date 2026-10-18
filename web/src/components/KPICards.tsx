@@ -8,6 +8,10 @@ interface KPICardsProps {
 }
 
 export const KPICards: React.FC<KPICardsProps> = ({ metrics }) => {
+  const hasQuotaSplit =
+    (metrics.included_cost !== undefined && metrics.included_cost > 0) ||
+    (metrics.payg_cost !== undefined && metrics.payg_cost > 0);
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {/* Total Billed Spend */}
@@ -22,9 +26,20 @@ export const KPICards: React.FC<KPICardsProps> = ({ metrics }) => {
           <div className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
             {formatCurrency(metrics.total_billed_cost, metrics.currency)}
           </div>
-          <div className="mt-1 flex items-center text-xs text-google-gray-400">
-            <span>Reconciled with Cloud Billing</span>
-          </div>
+          {hasQuotaSplit ? (
+            <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11px] font-mono">
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-google-green/10 text-google-green border border-google-green/20">
+                Included: <strong className="ml-1">{formatCurrency(metrics.included_cost ?? 0, metrics.currency)}</strong>
+              </span>
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                PAYG: <strong className="ml-1">{formatCurrency(metrics.payg_cost ?? 0, metrics.currency)}</strong>
+              </span>
+            </div>
+          ) : (
+            <div className="mt-1 flex items-center text-xs text-google-gray-400">
+              <span>Reconciled with Cloud Billing</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -40,9 +55,24 @@ export const KPICards: React.FC<KPICardsProps> = ({ metrics }) => {
           <div className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
             {(metrics.total_tokens / 1_000_000).toFixed(2)}M
           </div>
-          <div className="mt-1 flex items-center text-xs text-google-gray-400">
-            <span>{metrics.total_tokens.toLocaleString()} total tokens</span>
-          </div>
+          {metrics.total_wtu || metrics.cache_hit_rate !== undefined ? (
+            <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11px] font-mono">
+              {metrics.total_wtu ? (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+                  {metrics.total_wtu.toLocaleString()} WTU
+                </span>
+              ) : null}
+              {metrics.cache_hit_rate !== undefined ? (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
+                  {metrics.cache_hit_rate.toFixed(1)}% Cache Hit
+                </span>
+              ) : null}
+            </div>
+          ) : (
+            <div className="mt-1 flex items-center text-xs text-google-gray-400">
+              <span>{metrics.total_tokens.toLocaleString()} total tokens</span>
+            </div>
+          )}
         </div>
       </div>
 
