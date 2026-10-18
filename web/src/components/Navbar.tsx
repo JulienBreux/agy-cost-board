@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layers, DollarSign, ShieldCheck, Zap, Activity, User, Sparkles, Cpu, Trophy } from 'lucide-react';
+import { Layers, DollarSign, ShieldCheck, Zap, Activity, User, Sparkles, Cpu, Trophy, FolderKanban } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 
 export type NavTab = 'overview' | 'leaderboard' | 'my-consumption' | 'costs' | 'licenses' | 'setup';
@@ -9,6 +9,9 @@ interface NavbarProps {
   setActiveTab: (tab: NavTab) => void;
   days: number;
   setDays: (days: number) => void;
+  monitoredProjects?: string[];
+  selectedProject?: string;
+  onSelectProject?: (project: string) => void;
   onOpenChangelog?: () => void;
   onOpenMcpModal?: () => void;
   mcpEnabled?: boolean;
@@ -19,6 +22,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   setActiveTab,
   days,
   setDays,
+  monitoredProjects = [],
+  selectedProject = 'all',
+  onSelectProject,
   onOpenChangelog,
   onOpenMcpModal,
   mcpEnabled = true,
@@ -48,8 +54,30 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </div>
 
-          {/* Right Controls: Time Window, MCP & Quotas, What's new & Theme Selector */}
+          {/* Right Controls: Project Selector, Time Window, MCP & Quotas, What's new & Theme Selector */}
           <div className="flex items-center space-x-1.5 sm:space-x-2 flex-shrink-0">
+            {/* Multi-Project Selector */}
+            {onSelectProject && monitoredProjects.length > 0 && (
+              <div className="flex items-center space-x-1.5 bg-[#1a1e28] px-2 py-1 rounded-lg border border-[#282f40] flex-shrink-0">
+                <FolderKanban className="h-3.5 w-3.5 text-indigo-400 flex-shrink-0" />
+                <select
+                  aria-label="Select GCP Project"
+                  value={selectedProject || 'all'}
+                  onChange={(e) => onSelectProject(e.target.value)}
+                  className="bg-transparent text-xs font-medium text-google-gray-200 focus:outline-none cursor-pointer pr-1"
+                >
+                  <option value="all" className="bg-[#1a1e28] text-white">
+                    All Projects ({monitoredProjects.length})
+                  </option>
+                  {monitoredProjects.map((proj) => (
+                    <option key={proj} value={proj} className="bg-[#1a1e28] text-white">
+                      {proj}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             {/* Time Window Selector */}
             <div className="flex items-center space-x-1 bg-[#1a1e28] p-1 rounded-lg border border-[#282f40] flex-shrink-0">
               {[7, 14, 30].map((d) => (

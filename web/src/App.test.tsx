@@ -309,6 +309,57 @@ describe('App Component Navigation', () => {
             expect(screen.getByText('agy-cli')).toBeInTheDocument();
         });
     });
+
+    it('renders 30-day ForecastCard and filters by project when selecting from Navbar Project Selector', async () => {
+        const overviewSpy = vi.spyOn(api, 'fetchOverview').mockResolvedValue({
+            ...mockOverview,
+            monitored_projects: ['gcp-ai-platform-prod', 'gcp-finops-analytics', 'gcp-agent-sandbox'],
+            selected_project: 'all',
+            forecast: {
+                horizon_days: 30,
+                daily_velocity_wtu: 2000000,
+                daily_velocity_usd: 4.0,
+                projected_30d_total_wtu: 60000000,
+                projected_30d_total_usd: 120.0,
+                projected_30d_included_usd: 95.0,
+                projected_30d_payg_usd: 25.0,
+                will_spillover_in_current_window: true,
+                spillover_date: '2026-10-21',
+                days_until_spillover: 3,
+                forecast_days: [
+                    {
+                        date: '2026-10-19',
+                        window_start: '2026-10-15',
+                        window_end: '2026-10-21',
+                        projected_wtu: 2000000,
+                        included_wtu: 1500000,
+                        payg_overage_wtu: 500000,
+                        included_cost_usd: 3.0,
+                        payg_overage_usd: 1.0,
+                        cumulative_pool_wtu: 16250000,
+                        pool_limit_wtu: 16250000,
+                        spillover_triggered: true,
+                    },
+                ],
+            },
+        });
+
+        render(<App />);
+
+        await waitFor(() => {
+            expect(screen.getByText(/30-Day Window-Aware Usage & PAYG Forecast/i)).toBeInTheDocument();
+            expect(screen.getByText(/Spillover on 2026-10-21/i)).toBeInTheDocument();
+        });
+
+        const projectSelect = screen.getByLabelText(/Select GCP Project/i);
+        expect(projectSelect).toBeInTheDocument();
+
+        fireEvent.change(projectSelect, { target: { value: 'gcp-ai-platform-prod' } });
+
+        await waitFor(() => {
+            expect(overviewSpy).toHaveBeenCalledWith(30, 'gcp-ai-platform-prod');
+        });
+    });
 });
 
 

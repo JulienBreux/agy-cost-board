@@ -21,6 +21,7 @@ import { KPICards } from './components/KPICards';
 import { CostChart } from './components/CostChart';
 import { TokensEffortClientSection } from './components/TokensEffortClientSection';
 import { WeeklyAllowancePoolCard } from './components/WeeklyAllowancePoolCard';
+import { ForecastCard } from './components/ForecastCard';
 import { CostTable } from './components/CostTable';
 import { LeaderboardView } from './components/LeaderboardView';
 import { LicenseTable } from './components/LicenseTable';
@@ -53,6 +54,10 @@ export function App() {
     const params = new URLSearchParams(window.location.search);
     return params.get('user') || '';
   });
+  const [selectedProject, setSelectedProject] = useState<string>(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('project') || 'all';
+  });
   const [days, setDays] = useState<number>(30);
   const [appVersion, setAppVersion] = useState<string>('');
   const [showChangelog, setShowChangelog] = useState<boolean>(false);
@@ -75,10 +80,10 @@ export function App() {
     setError(null);
     try {
       const [ov, c, gov, lb] = await Promise.all([
-        fetchOverview(days),
-        fetchAttributedCosts(days),
-        fetchLicenseGovernance(days),
-        fetchLeaderboard(days).catch(() => [] as LeaderboardEntry[]),
+        fetchOverview(days, selectedProject),
+        fetchAttributedCosts(days, '', undefined, selectedProject),
+        fetchLicenseGovernance(days, selectedProject),
+        fetchLeaderboard(days, undefined, selectedProject).catch(() => [] as LeaderboardEntry[]),
       ]);
       setOverview(ov);
       setCosts(c);
@@ -110,7 +115,7 @@ export function App() {
   useEffect(() => {
     loadData();
     loadSetup();
-  }, [days]);
+  }, [days, selectedProject]);
 
   useEffect(() => {
     fetchVersion()
@@ -144,7 +149,7 @@ export function App() {
     }
   }, [activeTab]);
 
-  // Synchronize URL query params (?tab=...&user=...)
+  // Synchronize URL query params (?tab=...&user=...&project=...)
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search);
@@ -158,13 +163,18 @@ export function App() {
       } else {
         params.delete('user');
       }
+      if (selectedProject && selectedProject !== 'all') {
+        params.set('project', selectedProject);
+      } else {
+        params.delete('project');
+      }
       const newQuery = params.toString();
       const newUrl = window.location.pathname + (newQuery ? '?' + newQuery : '');
       window.history.replaceState(null, '', newUrl);
     } catch {
       // Ignore URL sync errors in environments without history API
     }
-  }, [activeTab, dashboardUserId]);
+  }, [activeTab, dashboardUserId, selectedProject]);
 
   const availableUsers = useMemo(() => {
     const set = new Set<string>();
@@ -202,6 +212,9 @@ export function App() {
         setActiveTab={setActiveTab}
         days={days}
         setDays={setDays}
+        monitoredProjects={overview?.monitored_projects || governance?.monitored_projects || []}
+        selectedProject={selectedProject}
+        onSelectProject={setSelectedProject}
         onOpenChangelog={() => setShowChangelog(true)}
         onOpenMcpModal={() => setShowMcpModal(true)}
         mcpEnabled={mcpEnabled}
@@ -262,6 +275,12 @@ export function App() {
                 {overview.weekly_pool && (
                   <WeeklyAllowancePoolCard
                     pool={overview.weekly_pool}
+                    currency={overview.currency}
+                  />
+                )}
+                {overview.forecast && (
+                  <ForecastCard
+                    forecast={overview.forecast}
                     currency={overview.currency}
                   />
                 )}
