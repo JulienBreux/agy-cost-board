@@ -85,7 +85,7 @@ func TestDemoDataProvider(t *testing.T) {
 		}
 	})
 
-	t.Run("FetchLicenseSeats returns assigned and dormant seats", func(t *testing.T) {
+	t.Run("FetchLicenseSeats returns assigned, dormant, multi-tier, multi-location, and trial seats", func(t *testing.T) {
 		seats, quota, err := provider.FetchLicenseSeats(ctx, 30)
 		if err != nil {
 			t.Fatalf("unexpected error fetching license seats: %v", err)
@@ -95,15 +95,39 @@ func TestDemoDataProvider(t *testing.T) {
 			t.Errorf("expected positive seat quota, got %d", quota)
 		}
 
-		var dormantCount int
+		var dormantCount, trialCount int
+		tiers := make(map[string]int)
+		locations := make(map[string]int)
 		for _, s := range seats {
 			if s.Status == domain.SeatStatusDormant {
 				dormantCount++
+			}
+			if s.IsTrial {
+				trialCount++
+				if s.TrialEndsAt == "" {
+					t.Errorf("expected TrialEndsAt to be populated for trial seat %s", s.UserID)
+				}
+			}
+			tiers[s.Tier]++
+			locations[s.Location]++
+			if s.WeeklyAllowanceUSD <= 0 || s.WeeklyAllowanceWTU <= 0 {
+				t.Errorf("expected positive weekly allowance for seat %s, got USD=%.2f WTU=%d",
+					s.UserID, s.WeeklyAllowanceUSD, s.WeeklyAllowanceWTU)
 			}
 		}
 
 		if dormantCount == 0 {
 			t.Errorf("expected at least one dormant seat in demo data")
 		}
+		if trialCount == 0 {
+			t.Errorf("expected at least one trial seat in demo data")
+		}
+		if tiers["standard"] == 0 || tiers["plus"] == 0 {
+			t.Errorf("expected both standard and plus tiers in demo data, got %v", tiers)
+		}
+		if locations["global"] == 0 || locations["eu"] == 0 || locations["us"] == 0 {
+			t.Errorf("expected global, eu, and us locations in demo data, got %v", locations)
+		}
 	})
 }
+

@@ -193,13 +193,18 @@ func MapBillingRow(row BillingRow) domain.BilledCost {
 // DeriveLicenseSeats calculates assigned seats, active usage, and dormant flags from logs.
 func DeriveLicenseSeats(logs []domain.TelemetryLog, windowDays int, configuredQuota int) ([]domain.LicenseSeat, int) {
 	userMap := make(map[string]*domain.LicenseSeat)
+	defaultTier, defaultUSD, defaultWTU := domain.ResolveSeatAllowance("")
 	for _, l := range logs {
 		seat, exists := userMap[l.UserID]
 		if !exists {
 			seat = &domain.LicenseSeat{
-				UserID:       l.UserID,
-				Assigned:     true,
-				LastActivity: l.Timestamp,
+				UserID:             l.UserID,
+				Assigned:           true,
+				LastActivity:       l.Timestamp,
+				Tier:               defaultTier,
+				WeeklyAllowanceUSD: defaultUSD,
+				WeeklyAllowanceWTU: defaultWTU,
+				Location:           "global",
 			}
 			userMap[l.UserID] = seat
 		}

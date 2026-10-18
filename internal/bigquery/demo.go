@@ -158,14 +158,17 @@ func (d *DemoDataProvider) FetchBilledCosts(ctx context.Context, days int) ([]do
 func (d *DemoDataProvider) FetchLicenseSeats(ctx context.Context, windowDays int) ([]domain.LicenseSeat, int, error) {
 	quota := cmp.Or(d.quota, 12)
 	now := time.Now().UTC()
+	trialEnd := now.AddDate(0, 0, 14).Format("2006-01-02")
 
-	seats := []domain.LicenseSeat{
+	rawSeats := []domain.LicenseSeat{
 		{
 			UserID:              "alex.turner@google.com",
 			Assigned:            true,
 			Status:              domain.SeatStatusActive,
 			LastActivity:        now.Add(-2 * time.Hour),
 			TotalTokensInWindow: 450000,
+			Tier:                "plus",
+			Location:            "global",
 		},
 		{
 			UserID:              "sophia.chen@google.com",
@@ -173,6 +176,8 @@ func (d *DemoDataProvider) FetchLicenseSeats(ctx context.Context, windowDays int
 			Status:              domain.SeatStatusActive,
 			LastActivity:        now.Add(-4 * time.Hour),
 			TotalTokensInWindow: 380000,
+			Tier:                "plus",
+			Location:            "us",
 		},
 		{
 			UserID:              "marcus.vance@google.com",
@@ -180,6 +185,8 @@ func (d *DemoDataProvider) FetchLicenseSeats(ctx context.Context, windowDays int
 			Status:              domain.SeatStatusActive,
 			LastActivity:        now.AddDate(0, 0, -1),
 			TotalTokensInWindow: 210000,
+			Tier:                "standard",
+			Location:            "eu",
 		},
 		{
 			UserID:              "elena.rostova@google.com",
@@ -187,6 +194,8 @@ func (d *DemoDataProvider) FetchLicenseSeats(ctx context.Context, windowDays int
 			Status:              domain.SeatStatusActive,
 			LastActivity:        now.AddDate(0, 0, -2),
 			TotalTokensInWindow: 190000,
+			Tier:                "plus",
+			Location:            "eu",
 		},
 		{
 			UserID:              "liam.oconnor@google.com",
@@ -194,6 +203,8 @@ func (d *DemoDataProvider) FetchLicenseSeats(ctx context.Context, windowDays int
 			Status:              domain.SeatStatusActive,
 			LastActivity:        now.AddDate(0, 0, -3),
 			TotalTokensInWindow: 120000,
+			Tier:                "standard",
+			Location:            "us",
 		},
 		{
 			UserID:              "dev.intern@google.com",
@@ -201,6 +212,10 @@ func (d *DemoDataProvider) FetchLicenseSeats(ctx context.Context, windowDays int
 			Status:              domain.SeatStatusAtRisk,
 			LastActivity:        now.AddDate(0, 0, -12),
 			TotalTokensInWindow: 850,
+			Tier:                "standard",
+			Location:            "global",
+			IsTrial:             true,
+			TrialEndsAt:         trialEnd,
 		},
 		{
 			UserID:              "inactive.dev1@google.com",
@@ -208,6 +223,8 @@ func (d *DemoDataProvider) FetchLicenseSeats(ctx context.Context, windowDays int
 			Status:              domain.SeatStatusDormant,
 			LastActivity:        now.AddDate(0, 0, -45),
 			TotalTokensInWindow: 0,
+			Tier:                "plus",
+			Location:            "global",
 		},
 		{
 			UserID:              "inactive.dev2@google.com",
@@ -215,8 +232,20 @@ func (d *DemoDataProvider) FetchLicenseSeats(ctx context.Context, windowDays int
 			Status:              domain.SeatStatusDormant,
 			LastActivity:        now.AddDate(0, 0, -60),
 			TotalTokensInWindow: 0,
+			Tier:                "standard",
+			Location:            "eu",
 		},
+	}
+
+	seats := make([]domain.LicenseSeat, 0, len(rawSeats))
+	for _, s := range rawSeats {
+		tier, usd, wtu := domain.ResolveSeatAllowance(s.Tier)
+		s.Tier = tier
+		s.WeeklyAllowanceUSD = usd
+		s.WeeklyAllowanceWTU = wtu
+		seats = append(seats, s)
 	}
 
 	return seats, quota, nil
 }
+

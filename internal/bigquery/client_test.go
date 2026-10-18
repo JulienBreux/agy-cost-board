@@ -232,6 +232,15 @@ func TestDeriveLicenseSeats(t *testing.T) {
 	if len(seats) != 2 {
 		t.Errorf("expected 2 derived seats, got %d", len(seats))
 	}
+	for _, s := range seats {
+		if s.Tier != "plus" || s.WeeklyAllowanceUSD != 3.75 || s.WeeklyAllowanceWTU != 1875000 {
+			t.Errorf("expected default plus tier ($3.75 / 1875000 WTU), got tier=%q usd=%.2f wtu=%d",
+				s.Tier, s.WeeklyAllowanceUSD, s.WeeklyAllowanceWTU)
+		}
+		if s.Location != "global" {
+			t.Errorf("expected default location 'global', got %q", s.Location)
+		}
+	}
 
 	// Test default quota when <= 0
 	_, fallbackQuota := bigquery.DeriveLicenseSeats(logs, 30, 0)
@@ -239,6 +248,7 @@ func TestDeriveLicenseSeats(t *testing.T) {
 		t.Errorf("expected fallback quota to equal len(seats)=2, got %d", fallbackQuota)
 	}
 }
+
 
 func TestClientClose(t *testing.T) {
 	client := &bigquery.BigQueryClient{}
