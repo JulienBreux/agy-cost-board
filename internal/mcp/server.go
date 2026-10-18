@@ -78,7 +78,7 @@ func (s *Server) Tools() []Tool {
 	return []Tool{
 		{
 			Name:        "get_overview_metrics",
-			Description: "Retrieve project-wide Antigravity AI billed spend, total token volumes, active users count, Gemini Enterprise seat quota utilization, and per-model cost breakdown.",
+			Description: "Retrieve project-wide Antigravity AI billed spend (Included seat allowance vs. PAYG overage), total token volumes, Weighted Token Units (WTU), overall Cache Hit Rate %, active users count, Gemini Enterprise seat quota utilization, per-model cost breakdown, token/cost share categories, thinking effort stats, and client breakdown.",
 			InputSchema: map[string]any{
 				"type": "object",
 				"properties": map[string]any{
@@ -106,7 +106,7 @@ func (s *Server) Tools() []Tool {
 		},
 		{
 			Name:        "get_users_costs",
-			Description: "List proportional per-user AI cost attributions across the project, with optional lookback days and model filters.",
+			Description: "List proportional per-user AI cost attributions (including Included vs. PAYG cost, WTU, and Cache Hit Rate %) across the project, with optional lookback days and model filters.",
 			InputSchema: map[string]any{
 				"type": "object",
 				"properties": map[string]any{
@@ -124,7 +124,7 @@ func (s *Server) Tools() []Tool {
 		},
 		{
 			Name:        "get_user_dashboard",
-			Description: "Retrieve a developer's personal consumption driving dashboard, including total spend, daily/weekly burn rate, monthly budget quota consumed percentage, projected month-end spend, model breakdown, and optimization tips.",
+			Description: "Retrieve a developer's personal consumption driving dashboard, including total spend (Included vs. PAYG), WTU, Cache Hit Rate %, daily/weekly burn rate, monthly budget quota consumed percentage, projected month-end spend, model breakdown, thinking effort breakdown, client stats, and optimization tips.",
 			InputSchema: map[string]any{
 				"type":     "object",
 				"required": []string{"user_id"},

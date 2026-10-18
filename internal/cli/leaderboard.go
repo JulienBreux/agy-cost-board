@@ -61,18 +61,27 @@ func newLeaderboardCommand(v *viper.Viper) *cobra.Command {
 				cmd.Print(out)
 
 			default:
-				headers := []string{"RANK", "USER", "TOTAL SPEND", "SPEND SHARE", "TOKENS", "ACTIVE DAYS", "COST / 1K TOKENS", "TOP MODEL"}
+				headers := []string{"RANK", "USER", "TOTAL SPEND", "INCLUDED", "PAYG", "SPEND SHARE", "TOKENS", "WTU", "CACHE %", "ACTIVE DAYS", "COST / 1K TOKENS", "TOP MODEL", "EFFORT"}
 				var rows [][]string
 				for _, e := range entries {
+					effort := e.TopEffort
+					if effort == "" {
+						effort = "none"
+					}
 					rows = append(rows, []string{
 						fmt.Sprintf("#%d", e.Rank),
 						e.UserID,
 						domain.FormatCost(e.TotalCost, e.Currency),
+						domain.FormatCost(e.IncludedCost, e.Currency),
+						domain.FormatCost(e.PAYGCost, e.Currency),
 						fmt.Sprintf("%.1f%%", e.ShareOfSpend),
 						strconv.FormatInt(e.TotalTokens, 10),
+						strconv.FormatInt(e.WTU, 10),
+						fmt.Sprintf("%.1f%%", e.CacheHitRate),
 						fmt.Sprintf("%dd", e.ActiveDays),
 						fmt.Sprintf("%s%.4f", domain.CurrencySymbol(e.Currency), e.CostPer1KTokens),
 						e.TopModel,
+						effort,
 					})
 				}
 				cmd.Print(FormatTable(headers, rows))

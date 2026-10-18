@@ -87,4 +87,11 @@ func TestFormattersEdgeCases(t *testing.T) {
 			t.Errorf("expected table to contain extra column: %s", table)
 		}
 	})
+
+	t.Run("FormatWTU formats weighted token units cleanly", func(t *testing.T) {
+		if got := cli.FormatWTU(1234.56); got != "1234.6 WTU" {
+			t.Errorf("expected '1234.6 WTU', got %q", got)
+		}
+	})
 }
+

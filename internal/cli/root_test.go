@@ -91,8 +91,8 @@ func TestCLICommandsWithDemo(t *testing.T) {
 		}
 
 		out := buf.String()
-		if !strings.Contains(out, "USER") || !strings.Contains(out, "alex.turner@google.com") {
-			t.Errorf("expected table with demo users, got: %s", out)
+		if !strings.Contains(out, "USER") || !strings.Contains(out, "alex.turner@google.com") || !strings.Contains(out, "WTU") || !strings.Contains(out, "CACHE %") || !strings.Contains(out, "INCLUDED") || !strings.Contains(out, "PAYG") {
+			t.Errorf("expected table with demo users and FinOps columns (WTU, CACHE %%, INCLUDED, PAYG), got: %s", out)
 		}
 	})
 
@@ -108,8 +108,8 @@ func TestCLICommandsWithDemo(t *testing.T) {
 		}
 
 		out := buf.String()
-		if !strings.Contains(out, `"user_id": "alex.turner@google.com"`) {
-			t.Errorf("expected JSON with user_id, got: %s", out)
+		if !strings.Contains(out, `"user_id": "alex.turner@google.com"`) || !strings.Contains(out, `"wtu"`) || !strings.Contains(out, `"included_cost"`) {
+			t.Errorf("expected JSON with user_id, wtu, and included_cost, got: %s", out)
 		}
 	})
 
@@ -142,8 +142,8 @@ func TestCLICommandsWithDemo(t *testing.T) {
 		}
 
 		out := buf.String()
-		if !strings.Contains(out, "RANK") || !strings.Contains(out, "#1") || !strings.Contains(out, "alex.turner@google.com") {
-			t.Errorf("expected leaderboard table with ranks and demo users, got: %s", out)
+		if !strings.Contains(out, "RANK") || !strings.Contains(out, "#1") || !strings.Contains(out, "alex.turner@google.com") || !strings.Contains(out, "WTU") || !strings.Contains(out, "CACHE %") || !strings.Contains(out, "EFFORT") {
+			t.Errorf("expected leaderboard table with ranks, demo users, WTU, CACHE %%, and EFFORT, got: %s", out)
 		}
 	})
 

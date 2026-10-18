@@ -95,3 +95,9 @@ func FormatTable(headers []string, rows [][]string) string {
 
 	return sb.String()
 }
+
+// FormatWTU formats Weighted Token Units with one decimal place and the WTU suffix.
+func FormatWTU(wtu float64) string {
+	return fmt.Sprintf("%.1f WTU", wtu)
+}
+

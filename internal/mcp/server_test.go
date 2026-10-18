@@ -100,6 +100,17 @@ func TestMCPStdioLifecycleAndTools(t *testing.T) {
 			t.Fatalf("line %d: expected non-empty text content in tool result", idx)
 		}
 	}
+
+	// Verify FinOps Phase 1 fields in get_overview_metrics (line 3) and get_user_dashboard (line 6)
+	if !strings.Contains(lines[3], "total_wtu") || !strings.Contains(lines[3], "token_cost_shares") || !strings.Contains(lines[3], "model_effort_stats") || !strings.Contains(lines[3], "client_breakdown") {
+		t.Errorf("expected get_overview_metrics MCP output to include Phase 1 FinOps fields")
+	}
+	if !strings.Contains(lines[6], "top_effort") || !strings.Contains(lines[6], "total_wtu") || !strings.Contains(lines[6], "cache_hit_rate") || !strings.Contains(lines[6], "included_cost") {
+		t.Errorf("expected get_user_dashboard MCP output to include Phase 1 FinOps fields")
+	}
+	if !strings.Contains(listResp.Result.Tools[0].Description, "WTU") {
+		t.Errorf("expected get_overview_metrics tool description to mention WTU, got: %s", listResp.Result.Tools[0].Description)
+	}
 }
 
 func TestMCPErrorHandling(t *testing.T) {

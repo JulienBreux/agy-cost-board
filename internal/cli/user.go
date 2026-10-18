@@ -50,7 +50,7 @@ func newUserCommand(v *viper.Viper) *cobra.Command {
 				cmd.Println(out)
 
 			default:
-				headers := []string{"USER", "STATUS", "TOTAL TOKENS", "TOTAL COST", "LAST ACTIVE"}
+				headers := []string{"USER", "STATUS", "TOTAL TOKENS", "WTU", "CACHE %", "TOTAL COST", "INCLUDED", "PAYG", "LAST ACTIVE"}
 				lastAct := "Never"
 				if !summary.LastActive.IsZero() {
 					lastAct = summary.LastActive.Format("2006-01-02 15:04")
@@ -59,7 +59,11 @@ func newUserCommand(v *viper.Viper) *cobra.Command {
 					summary.UserID,
 					string(summary.SeatStatus),
 					strconv.FormatInt(summary.TotalTokens, 10),
+					strconv.FormatInt(summary.WTU, 10),
+					fmt.Sprintf("%.1f%%", summary.CacheHitRate),
 					domain.FormatCost(summary.TotalCost, summary.Currency),
+					domain.FormatCost(summary.IncludedCost, summary.Currency),
+					domain.FormatCost(summary.PAYGCost, summary.Currency),
 					lastAct,
 				}}
 				cmd.Print(FormatTable(headers, rows))

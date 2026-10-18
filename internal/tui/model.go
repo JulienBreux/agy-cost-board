@@ -328,8 +328,10 @@ func (m Model) View() string {
 
 	// KPI Cards
 	if m.Overview != nil {
-		card1 := cardStyle.Render("TOTAL BILLED\n" + cardValueStyle.Render(domain.FormatCost(m.Overview.TotalBilledCost, m.Overview.Currency)))
-		card2 := cardStyle.Render("TOTAL TOKENS\n" + cardValueStyle.Render(strconv.FormatInt(m.Overview.TotalTokens, 10)))
+		card1 := cardStyle.Render("TOTAL BILLED\n" + cardValueStyle.Render(domain.FormatCost(m.Overview.TotalBilledCost, m.Overview.Currency)) +
+			fmt.Sprintf("\nInc: %s | PAYG: %s", domain.FormatCost(m.Overview.IncludedCost, m.Overview.Currency), domain.FormatCost(m.Overview.PAYGCost, m.Overview.Currency)))
+		card2 := cardStyle.Render("TOTAL TOKENS / WTU\n" + cardValueStyle.Render(strconv.FormatInt(m.Overview.TotalTokens, 10)) +
+			fmt.Sprintf("\nWTU: %d | Cache: %.1f%%", m.Overview.TotalWTU, m.Overview.CacheHitRate))
 		card3 := cardStyle.Render("ACTIVE USERS\n" + cardValueStyle.Render(strconv.Itoa(m.Overview.ActiveUsersCount)))
 		card4 := cardStyle.Render("POTENTIAL SAVINGS\n" + cardWarnValueStyle.Render(domain.FormatCost(m.Overview.EstimatedMonthlySavings, m.Overview.Currency) + "/mo"))
 		sb.WriteString(lipgloss.JoinHorizontal(lipgloss.Top, card1, card2, card3, card4))
@@ -355,8 +357,8 @@ func (m Model) View() string {
 
 func (m Model) renderCostsView() string {
 	var sb strings.Builder
-	sb.WriteString(tableHeaderStyle.Render(fmt.Sprintf("%-28s %-20s %-12s %-14s %-10s %-12s",
-		"USER", "MODEL", "DATE", "TOKENS", "SHARE %", "COST")))
+	sb.WriteString(tableHeaderStyle.Render(fmt.Sprintf("%-26s %-18s %-12s %-12s %-10s %-10s %-10s %-12s",
+		"USER", "MODEL", "DATE", "TOKENS", "WTU", "CACHE %", "SHARE %", "COST")))
 	sb.WriteString("\n")
 
 	if len(m.Costs) == 0 {
@@ -377,8 +379,9 @@ func (m Model) renderCostsView() string {
 		if i == m.Cursor {
 			prefix = "> "
 		}
-		rowStr := fmt.Sprintf("%s%-26s %-20s %-12s %-14d %-10s %s",
+		rowStr := fmt.Sprintf("%s%-24s %-18s %-12s %-12d %-10d %-10s %-10s %s",
 			prefix, c.UserID, c.Model, c.UsageDate, c.UserTokens,
+			c.WTU, fmt.Sprintf("%.1f%%", c.CacheHitRate),
 			fmt.Sprintf("%.1f%%", c.TokenShare*100), domain.FormatCost(c.AllocatedCost, c.Currency))
 
 		if i == m.Cursor {
@@ -394,8 +397,8 @@ func (m Model) renderCostsView() string {
 
 func (m Model) renderLeaderboardView() string {
 	var sb strings.Builder
-	sb.WriteString(tableHeaderStyle.Render(fmt.Sprintf("%-6s %-28s %-14s %-10s %-14s %-8s %-12s %-20s",
-		"RANK", "DEVELOPER", "TOTAL SPEND", "SHARE %", "TOKENS", "DAYS", "COST / 1K", "TOP MODEL")))
+	sb.WriteString(tableHeaderStyle.Render(fmt.Sprintf("%-6s %-26s %-14s %-10s %-12s %-10s %-10s %-8s %-12s %-18s %-10s",
+		"RANK", "DEVELOPER", "TOTAL SPEND", "SHARE %", "TOKENS", "WTU", "CACHE %", "DAYS", "COST / 1K", "TOP MODEL", "EFFORT")))
 	sb.WriteString("\n")
 
 	if len(m.Leaderboard) == 0 {
@@ -416,10 +419,16 @@ func (m Model) renderLeaderboardView() string {
 		if i == m.Cursor {
 			prefix = "> "
 		}
-		rowStr := fmt.Sprintf("%s#%-3d %-28s %-14s %-10s %-14d %-8s %-12s %s",
+		effort := e.TopEffort
+		if effort == "" {
+			effort = "none"
+		}
+		rowStr := fmt.Sprintf("%s#%-3d %-26s %-14s %-10s %-12d %-10d %-10s %-8s %-12s %-18s %s",
 			prefix, e.Rank, e.UserID, domain.FormatCost(e.TotalCost, e.Currency),
-			fmt.Sprintf("%.1f%%", e.ShareOfSpend), e.TotalTokens, fmt.Sprintf("%dd", e.ActiveDays),
-			fmt.Sprintf("%s%.4f", domain.CurrencySymbol(e.Currency), e.CostPer1KTokens), e.TopModel)
+			fmt.Sprintf("%.1f%%", e.ShareOfSpend), e.TotalTokens,
+			e.WTU, fmt.Sprintf("%.1f%%", e.CacheHitRate),
+			fmt.Sprintf("%dd", e.ActiveDays),
+			fmt.Sprintf("%s%.4f", domain.CurrencySymbol(e.Currency), e.CostPer1KTokens), e.TopModel, effort)
 
 		if i == m.Cursor {
 			sb.WriteString(selectedRowStyle.Render(rowStr))
@@ -473,8 +482,12 @@ func (m Model) renderUserBreakdownView() string {
 
 	u := m.SelectedUser
 	sb.WriteString(fmt.Sprintf("DEVELOPER BREAKDOWN: %s\n", u.UserID))
-	sb.WriteString(fmt.Sprintf("Status: %s | Total Tokens: %d | Total Attributed Cost: %s\n\n",
-		u.SeatStatus, u.TotalTokens, domain.FormatCost(u.TotalCost, u.Currency)))
+	sb.WriteString(fmt.Sprintf("Status: %s | Total Tokens: %d | WTU: %d | Cache Hit: %.1f%%\n",
+		u.SeatStatus, u.TotalTokens, u.WTU, u.CacheHitRate))
+	sb.WriteString(fmt.Sprintf("Total Attributed Cost: %s (Included: %s | PAYG: %s)\n\n",
+		domain.FormatCost(u.TotalCost, u.Currency),
+		domain.FormatCost(u.IncludedCost, u.Currency),
+		domain.FormatCost(u.PAYGCost, u.Currency)))
 
 	sb.WriteString(tableHeaderStyle.Render(fmt.Sprintf("%-24s %-16s %-12s %-12s",
 		"MODEL", "TOKENS", "TOKEN SHARE", "COST")))
@@ -487,4 +500,5 @@ func (m Model) renderUserBreakdownView() string {
 
 	return sb.String()
 }
+
 

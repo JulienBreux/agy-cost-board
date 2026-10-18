@@ -245,4 +245,28 @@ func TestTUIModelNavigation(t *testing.T) {
 			t.Errorf("expected TUI overview to contain € in demo mode, got: %s", view)
 		}
 	})
+
+	t.Run("TUI displays WTU, Cache Hit Rate, Included and PAYG coexistence metrics", func(t *testing.T) {
+		m.ActiveTab = 0
+		view0 := m.View()
+		if !strings.Contains(view0, "WTU") || !strings.Contains(view0, "CACHE %") || !strings.Contains(view0, "Inc:") || !strings.Contains(view0, "PAYG:") {
+			t.Errorf("expected TUI tab 0 to display WTU, CACHE %%, Inc:, and PAYG:, got: %s", view0)
+		}
+
+		m.ActiveTab = 1
+		view1 := m.View()
+		if !strings.Contains(view1, "WTU") || !strings.Contains(view1, "CACHE %") || !strings.Contains(view1, "EFFORT") {
+			t.Errorf("expected TUI Leaderboard tab 1 to display WTU, CACHE %%, and EFFORT, got: %s", view1)
+		}
+
+		m.ActiveTab = 0
+		m.Cursor = 0
+		updated, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
+		m = updated.(tui.Model)
+		view3 := m.View()
+		if !strings.Contains(view3, "WTU:") || !strings.Contains(view3, "Cache Hit:") || !strings.Contains(view3, "Included:") || !strings.Contains(view3, "PAYG:") {
+			t.Errorf("expected TUI Developer Breakdown tab 3 to display WTU:, Cache Hit:, Included:, and PAYG:, got: %s", view3)
+		}
+	})
 }
+

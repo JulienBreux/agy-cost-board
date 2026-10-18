@@ -62,7 +62,7 @@ func newCostCommand(v *viper.Viper) *cobra.Command {
 				cmd.Print(out)
 
 			default:
-				headers := []string{"USER", "MODEL", "DATE", "TOKENS", "SHARE %", "ALLOCATED COST"}
+				headers := []string{"USER", "MODEL", "DATE", "TOKENS", "WTU", "CACHE %", "SHARE %", "ALLOCATED COST", "INCLUDED", "PAYG"}
 				var rows [][]string
 				for _, c := range costs {
 					rows = append(rows, []string{
@@ -70,8 +70,12 @@ func newCostCommand(v *viper.Viper) *cobra.Command {
 						c.Model,
 						c.UsageDate,
 						strconv.FormatInt(c.UserTokens, 10),
+						strconv.FormatInt(c.WTU, 10),
+						fmt.Sprintf("%.1f%%", c.CacheHitRate),
 						fmt.Sprintf("%.1f%%", c.TokenShare*100),
 						domain.FormatCost(c.AllocatedCost, c.Currency),
+						domain.FormatCost(c.IncludedCost, c.Currency),
+						domain.FormatCost(c.PAYGCost, c.Currency),
 					})
 				}
 				cmd.Print(FormatTable(headers, rows))
