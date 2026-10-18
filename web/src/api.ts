@@ -59,6 +59,54 @@ export interface ClientStats {
   share_of_cost?: number;
 }
 
+export interface WeeklyPoolWindow {
+  window_label: string;
+  window_start: string;
+  window_end: string;
+  pool_limit_usd: number;
+  pool_limit_wtu: number;
+  included_used_usd: number;
+  included_used_wtu: number;
+  payg_overage_usd: number;
+  payg_overage_wtu: number;
+  utilization_pct: number;
+}
+
+export interface PoolWhatIfScenario {
+  pool_mode: 'pooled' | 'per_user' | string;
+  seat_basis: 'assigned' | 'purchased' | string;
+  pool_limit_usd: number;
+  pool_limit_wtu: number;
+  included_used_usd: number;
+  included_used_wtu: number;
+  payg_overage_usd: number;
+  payg_overage_wtu: number;
+  remaining_usd: number;
+  remaining_wtu: number;
+  utilization_pct: number;
+  windows?: WeeklyPoolWindow[];
+}
+
+export interface WeeklyAllowancePool {
+  window_start: string;
+  window_end: string;
+  reset_in_hours: number;
+  reset_countdown: string;
+  pool_mode: 'pooled' | 'per_user' | string;
+  seat_basis: 'assigned' | 'purchased' | string;
+  pool_limit_usd: number;
+  pool_limit_wtu: number;
+  included_used_usd: number;
+  included_used_wtu: number;
+  payg_overage_usd: number;
+  payg_overage_wtu: number;
+  remaining_usd: number;
+  remaining_wtu: number;
+  utilization_pct: number;
+  windows?: WeeklyPoolWindow[];
+  scenarios?: Record<string, PoolWhatIfScenario>;
+}
+
 export interface OverviewMetrics {
   total_billed_cost: number;
   total_wtu?: number;
@@ -77,6 +125,7 @@ export interface OverviewMetrics {
   token_cost_shares?: TokenCostShare[];
   model_effort_stats?: ModelEffortStats[];
   client_breakdown?: ClientStats[];
+  weekly_pool?: WeeklyAllowancePool;
   currency: string;
 }
 
@@ -93,12 +142,23 @@ export interface AllocatedUserCost {
   wtu?: number;
   included_cost?: number;
   payg_cost?: number;
+  fair_share_included_cost?: number;
+  fair_share_payg_cost?: number;
+  when_used_included_cost?: number;
+  when_used_payg_cost?: number;
   currency: string;
 }
 
 export interface LicenseSeat {
   user_id: string;
+  assigned?: boolean;
   status: 'active' | 'at_risk' | 'dormant';
+  tier?: 'standard' | 'plus' | string;
+  weekly_allowance_usd?: number;
+  weekly_allowance_wtu?: number;
+  location?: 'global' | 'eu' | 'us' | string;
+  is_trial?: boolean;
+  trial_ends_at?: string;
   last_activity: string;
   total_tokens_in_window: number;
 }
@@ -108,9 +168,15 @@ export interface LicenseGovernance {
   assigned_seats: number;
   active_seats: number;
   dormant_seats: number;
+  standard_seats?: number;
+  plus_seats?: number;
+  trial_seats?: number;
+  locations?: string[];
   utilization_pct: number;
   estimated_monthly_savings: number;
   dormant_users: LicenseSeat[];
+  all_seats?: LicenseSeat[];
+  weekly_pool?: WeeklyAllowancePool;
   currency?: string;
 }
 
@@ -130,6 +196,10 @@ export interface LeaderboardEntry {
   total_cost: number;
   included_cost?: number;
   payg_cost?: number;
+  fair_share_included_cost?: number;
+  fair_share_payg_cost?: number;
+  when_used_included_cost?: number;
+  when_used_payg_cost?: number;
   wtu?: number;
   spend_share_pct: number;
   share_of_spend?: number;
@@ -183,12 +253,19 @@ export const normalizeLeaderboardEntry = (raw: any, idx = 0): LeaderboardEntry =
     }
   }
 
+  const includedCost = Number(raw?.included_cost ?? 0);
+  const paygCost = Number(raw?.payg_cost ?? 0);
+
   return {
     rank: Number(raw?.rank ?? idx + 1),
     user_id: String(raw?.user_id ?? 'unknown'),
     total_cost: totalCost,
-    included_cost: Number(raw?.included_cost ?? 0),
-    payg_cost: Number(raw?.payg_cost ?? 0),
+    included_cost: includedCost,
+    payg_cost: paygCost,
+    fair_share_included_cost: Number(raw?.fair_share_included_cost ?? includedCost),
+    fair_share_payg_cost: Number(raw?.fair_share_payg_cost ?? paygCost),
+    when_used_included_cost: Number(raw?.when_used_included_cost ?? includedCost),
+    when_used_payg_cost: Number(raw?.when_used_payg_cost ?? paygCost),
     wtu: Number(raw?.wtu ?? 0),
     spend_share_pct: spendShare,
     share_of_spend: spendShare,
@@ -214,6 +291,10 @@ export const aggregateLeaderboardFromCosts = (costs: AllocatedUserCost[]): Leade
       totalCost: number;
       includedCost: number;
       paygCost: number;
+      fairShareIncludedCost: number;
+      fairSharePaygCost: number;
+      whenUsedIncludedCost: number;
+      whenUsedPaygCost: number;
       wtu: number;
       totalTokens: number;
       cachedTokens: number;
@@ -234,6 +315,10 @@ export const aggregateLeaderboardFromCosts = (costs: AllocatedUserCost[]): Leade
         totalCost: 0,
         includedCost: 0,
         paygCost: 0,
+        fairShareIncludedCost: 0,
+        fairSharePaygCost: 0,
+        whenUsedIncludedCost: 0,
+        whenUsedPaygCost: 0,
         wtu: 0,
         totalTokens: 0,
         cachedTokens: 0,
@@ -243,9 +328,15 @@ export const aggregateLeaderboardFromCosts = (costs: AllocatedUserCost[]): Leade
       };
       byUser.set(c.user_id, u);
     }
+    const inc = c.included_cost ?? 0;
+    const payg = c.payg_cost ?? 0;
     u.totalCost += c.allocated_cost;
-    u.includedCost += c.included_cost ?? 0;
-    u.paygCost += c.payg_cost ?? 0;
+    u.includedCost += inc;
+    u.paygCost += payg;
+    u.fairShareIncludedCost += c.fair_share_included_cost ?? inc;
+    u.fairSharePaygCost += c.fair_share_payg_cost ?? payg;
+    u.whenUsedIncludedCost += c.when_used_included_cost ?? inc;
+    u.whenUsedPaygCost += c.when_used_payg_cost ?? payg;
     u.wtu += c.wtu ?? 0;
     u.totalTokens += c.user_tokens;
     u.cachedTokens += c.cached_tokens ?? 0;
@@ -279,6 +370,10 @@ export const aggregateLeaderboardFromCosts = (costs: AllocatedUserCost[]): Leade
       total_cost: Number(u.totalCost.toFixed(2)),
       included_cost: Number(u.includedCost.toFixed(2)),
       payg_cost: Number(u.paygCost.toFixed(2)),
+      fair_share_included_cost: Number(u.fairShareIncludedCost.toFixed(2)),
+      fair_share_payg_cost: Number(u.fairSharePaygCost.toFixed(2)),
+      when_used_included_cost: Number(u.whenUsedIncludedCost.toFixed(2)),
+      when_used_payg_cost: Number(u.whenUsedPaygCost.toFixed(2)),
       wtu: u.wtu,
       spend_share_pct: spendShare,
       share_of_spend: spendShare,
@@ -309,8 +404,12 @@ export const aggregateLeaderboardFromCosts = (costs: AllocatedUserCost[]): Leade
   return entries;
 };
 
-export const fetchLeaderboard = async (days = 30): Promise<LeaderboardEntry[]> => {
-  const res = await fetch(`/api/v1/leaderboard?days=${days}`);
+export const fetchLeaderboard = async (
+  days = 30,
+  paygMode?: 'fair_share' | 'when_used'
+): Promise<LeaderboardEntry[]> => {
+  const url = `/api/v1/leaderboard?days=${days}${paygMode ? `&payg_mode=${encodeURIComponent(paygMode)}` : ''}`;
+  const res = await fetch(url);
   if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch developer leaderboard`);
   const data = await res.json();
   if (!Array.isArray(data)) return [];
@@ -323,8 +422,14 @@ export const fetchOverview = async (days = 30): Promise<OverviewMetrics> => {
   return res.json();
 };
 
-export const fetchAttributedCosts = async (days = 30, model = ''): Promise<AllocatedUserCost[]> => {
-  const url = `/api/v1/costs/users?days=${days}${model ? `&model=${encodeURIComponent(model)}` : ''}`;
+export const fetchAttributedCosts = async (
+  days = 30,
+  model = '',
+  paygMode?: 'fair_share' | 'when_used'
+): Promise<AllocatedUserCost[]> => {
+  const url = `/api/v1/costs/users?days=${days}${model ? `&model=${encodeURIComponent(model)}` : ''}${
+    paygMode ? `&payg_mode=${encodeURIComponent(paygMode)}` : ''
+  }`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch attributed costs`);
   return res.json();
