@@ -1,7 +1,7 @@
 # Specification: Phase 1 (`v0.10.0`) — Token Cache, Thinking Effort, Client Telemetry & Included vs. PAYG Coexistence
 
 ## 1. Overview
-Inspired by `cloud-gtm/agy-finops`, this track enhances `agy-cost-board` so that it surfaces **both** its existing **Cloud Billing Export Reconciled Cost** and **Gemini Enterprise's Metered Model** (**Weighted Token Units — WTU**, **Included Seat Allowance Usage**, and **PAYG Overage**), alongside deep inference telemetry for **Cached Input Tokens**, **Thinking Effort Levels** (`minimal`..`max`), and **Client Applications** (`client_name` / `client_version`).
+This track enhances `agy-cost-board` so that it surfaces **both** its existing **Cloud Billing Export Reconciled Cost** and **Gemini Enterprise's Metered Model** (**Weighted Token Units — WTU**, **Included Seat Allowance Usage**, and **PAYG Overage**), alongside deep inference telemetry for **Cached Input Tokens**, **Thinking Effort Levels** (`minimal`..`max`), and **Client Applications** (`client_name` / `client_version`).
 
 ## 2. Functional Requirements
 

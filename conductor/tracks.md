@@ -60,3 +60,9 @@
 - [x] **Track: Phase 2 (v0.11.0) — Weekly Allowance Pool Engine, Fair-Share vs. When-Used Chargeback & Multi-Tier License Discovery**
   *Link: [./tracks/finops_phase2_pool_chargeback_tiers_20261018/index.md](./tracks/finops_phase2_pool_chargeback_tiers_20261018/index.md)*
 
+---
+
+- [ ] **Track: Phase 3 (v0.12.0) — 30-Day Window-Aware Forecast, Cloud Monitoring Quota Meter Sync & Multi-Project Support**
+  *Link: [./tracks/finops_phase3_forecast_monitoring_multiproject_20261018/index.md](./tracks/finops_phase3_forecast_monitoring_multiproject_20261018/index.md)*
+
+
