@@ -5,12 +5,12 @@
     - [x] Draft overview, persona-based navigation paths (Platform/FinOps, Engineering Managers, Developers), Mermaid system architecture diagram, and complete index table linking to all guides in `docs/`.
 - [x] Task: Create `docs/getting-started.md` (Installation, Demo Lab & GCP Setup)
     - [x] Document prerequisites, building from source (`make build`), exploring the 100% offline Synthetic Demo Lab (`--demo`), and connecting to Google Cloud & BigQuery with the 5-point automated verification and provisioning engine (`setup`, `setup --create`, `setup --save`, `doctor`).
-- [~] Task: Create `docs/architecture-and-finops.md` (Proportional Attribution, WTU & FinOps Model)
-    - [ ] Document the Mathematical Proportional Attribution formula (`Allocated Cost(u, m, d)`), Dual Cost Model coexistence (`v0.10.0`: Reconciled Cloud Billing vs. Metered WTU / Included Seat Allowance vs. PAYG Overage), Token Cache Hit Rate & Thinking Effort levels (`minimal`..`max`), Client Telemetry (`vscode`, `jetbrains`, `agy-cli`), Gemini Enterprise Shelfware Reclamation, and Native Multi-Currency (ISO-4217 zero-FX ingestion).
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Core Documentation Hub, Getting Started & FinOps Architecture (`docs/`)' (Protocol in workflow.md)
+- [x] Task: Create `docs/architecture-and-finops.md` (Proportional Attribution, WTU & FinOps Model)
+    - [x] Document the Mathematical Proportional Attribution formula (`Allocated Cost(u, m, d)`), Dual Cost Model coexistence (`v0.10.0`: Reconciled Cloud Billing vs. Metered WTU / Included Seat Allowance vs. PAYG Overage), Token Cache Hit Rate & Thinking Effort levels (`minimal`..`max`), Client Telemetry (`vscode`, `jetbrains`, `agy-cli`), Gemini Enterprise Shelfware Reclamation, and Native Multi-Currency (ISO-4217 zero-FX ingestion).
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Core Documentation Hub, Getting Started & FinOps Architecture (`docs/`)' (Protocol in workflow.md)
 
 ## Phase 2: Interfaces, Integrations & Deployment Guides (`docs/`)
-- [ ] Task: Create `docs/interfaces-and-reference.md` (Web UI, TUI, CLI & REST API Reference)
+- [~] Task: Create `docs/interfaces-and-reference.md` (Web UI, TUI, CLI & REST API Reference)
     - [ ] Document the Web Dashboard (two-line header navigation: `Overview`, `Leaderboard`, `My Consumption`, `Attributed Costs`, `Seat Governance`, `Setup & Health`, plus "What's New" and "MCP & Quotas" modals), Interactive TUI (`agy-cost-board tui`), complete CLI Command Reference table & flags, and REST API Reference table (`v0.10.0` fields included).
 - [ ] Task: Create `docs/integrations.md` (Antigravity MCP Server, Plugin & CLI Statusline)
     - [ ] Document the Model Context Protocol (`2025-03-26`) Server (exposed tools, Streamable HTTP `POST /mcp`, Stdio `agy-cost-board mcp`, `AGY_COST_BOARD_MCP_ENABLED` toggle, and `.agents/plugins/agy-cost-board/` plugin bundle) and the Antigravity CLI Statusline Spend Integration (`GET /statusline.sh`, query params, user resolution hierarchy, env vars, Cloud Run IAM Bearer auth, and fail-open caching).
