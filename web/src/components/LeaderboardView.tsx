@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Trophy, Medal, Search, ArrowUpDown, Calendar, Cpu, Coins, Flame } from 'lucide-react';
+import { Trophy, Medal, Search, ArrowUpDown, Calendar, Cpu, Coins, Flame, Download } from 'lucide-react';
 import { LeaderboardEntry } from '../api';
 import { formatCurrency } from '../utils/currency';
 
@@ -10,6 +10,7 @@ interface LeaderboardViewProps {
 }
 
 type SortField = 'cost' | 'tokens' | 'active_days' | 'efficiency';
+type PaygMode = 'fair_share' | 'when_used';
 
 const MODEL_COLORS: Record<string, string> = {
   'gemini-2.5-pro': 'bg-google-blue',
@@ -73,6 +74,21 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState<SortField>('cost');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [paygMode, setPaygMode] = useState<PaygMode>('fair_share');
+
+  const getIncludedCost = (entry: LeaderboardEntry): number => {
+    if (paygMode === 'when_used') {
+      return entry.when_used_included_cost ?? entry.included_cost ?? 0;
+    }
+    return entry.fair_share_included_cost ?? entry.included_cost ?? 0;
+  };
+
+  const getPaygCost = (entry: LeaderboardEntry): number => {
+    if (paygMode === 'when_used') {
+      return entry.when_used_payg_cost ?? entry.payg_cost ?? 0;
+    }
+    return entry.fair_share_payg_cost ?? entry.payg_cost ?? 0;
+  };
 
   const topThree = useMemo(() => {
     const byCost = [...entries].sort((a, b) => a.rank - b.rank);
@@ -102,6 +118,63 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
     } else {
       setSortBy(col);
       setSortOrder('desc');
+    }
+  };
+
+  const handleExportCsv = () => {
+    const headers = [
+      'rank',
+      'user_id',
+      'total_cost',
+      'payg_mode',
+      'included_cost',
+      'payg_cost',
+      'fair_share_included_cost',
+      'fair_share_payg_cost',
+      'when_used_included_cost',
+      'when_used_payg_cost',
+      'total_tokens',
+      'wtu',
+      'cache_hit_rate',
+      'active_days',
+      'top_model',
+      'currency',
+    ];
+    const rows = filteredAndSorted.map((e) => [
+      e.rank ?? '',
+      `"${(e.user_id || '').replace(/"/g, '""')}"`,
+      (e.total_cost ?? 0).toFixed(4),
+      paygMode,
+      getIncludedCost(e).toFixed(4),
+      getPaygCost(e).toFixed(4),
+      (e.fair_share_included_cost ?? e.included_cost ?? 0).toFixed(4),
+      (e.fair_share_payg_cost ?? e.payg_cost ?? 0).toFixed(4),
+      (e.when_used_included_cost ?? e.included_cost ?? 0).toFixed(4),
+      (e.when_used_payg_cost ?? e.payg_cost ?? 0).toFixed(4),
+      e.total_tokens ?? 0,
+      Math.round(e.wtu ?? 0),
+      (e.cache_hit_rate ?? 0).toFixed(2),
+      e.active_days ?? 0,
+      `"${(e.top_model || '').replace(/"/g, '""')}"`,
+      e.currency || 'USD',
+    ]);
+    const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+    try {
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      if (typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function') {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `leaderboard-${paygMode}-${days}d.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        if (typeof URL.revokeObjectURL === 'function') {
+          URL.revokeObjectURL(url);
+        }
+      }
+    } catch {
+      // No-op in headless test environments without Blob/URL support
     }
   };
 
@@ -135,7 +208,7 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <div className="flex items-center space-x-2">
             <Trophy className="h-5 w-5 text-amber-400" />
@@ -147,6 +220,44 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
             Ranked developer AI spend, token throughput, active days, and model mix efficiency over the last {days} days.
           </p>
         </div>
+
+        {/* Chargeback Attribution Mode Toggle + CSV Export */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="inline-flex items-center bg-[#181c26] border border-[#282f40] rounded-lg p-0.5 text-xs">
+            <button
+              type="button"
+              onClick={() => setPaygMode('fair_share')}
+              className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
+                paygMode === 'fair_share'
+                  ? 'bg-google-blue text-white shadow-sm'
+                  : 'text-google-gray-400 hover:text-white'
+              }`}
+              title="Distribute 7-day pool overage proportionally across licensed pool users"
+            >
+              Fair Share
+            </button>
+            <button
+              type="button"
+              onClick={() => setPaygMode('when_used')}
+              className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
+                paygMode === 'when_used'
+                  ? 'bg-google-blue text-white shadow-sm'
+                  : 'text-google-gray-400 hover:text-white'
+              }`}
+              title="Attribute PAYG chronologically as the weekly pool exhausts"
+            >
+              When Used
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={handleExportCsv}
+            className="inline-flex items-center space-x-1.5 bg-[#181c26] hover:bg-[#202532] border border-[#282f40] text-google-gray-200 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+          >
+            <Download className="h-3.5 w-3.5" />
+            <span>Export CSV</span>
+          </button>
+        </div>
       </div>
 
       {/* Top 3 Podium Cards */}
@@ -155,6 +266,8 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
           {topThree.map((entry, idx) => {
             const style = podiumStyles[idx] || podiumStyles[2];
             const spendSharePct = getSpendSharePct(entry);
+            const incCost = getIncludedCost(entry);
+            const paygCost = getPaygCost(entry);
             return (
               <div
                 key={entry.user_id}
@@ -190,13 +303,13 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
                   <div className="text-2xl font-extrabold text-white font-mono mt-1">
                     {formatCurrency(entry.total_cost ?? 0, entry.currency)}
                   </div>
-                  {((entry.included_cost ?? 0) > 0 || (entry.payg_cost ?? 0) > 0) && (
+                  {(incCost > 0 || paygCost > 0) && (
                     <div className="flex flex-wrap items-center gap-1.5 mt-1.5 text-[11px] font-mono">
                       <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                        Inc: {formatCurrency(entry.included_cost ?? 0, entry.currency)}
+                        Inc: {formatCurrency(incCost, entry.currency)}
                       </span>
                       <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                        PAYG: {formatCurrency(entry.payg_cost ?? 0, entry.currency)}
+                        PAYG: {formatCurrency(paygCost, entry.currency)}
                       </span>
                     </div>
                   )}
@@ -379,10 +492,10 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
                       </td>
                       <td className="py-3 px-4 text-right font-semibold text-white font-mono">
                         <div>{formatCurrency(entry.total_cost ?? 0, entry.currency)}</div>
-                        {((entry.included_cost ?? 0) > 0 || (entry.payg_cost ?? 0) > 0) && (
+                        {(getIncludedCost(entry) > 0 || getPaygCost(entry) > 0) && (
                           <div className="text-[10px] font-normal text-google-gray-400">
-                            Inc: {formatCurrency(entry.included_cost ?? 0, entry.currency)} · PAYG:{' '}
-                            {formatCurrency(entry.payg_cost ?? 0, entry.currency)}
+                            Inc: {formatCurrency(getIncludedCost(entry), entry.currency)} · PAYG:{' '}
+                            {formatCurrency(getPaygCost(entry), entry.currency)}
                           </div>
                         )}
                       </td>

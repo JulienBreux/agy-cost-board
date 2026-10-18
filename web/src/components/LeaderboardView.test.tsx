@@ -189,5 +189,39 @@ describe('LeaderboardView Component', () => {
     expect(screen.getAllByText('76.4%').length).toBeGreaterThan(0);
     expect(screen.getAllByText('high').length).toBeGreaterThan(0);
   });
+
+  it('toggles between Fair Share and When Used chargeback attribution and exports CSV', () => {
+    const onSelectUser = vi.fn();
+    const dualEntries: LeaderboardEntry[] = [
+      {
+        ...mockEntries[0],
+        included_cost: 300.0,
+        payg_cost: 120.5,
+        fair_share_included_cost: 300.0,
+        fair_share_payg_cost: 120.5,
+        when_used_included_cost: 210.0,
+        when_used_payg_cost: 210.5,
+      },
+    ];
+
+    render(<LeaderboardView entries={dualEntries} onSelectUser={onSelectUser} days={30} />);
+
+    // Default is Fair Share
+    expect(screen.getAllByText(/Inc: €300\.00/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/PAYG: €120\.50/).length).toBeGreaterThan(0);
+
+    // Switch to When Used
+    const whenUsedBtn = screen.getByRole('button', { name: /when used/i });
+    fireEvent.click(whenUsedBtn);
+
+    expect(screen.getAllByText(/Inc: €210\.00/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/PAYG: €210\.50/).length).toBeGreaterThan(0);
+
+    // Export CSV button exists and can be clicked safely
+    const exportBtn = screen.getByRole('button', { name: /export csv/i });
+    expect(exportBtn).toBeInTheDocument();
+    fireEvent.click(exportBtn);
+  });
 });
+
 

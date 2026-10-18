@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Filter, ArrowUpDown } from 'lucide-react';
+import { Search, Filter, ArrowUpDown, Download } from 'lucide-react';
 import { AllocatedUserCost } from '../api';
 import { formatCurrency } from '../utils/currency';
 
@@ -8,13 +8,30 @@ interface CostTableProps {
   onSelectUser: (userId: string) => void;
 }
 
+type PaygMode = 'fair_share' | 'when_used';
+
 export const CostTable: React.FC<CostTableProps> = ({ costs, onSelectUser }) => {
   const [search, setSearch] = useState('');
   const [selectedModel, setSelectedModel] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'cost' | 'tokens' | 'date'>('cost');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [paygMode, setPaygMode] = useState<PaygMode>('fair_share');
   const [page, setPage] = useState(1);
   const pageSize = 15;
+
+  const getIncludedCost = (r: AllocatedUserCost): number => {
+    if (paygMode === 'when_used') {
+      return r.when_used_included_cost ?? r.included_cost ?? 0;
+    }
+    return r.fair_share_included_cost ?? r.included_cost ?? 0;
+  };
+
+  const getPaygCost = (r: AllocatedUserCost): number => {
+    if (paygMode === 'when_used') {
+      return r.when_used_payg_cost ?? r.payg_cost ?? 0;
+    }
+    return r.fair_share_payg_cost ?? r.payg_cost ?? 0;
+  };
 
   const models = useMemo(() => {
     const set = new Set<string>();
@@ -50,6 +67,63 @@ export const CostTable: React.FC<CostTableProps> = ({ costs, onSelectUser }) => 
     }
   };
 
+  const handleExportCsv = () => {
+    const headers = [
+      'usage_date',
+      'user_id',
+      'model',
+      'user_tokens',
+      'wtu',
+      'cache_hit_rate',
+      'token_share',
+      'allocated_cost',
+      'payg_mode',
+      'included_cost',
+      'payg_cost',
+      'fair_share_included_cost',
+      'fair_share_payg_cost',
+      'when_used_included_cost',
+      'when_used_payg_cost',
+      'currency',
+    ];
+    const rows = filteredAndSorted.map((r) => [
+      r.usage_date,
+      `"${(r.user_id || '').replace(/"/g, '""')}"`,
+      `"${(r.model || '').replace(/"/g, '""')}"`,
+      r.user_tokens ?? 0,
+      Math.round(r.wtu ?? 0),
+      (r.cache_hit_rate ?? 0).toFixed(2),
+      (r.token_share ?? 0).toFixed(4),
+      (r.allocated_cost ?? 0).toFixed(4),
+      paygMode,
+      getIncludedCost(r).toFixed(4),
+      getPaygCost(r).toFixed(4),
+      (r.fair_share_included_cost ?? r.included_cost ?? 0).toFixed(4),
+      (r.fair_share_payg_cost ?? r.payg_cost ?? 0).toFixed(4),
+      (r.when_used_included_cost ?? r.included_cost ?? 0).toFixed(4),
+      (r.when_used_payg_cost ?? r.payg_cost ?? 0).toFixed(4),
+      r.currency || 'USD',
+    ]);
+    const csv = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
+    try {
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      if (typeof URL !== 'undefined' && typeof URL.createObjectURL === 'function') {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `attributed-costs-${paygMode}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        if (typeof URL.revokeObjectURL === 'function') {
+          URL.revokeObjectURL(url);
+        }
+      }
+    } catch {
+      // No-op in headless test environments
+    }
+  };
+
   return (
     <div className="bg-[#14171f] border border-[#222836] rounded-xl overflow-hidden shadow-sm">
       {/* Controls Bar */}
@@ -69,8 +143,35 @@ export const CostTable: React.FC<CostTableProps> = ({ costs, onSelectUser }) => 
           />
         </div>
 
-        {/* Filters */}
-        <div className="flex items-center space-x-2">
+        {/* Filters + Chargeback Mode + CSV Export */}
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="inline-flex items-center bg-[#181c26] border border-[#282f40] rounded-lg p-0.5 text-xs">
+            <button
+              type="button"
+              onClick={() => setPaygMode('fair_share')}
+              className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
+                paygMode === 'fair_share'
+                  ? 'bg-google-blue text-white shadow-sm'
+                  : 'text-google-gray-400 hover:text-white'
+              }`}
+              title="Distribute 7-day pool overage proportionally across licensed pool users"
+            >
+              Fair Share
+            </button>
+            <button
+              type="button"
+              onClick={() => setPaygMode('when_used')}
+              className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
+                paygMode === 'when_used'
+                  ? 'bg-google-blue text-white shadow-sm'
+                  : 'text-google-gray-400 hover:text-white'
+              }`}
+              title="Attribute PAYG chronologically as the weekly pool exhausts"
+            >
+              When Used
+            </button>
+          </div>
+
           <div className="flex items-center space-x-1.5 bg-[#1a1e28] border border-[#282f40] rounded-lg px-2.5 py-1.5 text-xs text-google-gray-400">
             <Filter className="h-3.5 w-3.5" />
             <select
@@ -87,6 +188,15 @@ export const CostTable: React.FC<CostTableProps> = ({ costs, onSelectUser }) => 
               ))}
             </select>
           </div>
+
+          <button
+            type="button"
+            onClick={handleExportCsv}
+            className="inline-flex items-center space-x-1.5 bg-[#181c26] hover:bg-[#202532] border border-[#282f40] text-google-gray-200 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors"
+          >
+            <Download className="h-3.5 w-3.5" />
+            <span>Export CSV</span>
+          </button>
         </div>
       </div>
 
@@ -180,10 +290,10 @@ export const CostTable: React.FC<CostTableProps> = ({ costs, onSelectUser }) => 
                   </td>
                   <td className="py-3 px-4 text-right font-semibold text-white font-mono">
                     <div>{formatCurrency(r.allocated_cost, r.currency)}</div>
-                    {((r.included_cost ?? 0) > 0 || (r.payg_cost ?? 0) > 0) && (
+                    {(getIncludedCost(r) > 0 || getPaygCost(r) > 0) && (
                       <div className="text-[10px] font-normal text-google-gray-400">
-                        Inc: {formatCurrency(r.included_cost ?? 0, r.currency)} · PAYG:{' '}
-                        {formatCurrency(r.payg_cost ?? 0, r.currency)}
+                        Inc: {formatCurrency(getIncludedCost(r), r.currency)} · PAYG:{' '}
+                        {formatCurrency(getPaygCost(r), r.currency)}
                       </div>
                     )}
                   </td>
@@ -220,3 +330,4 @@ export const CostTable: React.FC<CostTableProps> = ({ costs, onSelectUser }) => 
     </div>
   );
 };
+
