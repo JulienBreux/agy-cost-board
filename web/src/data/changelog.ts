@@ -12,6 +12,28 @@ export interface ChangelogRelease {
 
 export const CHANGELOG_DATA: ChangelogRelease[] = [
   {
+    version: 'v0.10.1',
+    date: 'October 18, 2026',
+    title: 'BigQuery Schema Resilience, Cloud Logging & Distributed Tracing',
+    items: [
+      {
+        title: 'Schema-Safe BigQuery Telemetry Extraction',
+        description:
+          'Fixed Cloud Logging BigQuery sink compatibility where resource.labels uses a global STRUCT<location, resource_container> schema without a .project_id subfield by using TO_JSON_STRING(...) + JSON_VALUE(...) with automatic resource_container extraction.',
+      },
+      {
+        title: 'Google Cloud Logging & Cloud Trace Correlation',
+        description:
+          'Added structured JSON/text logging (log/slog) with automatic Cloud Run detection, X-Cloud-Trace-Context and W3C traceparent header propagation, X-Trace-Id / X-Request-Id response headers, and trace-correlated HTTP error payloads.',
+      },
+      {
+        title: 'Span Instrumentation & Shared Telemetry Cache',
+        description:
+          'Instrumented BigQuery queries, attribution engine calculations, and MCP tool calls with child trace spans and introduced a shared raw-telemetry cache to eliminate redundant BigQuery queries on cold-cache overview requests.',
+      },
+    ],
+  },
+  {
     version: 'v0.10.0',
     date: 'October 18, 2026',
     title: 'FinOps Intelligence Suite: WTU, Shared Pool Simulator, Chargeback, Forecasting & Multi-Project',
