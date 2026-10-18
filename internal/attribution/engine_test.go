@@ -255,6 +255,66 @@ func TestAttributionEngine(t *testing.T) {
 			t.Errorf("expected total spend share around 100%%, got %.2f%%", totalSpendShare)
 		}
 	})
+
+	t.Run("Populates WTU, Included vs PAYG, CacheHitRate, TokenCostShares, ModelEffortStats, and ClientBreakdown", func(t *testing.T) {
+		overview, err := engine.GetOverviewMetrics(ctx, 30)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if overview.TotalWTU <= 0 {
+			t.Errorf("expected TotalWTU > 0, got %d", overview.TotalWTU)
+		}
+		if overview.IncludedCost <= 0 {
+			t.Errorf("expected IncludedCost > 0, got %f", overview.IncludedCost)
+		}
+		if overview.PAYGCost <= 0 {
+			t.Errorf("expected PAYGCost > 0, got %f", overview.PAYGCost)
+		}
+		if overview.TotalCachedTokens <= 0 {
+			t.Errorf("expected TotalCachedTokens > 0, got %d", overview.TotalCachedTokens)
+		}
+		if overview.CacheHitRate <= 0 {
+			t.Errorf("expected CacheHitRate > 0, got %f", overview.CacheHitRate)
+		}
+		if len(overview.TokenCostShares) != 4 {
+			t.Errorf("expected 4 TokenCostShares categories, got %d", len(overview.TokenCostShares))
+		}
+		if len(overview.ModelEffortStats) == 0 {
+			t.Errorf("expected non-empty ModelEffortStats")
+		}
+		if len(overview.ClientBreakdown) == 0 {
+			t.Errorf("expected non-empty ClientBreakdown")
+		}
+
+		entries, err := engine.GetLeaderboard(ctx, 30)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if entries[0].WTU <= 0 {
+			t.Errorf("expected leaderboard top entry WTU > 0, got %d", entries[0].WTU)
+		}
+		if entries[0].CacheHitRate <= 0 {
+			t.Errorf("expected leaderboard top entry CacheHitRate > 0, got %f", entries[0].CacheHitRate)
+		}
+		if entries[0].TopEffort == "" {
+			t.Errorf("expected leaderboard top entry TopEffort to be set")
+		}
+
+		driving, err := engine.GetUserConsumptionDriving(ctx, "alex.turner@google.com", 30, 200.0)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if driving.TotalWTU <= 0 {
+			t.Errorf("expected user driving TotalWTU > 0, got %d", driving.TotalWTU)
+		}
+		if driving.CacheHitRate <= 0 {
+			t.Errorf("expected user driving CacheHitRate > 0, got %f", driving.CacheHitRate)
+		}
+		if driving.TopEffort == "" {
+			t.Errorf("expected user driving TopEffort to be set")
+		}
+	})
 }
+
 
 
