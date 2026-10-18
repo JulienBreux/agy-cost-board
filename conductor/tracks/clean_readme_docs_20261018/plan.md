@@ -12,9 +12,9 @@
 ## Phase 2: Interfaces, Integrations & Deployment Guides (`docs/`)
 - [x] Task: Create `docs/interfaces-and-reference.md` (Web UI, TUI, CLI & REST API Reference)
     - [x] Document the Web Dashboard (two-line header navigation: `Overview`, `Leaderboard`, `My Consumption`, `Attributed Costs`, `Seat Governance`, `Setup & Health`, plus "What's New" and "MCP & Quotas" modals), Interactive TUI (`agy-cost-board tui`), complete CLI Command Reference table & flags, and REST API Reference table (`v0.10.0` fields included).
-- [~] Task: Create `docs/integrations.md` (Antigravity MCP Server, Plugin & CLI Statusline)
-    - [ ] Document the Model Context Protocol (`2025-03-26`) Server (exposed tools, Streamable HTTP `POST /mcp`, Stdio `agy-cost-board mcp`, `AGY_COST_BOARD_MCP_ENABLED` toggle, and `.agents/plugins/agy-cost-board/` plugin bundle) and the Antigravity CLI Statusline Spend Integration (`GET /statusline.sh`, query params, user resolution hierarchy, env vars, Cloud Run IAM Bearer auth, and fail-open caching).
-- [ ] Task: Create `docs/deployment.md` (Cloud Run Deployment & Configuration Reference)
+- [x] Task: Create `docs/integrations.md` (Antigravity MCP Server, Plugin & CLI Statusline)
+    - [x] Document the Model Context Protocol (`2025-03-26`) Server (exposed tools, Streamable HTTP `POST /mcp`, Stdio `agy-cost-board mcp`, `AGY_COST_BOARD_MCP_ENABLED` toggle, and `.agents/plugins/agy-cost-board/` plugin bundle) and the Antigravity CLI Statusline Spend Integration (`GET /statusline.sh`, query params, user resolution hierarchy, env vars, Cloud Run IAM Bearer auth, and fail-open caching).
+- [~] Task: Create `docs/deployment.md` (Cloud Run Deployment & Configuration Reference)
     - [ ] Document One-Click Cloud Run Button deployment (`app.json`), declarative Knative deployment (`deploy.yaml`), manual `gcloud builds submit` & `gcloud run deploy`, IAM / IAP access patterns, and complete `AGY_COST_BOARD_*` environment variable & `.agy-cost-board.yaml` configuration reference.
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Interfaces, Integrations & Deployment Guides (`docs/`)' (Protocol in workflow.md)
 
