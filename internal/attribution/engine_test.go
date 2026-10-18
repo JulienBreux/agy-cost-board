@@ -6,6 +6,7 @@ import (
 
 	"github.com/julienbreux/agy-cost-board/internal/attribution"
 	"github.com/julienbreux/agy-cost-board/internal/bigquery"
+	"github.com/julienbreux/agy-cost-board/internal/domain"
 )
 
 func TestAttributionEngine(t *testing.T) {
@@ -382,6 +383,127 @@ func TestAttributionEngine(t *testing.T) {
 	})
 }
 
+func TestMonitoringQuotaMeterAndForecast(t *testing.T) {
+	t.Run("BuildMonitoringQuotaMeter classifies synced, minor_drift, and diverged", func(t *testing.T) {
+		synced := attribution.BuildMonitoringQuotaMeter(1012000, 1000000)
+		if synced.Status != "synced" || synced.DriftPct != 1.2 || synced.MetricType != attribution.MonitoringQuotaMeterMetric {
+			t.Errorf("expected synced at 1.2%% drift, got %+v", synced)
+		}
 
+		minor := attribution.BuildMonitoringQuotaMeter(1075000, 1000000)
+		if minor.Status != "minor_drift" || minor.DriftPct != 7.5 {
+			t.Errorf("expected minor_drift at 7.5%% drift, got %+v", minor)
+		}
 
+		diverged := attribution.BuildMonitoringQuotaMeter(1250000, 1000000)
+		if diverged.Status != "diverged" || diverged.DriftPct != 25.0 {
+			t.Errorf("expected diverged at 25.0%% drift, got %+v", diverged)
+		}
+	})
 
+	t.Run("ComputeUsageForecast simulates 30-day window-aware spillover and resets", func(t *testing.T) {
+		// Create logs with high daily pool-eligible usage across 3 days so weekly total exceeds 1,000,000 WTU pool limit
+		baseTime := time.Date(2026, 10, 12, 12, 0, 0, 0, time.UTC) // Monday
+		logs := []domain.TelemetryLog{
+			{Timestamp: baseTime, UserID: "alice@example.com", Model: "gemini-3.1-pro", PromptTokens: 100000, CompletionTokens: 30000, QuotaType: "SHARED_POOL"},
+			{Timestamp: baseTime.AddDate(0, 0, 1), UserID: "alice@example.com", Model: "gemini-3.1-pro", PromptTokens: 100000, CompletionTokens: 30000, QuotaType: "SHARED_POOL"},
+			{Timestamp: baseTime.AddDate(0, 0, 2), UserID: "alice@example.com", Model: "gemini-3.1-pro", PromptTokens: 100000, CompletionTokens: 30000, QuotaType: "SHARED_POOL"},
+			{Timestamp: baseTime.AddDate(0, 0, 2), UserID: "alice@example.com", Model: "claude-4.6-sonnet", PromptTokens: 20000, CompletionTokens: 10000, QuotaType: "PAYG"},
+		}
+		pool := &domain.WeeklyAllowancePool{
+			PoolLimitWTU:    1000000,
+			PoolLimitUSD:    2.00,
+			IncludedUsedWTU: 800000,
+			IncludedUsedUSD: 1.60,
+		}
+		licensed := map[string]bool{"alice@example.com": true}
+
+		forecast := attribution.ComputeUsageForecast(logs, pool, licensed)
+		if forecast == nil {
+			t.Fatalf("expected non-nil UsageForecast")
+		}
+		if forecast.HorizonDays != 30 || len(forecast.ForecastDays) != 30 {
+			t.Fatalf("expected 30 forecast days, got %d (%d)", forecast.HorizonDays, len(forecast.ForecastDays))
+		}
+		if forecast.DailyPoolEligibleWTU <= 0 || forecast.DailyAlwaysPAYGWTU <= 0 {
+			t.Errorf("expected positive daily pool-eligible (%d) and always-PAYG (%d) WTU",
+				forecast.DailyPoolEligibleWTU, forecast.DailyAlwaysPAYGWTU)
+		}
+		if !forecast.WillSpilloverInCurrentWindow || forecast.SpilloverDate == "" || forecast.DaysUntilSpillover < 0 {
+			t.Errorf("expected spillover in current window, got willSpillover=%v date=%q days=%d",
+				forecast.WillSpilloverInCurrentWindow, forecast.SpilloverDate, forecast.DaysUntilSpillover)
+		}
+		if forecast.Projected30dTotalWTU <= 0 || forecast.Projected30dTotalUSD <= 0 {
+			t.Errorf("expected positive 30d totals, got WTU=%d USD=%.2f",
+				forecast.Projected30dTotalWTU, forecast.Projected30dTotalUSD)
+		}
+
+		// Verify RecomputeForecastForPool with a much larger pool limit eliminates spillover
+		largePool := &domain.WeeklyAllowancePool{
+			PoolLimitWTU:    50000000,
+			PoolLimitUSD:    100.00,
+			IncludedUsedWTU: 600000,
+			IncludedUsedUSD: 1.20,
+		}
+		recomputed := attribution.RecomputeForecastForPool(forecast, largePool)
+		if recomputed.WillSpilloverInCurrentWindow || recomputed.SpilloverDate != "" || recomputed.DaysUntilSpillover != -1 {
+			t.Errorf("expected no spillover with 50M WTU pool limit, got willSpillover=%v date=%q days=%d",
+				recomputed.WillSpilloverInCurrentWindow, recomputed.SpilloverDate, recomputed.DaysUntilSpillover)
+		}
+	})
+}
+
+func TestEngineFilterByProject(t *testing.T) {
+	ctx := t.Context()
+	provider := bigquery.NewDemoDataProvider()
+	engine := attribution.NewEngine(provider, 1*time.Minute)
+	engine.SetMonitoredProjects([]string{"gcp-ai-platform-prod", "gcp-finops-analytics", "gcp-agent-sandbox"})
+
+	allOverview, err := engine.GetOverviewMetrics(ctx, 30)
+	if err != nil {
+		t.Fatalf("unexpected error for all projects: %v", err)
+	}
+	if allOverview.SelectedProject != "all" {
+		t.Errorf("expected SelectedProject='all', got %q", allOverview.SelectedProject)
+	}
+	if len(allOverview.MonitoredProjects) < 3 {
+		t.Errorf("expected at least 3 MonitoredProjects, got %v", allOverview.MonitoredProjects)
+	}
+	if allOverview.Forecast == nil || len(allOverview.Forecast.ForecastDays) != 30 {
+		t.Errorf("expected 30-day Forecast on OverviewMetrics, got %+v", allOverview.Forecast)
+	}
+	if allOverview.WeeklyPool == nil || allOverview.WeeklyPool.MonitoringMeter == nil {
+		t.Errorf("expected MonitoringMeter on WeeklyPool, got %+v", allOverview.WeeklyPool)
+	}
+
+	scopedEngine := engine.FilterByProject("gcp-ai-platform-prod")
+	prodOverview, err := scopedEngine.GetOverviewMetrics(ctx, 30)
+	if err != nil {
+		t.Fatalf("unexpected error for gcp-ai-platform-prod: %v", err)
+	}
+	if prodOverview.SelectedProject != "gcp-ai-platform-prod" {
+		t.Errorf("expected SelectedProject='gcp-ai-platform-prod', got %q", prodOverview.SelectedProject)
+	}
+	if len(prodOverview.MonitoredProjects) != len(allOverview.MonitoredProjects) {
+		t.Errorf("expected scoped engine to preserve full MonitoredProjects list (%v), got %v",
+			allOverview.MonitoredProjects, prodOverview.MonitoredProjects)
+	}
+	if prodOverview.TotalTokens <= 0 || prodOverview.TotalTokens >= allOverview.TotalTokens {
+		t.Errorf("expected scoped TotalTokens (%d) to be > 0 and < allOverview.TotalTokens (%d)",
+			prodOverview.TotalTokens, allOverview.TotalTokens)
+	}
+	if prodOverview.AssignedSeats <= 0 || prodOverview.AssignedSeats >= allOverview.AssignedSeats {
+		t.Errorf("expected scoped AssignedSeats (%d) to be > 0 and < allOverview.AssignedSeats (%d)",
+			prodOverview.AssignedSeats, allOverview.AssignedSeats)
+	}
+
+	prodCosts, err := scopedEngine.GetAttributedCosts(ctx, 30, "")
+	if err != nil {
+		t.Fatalf("unexpected error for scoped costs: %v", err)
+	}
+	for _, c := range prodCosts {
+		if c.ProjectID != "gcp-ai-platform-prod" {
+			t.Errorf("expected all scoped costs to have ProjectID='gcp-ai-platform-prod', got %q", c.ProjectID)
+		}
+	}
+}

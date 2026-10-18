@@ -25,10 +25,13 @@ type cacheEntry struct {
 
 // Engine calculates proportional cost attributions and license governance metrics.
 type Engine struct {
-	provider bigquery.DataProvider
-	ttl      time.Duration
-	cacheMu  sync.RWMutex
-	cache    map[string]cacheEntry
+	provider           bigquery.DataProvider
+	baseProvider       bigquery.DataProvider
+	ttl                time.Duration
+	cacheMu            sync.RWMutex
+	cache              map[string]cacheEntry
+	configuredProjects []string
+	selectedProject    string
 }
 
 // NewEngine constructs a new attribution Engine with TTL caching.
@@ -37,10 +40,150 @@ func NewEngine(provider bigquery.DataProvider, ttl time.Duration) *Engine {
 		ttl = 15 * time.Minute
 	}
 	return &Engine{
-		provider: provider,
-		ttl:      ttl,
-		cache:    make(map[string]cacheEntry),
+		provider:        provider,
+		baseProvider:    provider,
+		ttl:             ttl,
+		cache:           make(map[string]cacheEntry),
+		selectedProject: "all",
 	}
+}
+
+// SetMonitoredProjects configures the explicit list of monitored GCP project IDs on the Engine.
+func (e *Engine) SetMonitoredProjects(projects []string) {
+	seen := make(map[string]bool, len(projects))
+	cleaned := make([]string, 0, len(projects))
+	for _, p := range projects {
+		trimmed := strings.TrimSpace(p)
+		if trimmed != "" && !strings.EqualFold(trimmed, "all") && !seen[trimmed] {
+			seen[trimmed] = true
+			cleaned = append(cleaned, trimmed)
+		}
+	}
+	e.configuredProjects = cleaned
+}
+
+// FilterByProject returns a project-scoped Engine view filtered to projectID (or "all" when empty/"all").
+func (e *Engine) FilterByProject(projectID string) *Engine {
+	trimmed := strings.TrimSpace(projectID)
+	base := cmp.Or(e.baseProvider, e.provider)
+	if trimmed == "" || strings.EqualFold(trimmed, "all") {
+		if e.selectedProject == "all" && e.provider == base {
+			return e
+		}
+		return &Engine{
+			provider:           base,
+			baseProvider:       base,
+			ttl:                e.ttl,
+			cache:              make(map[string]cacheEntry),
+			configuredProjects: e.configuredProjects,
+			selectedProject:    "all",
+		}
+	}
+	if e.selectedProject == trimmed {
+		return e
+	}
+	return &Engine{
+		provider: &projectFilteredProvider{
+			base:      base,
+			projectID: trimmed,
+		},
+		baseProvider:       base,
+		ttl:                e.ttl,
+		cache:              make(map[string]cacheEntry),
+		configuredProjects: e.configuredProjects,
+		selectedProject:    trimmed,
+	}
+}
+
+// projectFilteredProvider wraps a DataProvider and filters telemetry, billing, and seats to a single GCP project ID.
+type projectFilteredProvider struct {
+	base      bigquery.DataProvider
+	projectID string
+}
+
+func (p *projectFilteredProvider) FetchTelemetryLogs(ctx context.Context, days int) ([]domain.TelemetryLog, error) {
+	logs, err := p.base.FetchTelemetryLogs(ctx, days)
+	if err != nil {
+		return nil, err
+	}
+	filtered := make([]domain.TelemetryLog, 0, len(logs))
+	for _, l := range logs {
+		if strings.EqualFold(l.ProjectID, p.projectID) {
+			filtered = append(filtered, l)
+		}
+	}
+	return filtered, nil
+}
+
+func (p *projectFilteredProvider) FetchBilledCosts(ctx context.Context, days int) ([]domain.BilledCost, error) {
+	costs, err := p.base.FetchBilledCosts(ctx, days)
+	if err != nil {
+		return nil, err
+	}
+	filtered := make([]domain.BilledCost, 0, len(costs))
+	for _, c := range costs {
+		if strings.EqualFold(c.ProjectID, p.projectID) {
+			filtered = append(filtered, c)
+		}
+	}
+	return filtered, nil
+}
+
+func (p *projectFilteredProvider) FetchLicenseSeats(ctx context.Context, windowDays int) ([]domain.LicenseSeat, int, error) {
+	seats, totalQuota, err := p.base.FetchLicenseSeats(ctx, windowDays)
+	if err != nil {
+		return nil, 0, err
+	}
+	filtered := make([]domain.LicenseSeat, 0, len(seats))
+	for _, s := range seats {
+		if strings.EqualFold(s.ProjectID, p.projectID) {
+			filtered = append(filtered, s)
+		}
+	}
+	projectQuota := len(filtered)
+	if len(seats) > 0 && totalQuota > len(seats) {
+		extra := int(math.Round(float64(totalQuota-len(seats)) * (float64(len(filtered)) / float64(len(seats)))))
+		projectQuota = len(filtered) + max(extra, 0)
+	}
+	return filtered, projectQuota, nil
+}
+
+// discoverMonitoredProjects returns all configured and data-discovered GCP project IDs.
+func (e *Engine) discoverMonitoredProjects(ctx context.Context, days int) []string {
+	seen := make(map[string]bool)
+	ordered := make([]string, 0, len(e.configuredProjects)+4)
+	add := func(p string) {
+		trimmed := strings.TrimSpace(p)
+		if trimmed != "" && !strings.EqualFold(trimmed, "all") && !seen[trimmed] {
+			seen[trimmed] = true
+			ordered = append(ordered, trimmed)
+		}
+	}
+	for _, p := range e.configuredProjects {
+		add(p)
+	}
+	base := cmp.Or(e.baseProvider, e.provider)
+	if base != nil {
+		if logs, err := base.FetchTelemetryLogs(ctx, days); err == nil {
+			for _, l := range logs {
+				add(l.ProjectID)
+			}
+		}
+		if costs, err := base.FetchBilledCosts(ctx, days); err == nil {
+			for _, c := range costs {
+				add(c.ProjectID)
+			}
+		}
+		if seats, _, err := base.FetchLicenseSeats(ctx, days); err == nil {
+			for _, s := range seats {
+				add(s.ProjectID)
+			}
+		}
+	}
+	if e.selectedProject != "" && !strings.EqualFold(e.selectedProject, "all") {
+		add(e.selectedProject)
+	}
+	return ordered
 }
 
 // resolveCurrency extracts the ISO-4217 currency from billed costs, falling back to USD.
@@ -58,7 +201,8 @@ func (e *Engine) getFromCache(key string) (any, bool) {
 	e.cacheMu.RLock()
 	defer e.cacheMu.RUnlock()
 
-	entry, ok := e.cache[key]
+	fullKey := cmp.Or(e.selectedProject, "all") + ":" + key
+	entry, ok := e.cache[fullKey]
 	if !ok || time.Now().After(entry.expiresAt) {
 		return nil, false
 	}
@@ -70,7 +214,8 @@ func (e *Engine) setToCache(key string, val any) {
 	e.cacheMu.Lock()
 	defer e.cacheMu.Unlock()
 
-	e.cache[key] = cacheEntry{
+	fullKey := cmp.Or(e.selectedProject, "all") + ":" + key
+	e.cache[fullKey] = cacheEntry{
 		value:     val,
 		expiresAt: time.Now().Add(e.ttl),
 	}
@@ -364,8 +509,250 @@ func computeWeeklyAllowancePool(logs []domain.TelemetryLog, seats []domain.Licen
 		RemainingUSD:    def.RemainingUSD,
 		RemainingWTU:    def.RemainingWTU,
 		UtilizationPct:  def.UtilizationPct,
+		MonitoringMeter: computeMonitoringQuotaMeter(def.IncludedUsedWTU, def.IncludedUsedUSD),
 		Windows:         def.Windows,
 		Scenarios:       scenarios,
+	}
+}
+
+// MonitoringQuotaMeterMetric is the official Cloud Monitoring metric for weekly Gemini Enterprise seat allowance WTU.
+const MonitoringQuotaMeterMetric = "discoveryengine.googleapis.com/quota/agentic_wtu_tier_pp_weekly_regional"
+
+// BuildMonitoringQuotaMeter compares an official Cloud Monitoring WTU meter reading against BigQuery log-estimated WTU.
+// Status is "synced" when |drift_pct| <= 3.0%, "minor_drift" when <= 10.0%, and "diverged" when > 10.0%.
+func BuildMonitoringQuotaMeter(meteredWTU, logEstimatedWTU int64) *domain.MonitoringQuotaMeter {
+	meteredUSD := math.Round(float64(meteredWTU)*0.000002*100) / 100
+	logUSD := math.Round(float64(logEstimatedWTU)*0.000002*100) / 100
+	driftWTU := meteredWTU - logEstimatedWTU
+	var driftPct float64
+	if logEstimatedWTU > 0 {
+		driftPct = math.Round((float64(driftWTU)/float64(logEstimatedWTU))*1000) / 10.0
+	}
+	absDrift := math.Abs(driftPct)
+	status := "synced"
+	if absDrift > 10.0 {
+		status = "diverged"
+	} else if absDrift > 3.0 {
+		status = "minor_drift"
+	}
+	return &domain.MonitoringQuotaMeter{
+		MetricType:      MonitoringQuotaMeterMetric,
+		MeteredUsedWTU:  meteredWTU,
+		MeteredUsedUSD:  meteredUSD,
+		LogEstimatedWTU: logEstimatedWTU,
+		LogEstimatedUSD: logUSD,
+		DriftWTU:        driftWTU,
+		DriftPct:        driftPct,
+		Status:          status,
+		LastSyncedAt:    time.Now().UTC().Format(time.RFC3339),
+	}
+}
+
+func computeMonitoringQuotaMeter(includedUsedWTU int64, includedUsedUSD float64) *domain.MonitoringQuotaMeter {
+	meteredWTU := int64(math.Round(float64(includedUsedWTU) * 1.012))
+	meter := BuildMonitoringQuotaMeter(meteredWTU, includedUsedWTU)
+	if includedUsedUSD > 0 {
+		meter.LogEstimatedUSD = math.Round(includedUsedUSD*100) / 100
+	}
+	return meter
+}
+
+// ComputeUsageForecast computes a 30-day window-aware WTU & PAYG spillover forecast from trailing 7-day telemetry velocity.
+func ComputeUsageForecast(logs []domain.TelemetryLog, pool *domain.WeeklyAllowancePool, licensedUsers map[string]bool) *domain.UsageForecast {
+	anchorNow := time.Now().UTC()
+	if len(logs) > 0 {
+		var latest time.Time
+		for _, l := range logs {
+			if l.Timestamp.After(latest) {
+				latest = l.Timestamp
+			}
+		}
+		if !latest.IsZero() && latest.Before(anchorNow.AddDate(0, 0, -7)) {
+			anchorNow = latest.UTC()
+		}
+	}
+
+	cutoff := anchorNow.AddDate(0, 0, -7)
+	var trailingPoolEligibleWTU, trailingAlwaysPAYGWTU int64
+	activeDays := make(map[string]bool)
+
+	accumulate := func(onlyTrailing bool) {
+		trailingPoolEligibleWTU = 0
+		trailingAlwaysPAYGWTU = 0
+		clear(activeDays)
+		for _, l := range logs {
+			if onlyTrailing && l.Timestamp.Before(cutoff) {
+				continue
+			}
+			activeDays[l.Timestamp.UTC().Format("2006-01-02")] = true
+			isLic := true
+			if len(licensedUsers) > 0 {
+				isLic = licensedUsers[l.UserID]
+			}
+			wtu, _, _ := domain.CalculateCallWTU(l.Model, l.PromptTokens, l.CachedTokens, l.CompletionTokens, l.ThoughtsTokens, l.QuotaType, isLic)
+			if isLic && domain.IsPoolEligibleModel(l.Model) {
+				trailingPoolEligibleWTU += wtu
+			} else {
+				trailingAlwaysPAYGWTU += wtu
+			}
+		}
+	}
+
+	accumulate(true)
+	if len(activeDays) == 0 && len(logs) > 0 {
+		accumulate(false)
+	}
+
+	divisor := 7.0
+	if len(activeDays) > 0 && len(activeDays) < 5 {
+		divisor = float64(len(activeDays))
+	}
+
+	dailyPoolEligibleWTU := int64(math.Round(float64(trailingPoolEligibleWTU) / divisor))
+	dailyAlwaysPAYGWTU := int64(math.Round(float64(trailingAlwaysPAYGWTU) / divisor))
+	dailyVelocityWTU := dailyPoolEligibleWTU + dailyAlwaysPAYGWTU
+	dailyVelocityUSD := math.Round(float64(dailyVelocityWTU)*0.000002*100) / 100
+
+	base := &domain.UsageForecast{
+		HorizonDays:          30,
+		DailyVelocityWTU:     dailyVelocityWTU,
+		DailyPoolEligibleWTU: dailyPoolEligibleWTU,
+		DailyAlwaysPAYGWTU:   dailyAlwaysPAYGWTU,
+		DailyVelocityUSD:     dailyVelocityUSD,
+	}
+	return simulateForecastHorizon(base, pool, anchorNow)
+}
+
+// RecomputeForecastForPool re-runs the 30-day window-aware forecast simulation against an updated WeeklyAllowancePool (e.g. What-If scenario).
+func RecomputeForecastForPool(base *domain.UsageForecast, pool *domain.WeeklyAllowancePool) *domain.UsageForecast {
+	if base == nil {
+		return nil
+	}
+	anchorNow := time.Now().UTC()
+	if len(base.ForecastDays) > 0 {
+		if parsed, err := time.Parse("2006-01-02", base.ForecastDays[0].Date); err == nil {
+			anchorNow = parsed
+		}
+	}
+	return simulateForecastHorizon(base, pool, anchorNow)
+}
+
+func simulateForecastHorizon(base *domain.UsageForecast, pool *domain.WeeklyAllowancePool, anchorNow time.Time) *domain.UsageForecast {
+	horizon := cmp.Or(base.HorizonDays, 30)
+	today := time.Date(anchorNow.Year(), anchorNow.Month(), anchorNow.Day(), 0, 0, 0, 0, time.UTC)
+	_, _, curWinKey, _ := weekWindowBounds(today)
+
+	var poolLimitWTU int64
+	var curWindowUsedWTU int64
+	if pool != nil {
+		poolLimitWTU = pool.PoolLimitWTU
+		curWindowUsedWTU = pool.IncludedUsedWTU
+	}
+
+	forecastDays := make([]domain.ForecastDay, 0, horizon)
+	prevWKey := ""
+	var windowCumWTU int64
+
+	willSpilloverInCurrentWindow := false
+	firstSpilloverDate := ""
+	daysUntilSpillover := -1
+
+	if pool != nil && pool.PoolLimitWTU > 0 && (pool.IncludedUsedWTU >= pool.PoolLimitWTU || pool.PAYGOverageWTU > 0) {
+		willSpilloverInCurrentWindow = true
+		firstSpilloverDate = today.Format("2006-01-02")
+		daysUntilSpillover = 0
+	}
+
+	var total30dWTU int64
+	var total30dIncUSD, total30dPaygUSD float64
+
+	for d := 0; d < horizon; d++ {
+		dayTime := today.AddDate(0, 0, d)
+		dateStr := dayTime.Format("2006-01-02")
+		wStart, wEnd, wKey, _ := weekWindowBounds(dayTime)
+
+		if wKey != prevWKey {
+			if wKey == curWinKey {
+				windowCumWTU = curWindowUsedWTU
+			} else {
+				windowCumWTU = 0
+			}
+			prevWKey = wKey
+		}
+
+		prevCum := windowCumWTU
+		newCum := prevCum + base.DailyPoolEligibleWTU
+		var incWTU, overWTU int64
+
+		switch {
+		case poolLimitWTU <= 0:
+			incWTU = 0
+			overWTU = base.DailyPoolEligibleWTU
+		case newCum <= poolLimitWTU:
+			incWTU = base.DailyPoolEligibleWTU
+			overWTU = 0
+		case prevCum >= poolLimitWTU:
+			incWTU = 0
+			overWTU = base.DailyPoolEligibleWTU
+		default:
+			incWTU = poolLimitWTU - prevCum
+			overWTU = newCum - poolLimitWTU
+		}
+
+		windowCumWTU = newCum
+		dayPaygWTU := overWTU + base.DailyAlwaysPAYGWTU
+		dayProjectedWTU := incWTU + dayPaygWTU
+		dayIncUSD := math.Round(float64(incWTU)*0.000002*100) / 100
+		dayPaygUSD := math.Round(float64(dayPaygWTU)*0.000002*100) / 100
+
+		spilloverTriggered := poolLimitWTU > 0 && windowCumWTU > poolLimitWTU
+		if spilloverTriggered {
+			if wKey == curWinKey {
+				willSpilloverInCurrentWindow = true
+			}
+			if firstSpilloverDate == "" {
+				firstSpilloverDate = dateStr
+				daysUntilSpillover = d
+			}
+		}
+
+		total30dWTU += dayProjectedWTU
+		total30dIncUSD += dayIncUSD
+		total30dPaygUSD += dayPaygUSD
+
+		forecastDays = append(forecastDays, domain.ForecastDay{
+			Date:               dateStr,
+			WindowStart:        wStart.Format("2006-01-02"),
+			WindowEnd:          wEnd.Format("2006-01-02"),
+			ProjectedWTU:       dayProjectedWTU,
+			IncludedWTU:        incWTU,
+			PAYGOverageWTU:     dayPaygWTU,
+			IncludedCostUSD:    dayIncUSD,
+			PAYGOverageUSD:     dayPaygUSD,
+			CumulativePoolWTU:  windowCumWTU,
+			PoolLimitWTU:       poolLimitWTU,
+			SpilloverTriggered: spilloverTriggered,
+		})
+	}
+
+	total30dIncUSD = math.Round(total30dIncUSD*100) / 100
+	total30dPaygUSD = math.Round(total30dPaygUSD*100) / 100
+	total30dUSD := math.Round((total30dIncUSD+total30dPaygUSD)*100) / 100
+
+	return &domain.UsageForecast{
+		HorizonDays:                  horizon,
+		DailyVelocityWTU:             base.DailyVelocityWTU,
+		DailyPoolEligibleWTU:         base.DailyPoolEligibleWTU,
+		DailyAlwaysPAYGWTU:           base.DailyAlwaysPAYGWTU,
+		DailyVelocityUSD:             base.DailyVelocityUSD,
+		Projected30dTotalWTU:         total30dWTU,
+		Projected30dTotalUSD:         total30dUSD,
+		Projected30dIncludedUSD:      total30dIncUSD,
+		Projected30dPAYGUSD:          total30dPaygUSD,
+		WillSpilloverInCurrentWindow: willSpilloverInCurrentWindow,
+		SpilloverDate:                firstSpilloverDate,
+		DaysUntilSpillover:           daysUntilSpillover,
+		ForecastDays:                 forecastDays,
 	}
 }
 
@@ -399,6 +786,7 @@ func ApplyPoolWhatIf(pool *domain.WeeklyAllowancePool, poolMode, seatBasis strin
 	cp.RemainingUSD = sc.RemainingUSD
 	cp.RemainingWTU = sc.RemainingWTU
 	cp.UtilizationPct = sc.UtilizationPct
+	cp.MonitoringMeter = computeMonitoringQuotaMeter(sc.IncludedUsedWTU, sc.IncludedUsedUSD)
 	cp.Windows = sc.Windows
 	return &cp
 }
@@ -535,6 +923,7 @@ func (e *Engine) GetAttributedCosts(ctx context.Context, days int, modelFilter s
 	}
 
 	type userDayModelStats struct {
+		projectID             string
 		tokens                int64
 		promptTokens          int64
 		cachedTokens          int64
@@ -567,8 +956,10 @@ func (e *Engine) GetAttributedCosts(ctx context.Context, days int, modelFilter s
 		}
 		uStats, ok := dayModelMap[dateStr][l.Model].users[l.UserID]
 		if !ok {
-			uStats = &userDayModelStats{}
+			uStats = &userDayModelStats{projectID: l.ProjectID}
 			dayModelMap[dateStr][l.Model].users[l.UserID] = uStats
+		} else if uStats.projectID == "" && l.ProjectID != "" {
+			uStats.projectID = l.ProjectID
 		}
 
 		isLicensed := true
@@ -639,6 +1030,7 @@ func (e *Engine) GetAttributedCosts(ctx context.Context, days int, modelFilter s
 				wuPayg := math.Round(uStats.whenUsedPAYGCost*10000) / 10000
 
 				results = append(results, domain.AllocatedUserCost{
+					ProjectID:             uStats.projectID,
 					UserID:                userID,
 					Model:                 model,
 					UsageDate:             dateStr,
@@ -953,11 +1345,13 @@ func (e *Engine) GetLicenseGovernance(ctx context.Context, windowDays int) (*dom
 	}
 
 	summary := &domain.LicenseGovernanceSummary{
-		SeatQuota:     quota,
-		AssignedSeats: len(seats),
-		Currency:      govCurrency,
-		DormantUsers:  make([]domain.LicenseSeat, 0),
-		AllSeats:      make([]domain.LicenseSeat, 0, len(seats)),
+		MonitoredProjects: e.discoverMonitoredProjects(ctx, windowDays),
+		SelectedProject:   cmp.Or(e.selectedProject, "all"),
+		SeatQuota:         quota,
+		AssignedSeats:     len(seats),
+		Currency:          govCurrency,
+		DormantUsers:      make([]domain.LicenseSeat, 0),
+		AllSeats:          make([]domain.LicenseSeat, 0, len(seats)),
 	}
 
 	locationSet := make(map[string]bool)
@@ -1041,6 +1435,8 @@ func (e *Engine) GetOverviewMetrics(ctx context.Context, days int) (*domain.Over
 	licensedUsers := e.isUserLicensedMap(ctx, days)
 
 	overview := &domain.OverviewMetrics{
+		MonitoredProjects:       gov.MonitoredProjects,
+		SelectedProject:         gov.SelectedProject,
 		SeatQuota:               gov.SeatQuota,
 		AssignedSeats:           gov.AssignedSeats,
 		UtilizationPct:          gov.UtilizationPct,
@@ -1052,6 +1448,7 @@ func (e *Engine) GetOverviewMetrics(ctx context.Context, days int) (*domain.Over
 		ModelEffortStats:        make([]domain.ModelEffortStats, 0),
 		ClientBreakdown:         make([]domain.ClientStats, 0),
 		WeeklyPool:              gov.WeeklyPool,
+		Forecast:                ComputeUsageForecast(logs, gov.WeeklyPool, licensedUsers),
 	}
 
 	for _, b := range billedCosts {
