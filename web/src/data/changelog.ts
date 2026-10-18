@@ -12,6 +12,38 @@ export interface ChangelogRelease {
 
 export const CHANGELOG_DATA: ChangelogRelease[] = [
   {
+    version: 'v0.10.0',
+    date: 'October 18, 2026',
+    title: 'FinOps Intelligence Suite: WTU, Shared Pool Simulator, Chargeback, Forecasting & Multi-Project',
+    items: [
+      {
+        title: 'Weighted Token Units (WTU), Cache Hit Rate & Effort Telemetry',
+        description:
+          'Added Weighted Token Units (1x Input + 0.1x Cached + 3x Thinking + 5x Output), context caching efficiency and USD savings, thinking effort tier breakdowns (Minimal/Low/Medium/High), and client distribution across Web, CLI, TUI, and MCP.',
+      },
+      {
+        title: 'Included Seat Cost vs. PAYG Overage & Weekly Allowance Pool Simulator',
+        description:
+          'Separated fixed Gemini Enterprise subscription costs from variable Vertex AI Pay-As-You-Go overages, with an interactive Weekly Allowance Pool gauge and What-If seat simulator (+5/+10/-5 seats).',
+      },
+      {
+        title: 'Fair-Share vs. When-Used Chargeback & Multi-Tier Licenses',
+        description:
+          'Added live Fair-Share (proportional WTU) vs. When-Used (chronological post-exhaustion) PAYG attribution modes, CSV chargeback export, and multi-tier/multi-location license governance (Enterprise, Standard, Trial across us/eu/global).',
+      },
+      {
+        title: '30-Day Window-Aware Spend Forecast & Cloud Monitoring Meter',
+        description:
+          'Added 30-day projected total spend (fixed renewal + daily PAYG velocity × 30) with confidence intervals, active days, optional Cloud Monitoring token_consumption cross-check badge, and multi-project selector.',
+      },
+      {
+        title: 'Streamlined README & Modular Documentation Hub',
+        description:
+          'Refactored README.md into a concise landing page and introduced a comprehensive 6-part documentation suite in docs/ covering Getting Started, Architecture & FinOps, Interfaces & Reference, Integrations, and Deployment.',
+      },
+    ],
+  },
+  {
     version: 'v0.9.0',
     date: 'October 18, 2026',
     title: 'Developer Leaderboard & Two-Line Navigation Bar',

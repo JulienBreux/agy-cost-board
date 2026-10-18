@@ -58,6 +58,7 @@ changelog:
       - '^test:'
       - '^chore:'
       - '^chore\(release\):'
+      - '^chore\(web\):'
       - '(?i)conductor'
       - 'Merge pull request'
       - 'Merge branch'
