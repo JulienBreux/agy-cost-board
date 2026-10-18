@@ -52,6 +52,17 @@ func (d *DemoDataProvider) FetchTelemetryLogs(ctx context.Context, days int) ([]
 		"claude-5.5-opus-high",
 	}
 
+	efforts := []string{"low", "medium", "high", "max"}
+	clients := []struct {
+		name    string
+		version string
+	}{
+		{"vscode", "2.18.0"},
+		{"jetbrains", "2.14.2"},
+		{"agy-cli", "0.9.3"},
+		{"agy-sdk", "1.4.0"},
+	}
+
 	now := time.Now().UTC()
 	var logs []domain.TelemetryLog
 
@@ -69,16 +80,36 @@ func (d *DemoDataProvider) FetchTelemetryLogs(ctx context.Context, days int) ([]
 			for range numCalls {
 				model := models[rng.IntN(len(models))]
 				promptTokens := int64(rng.IntN(15000) + 1000)
+				cachedTokens := int64(float64(promptTokens) * (0.20 + rng.Float64()*0.50)) // 20% to 70% cache hit
 				completionTokens := int64(rng.IntN(4000) + 200)
+				thoughtsTokens := int64(rng.IntN(2500))
+
+				effort := domain.ExtractEffortLevel(model)
+				if effort == "default" {
+					effort = efforts[rng.IntN(len(efforts))]
+				}
+
+				quotaType := "REGULAR_QUOTA"
+				if rng.Float64() < 0.20 {
+					quotaType = "OVERAGE_QUOTA"
+				}
+
+				client := clients[rng.IntN(len(clients))]
 
 				logs = append(logs, domain.TelemetryLog{
 					Timestamp:        dayTime.Add(time.Duration(rng.IntN(24*3600)) * time.Second),
 					ProjectID:        "agy-prod",
 					UserID:           u,
 					Model:            model,
-					TotalTokens:      promptTokens + completionTokens,
+					TotalTokens:      promptTokens + completionTokens + thoughtsTokens,
 					PromptTokens:     promptTokens,
+					CachedTokens:     cachedTokens,
 					CompletionTokens: completionTokens,
+					ThoughtsTokens:   thoughtsTokens,
+					QuotaType:        quotaType,
+					EffortLevel:      effort,
+					ClientName:       client.name,
+					ClientVersion:    client.version,
 				})
 			}
 		}

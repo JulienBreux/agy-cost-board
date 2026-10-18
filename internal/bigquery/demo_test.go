@@ -24,12 +24,19 @@ func TestDemoDataProvider(t *testing.T) {
 		// Verify distinct users and models exist
 		userMap := make(map[string]bool)
 		modelMap := make(map[string]bool)
-		var totalTokens int64
+		effortMap := make(map[string]bool)
+		clientMap := make(map[string]bool)
+		quotaMap := make(map[string]bool)
+		var totalTokens, totalCachedTokens int64
 
 		for _, l := range logs {
 			userMap[l.UserID] = true
 			modelMap[l.Model] = true
+			effortMap[l.EffortLevel] = true
+			clientMap[l.ClientName] = true
+			quotaMap[l.QuotaType] = true
 			totalTokens += l.TotalTokens
+			totalCachedTokens += l.CachedTokens
 		}
 
 		if len(userMap) < 4 {
@@ -40,6 +47,18 @@ func TestDemoDataProvider(t *testing.T) {
 		}
 		if totalTokens <= 0 {
 			t.Errorf("expected positive total token volume, got %d", totalTokens)
+		}
+		if totalCachedTokens <= 0 {
+			t.Errorf("expected positive cached token volume in demo logs, got %d", totalCachedTokens)
+		}
+		if len(effortMap) < 2 {
+			t.Errorf("expected multiple effort levels in demo logs, got %v", effortMap)
+		}
+		if len(clientMap) < 2 {
+			t.Errorf("expected multiple client names in demo logs, got %v", clientMap)
+		}
+		if !quotaMap["REGULAR_QUOTA"] || !quotaMap["OVERAGE_QUOTA"] {
+			t.Errorf("expected both REGULAR_QUOTA and OVERAGE_QUOTA in demo logs, got %v", quotaMap)
 		}
 	})
 

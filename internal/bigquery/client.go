@@ -54,14 +54,20 @@ func BuildTelemetryQueryForField(table string, days int, payloadField string) st
   labels.model AS model,
   IFNULL(CAST(%s.metadata.totalTokenCount AS INT64), 0) AS total_tokens,
   IFNULL(CAST(%s.metadata.promptTokenCount AS INT64), 0) AS prompt_tokens,
-  IFNULL(CAST(%s.metadata.candidatesTokenCount AS INT64), 0) AS completion_tokens
+  IFNULL(CAST(%s.metadata.cachedContentTokenCount AS INT64), 0) AS cached_tokens,
+  IFNULL(CAST(%s.metadata.candidatesTokenCount AS INT64), 0) AS completion_tokens,
+  IFNULL(CAST(%s.metadata.thoughtsTokenCount AS INT64), 0) AS thoughts_tokens,
+  IFNULL(%s.metadata.quotaType, 'REGULAR_QUOTA') AS quota_type,
+  IFNULL(%s.experience, '') AS experience,
+  IFNULL(labels.client_name, 'antigravity') AS client_name,
+  IFNULL(labels.client_version, '') AS client_version
 FROM
   `+"`%s`"+`
 WHERE
   timestamp >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL %d DAY)
   AND %s.metadata.totalTokenCount IS NOT NULL
 ORDER BY
-  timestamp DESC`, payloadField, payloadField, payloadField, table, days, payloadField)
+  timestamp DESC`, payloadField, payloadField, payloadField, payloadField, payloadField, payloadField, payloadField, table, days, payloadField)
 }
 
 // BuildBillingQuery generates SQL to extract net costs for Gemini & Antigravity SKUs.
@@ -131,7 +137,13 @@ type TelemetryRow struct {
 	Model            string    `bigquery:"model"`
 	TotalTokens      int64     `bigquery:"total_tokens"`
 	PromptTokens     int64     `bigquery:"prompt_tokens"`
+	CachedTokens     int64     `bigquery:"cached_tokens"`
 	CompletionTokens int64     `bigquery:"completion_tokens"`
+	ThoughtsTokens   int64     `bigquery:"thoughts_tokens"`
+	QuotaType        string    `bigquery:"quota_type"`
+	Experience       string    `bigquery:"experience"`
+	ClientName       string    `bigquery:"client_name"`
+	ClientVersion    string    `bigquery:"client_version"`
 }
 
 // BillingRow represents a raw record read from BigQuery billing exports.
@@ -144,6 +156,13 @@ type BillingRow struct {
 
 // MapTelemetryRow transforms a raw BigQuery telemetry row into a domain TelemetryLog.
 func MapTelemetryRow(projectID string, row TelemetryRow) domain.TelemetryLog {
+	effort := domain.ExtractEffortLevel(row.Experience)
+	if effort == "default" {
+		effort = domain.ExtractEffortLevel(row.Model)
+	}
+	quotaType := cmp.Or(strings.TrimSpace(row.QuotaType), "REGULAR_QUOTA")
+	clientName := cmp.Or(strings.TrimSpace(row.ClientName), "antigravity")
+
 	return domain.TelemetryLog{
 		Timestamp:        row.Timestamp,
 		ProjectID:        projectID,
@@ -151,7 +170,13 @@ func MapTelemetryRow(projectID string, row TelemetryRow) domain.TelemetryLog {
 		Model:            row.Model,
 		TotalTokens:      row.TotalTokens,
 		PromptTokens:     row.PromptTokens,
+		CachedTokens:     row.CachedTokens,
 		CompletionTokens: row.CompletionTokens,
+		ThoughtsTokens:   row.ThoughtsTokens,
+		QuotaType:        quotaType,
+		EffortLevel:      effort,
+		ClientName:       clientName,
+		ClientVersion:    strings.TrimSpace(row.ClientVersion),
 	}
 }
 

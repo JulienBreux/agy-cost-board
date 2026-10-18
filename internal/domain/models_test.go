@@ -228,3 +228,82 @@ func TestGenerateOptimizationTips(t *testing.T) {
 		}
 	})
 }
+
+func TestExtractEffortLevel(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"claude-5.5-opus-max", "max"},
+		{"claude-5.5-opus-high", "high"},
+		{"claude-5.5-sonnet-medium", "medium"},
+		{"agentic-coding-low", "low"},
+		{"agentic-coding-minimal", "minimal"},
+		{"agentic-coding-xhigh", "xhigh"},
+		{"gemini-4.0-pro", "default"},
+		{"", "default"},
+	}
+
+	for _, tc := range tests {
+		got := domain.ExtractEffortLevel(tc.input)
+		if got != tc.expected {
+			t.Errorf("ExtractEffortLevel(%q) = %q, want %q", tc.input, got, tc.expected)
+		}
+	}
+}
+
+func TestCalculateCallWTU(t *testing.T) {
+	t.Run("Enforces 50 WTU minimum for tiny licensed Gemini calls", func(t *testing.T) {
+		wtu, included, payg := domain.CalculateCallWTU("gemini-3.8-flash", 10, 0, 5, 0, "REGULAR_QUOTA", true)
+		if wtu != 50 {
+			t.Errorf("expected minimum 50 WTU, got %d", wtu)
+		}
+		if included != 0.0001 {
+			t.Errorf("expected included cost 0.0001, got %f", included)
+		}
+		if payg != 0 {
+			t.Errorf("expected 0 PAYG cost, got %f", payg)
+		}
+	})
+
+	t.Run("Applies 0.5x meter share for Gemini Flash and Argon models", func(t *testing.T) {
+		// 100,000 uncached prompt tokens ($4/1M) + 10,000 output tokens ($20/1M) = $0.40 + $0.20 = $0.60 list
+		// Meter share 0.5 -> $0.30 metered -> 150,000 WTU
+		wtu, included, payg := domain.CalculateCallWTU("gemini-4.0-argon", 100000, 0, 10000, 0, "REGULAR_QUOTA", true)
+		if wtu != 150000 {
+			t.Errorf("expected 150000 WTU, got %d", wtu)
+		}
+		if included != 0.30 {
+			t.Errorf("expected included cost 0.30, got %f", included)
+		}
+		if payg != 0 {
+			t.Errorf("expected 0 PAYG cost, got %f", payg)
+		}
+	})
+
+	t.Run("Routes OVERAGE_QUOTA and Claude calls to PAYG", func(t *testing.T) {
+		_, included, payg := domain.CalculateCallWTU("claude-5.5-opus-max", 10000, 2000, 1000, 500, "REGULAR_QUOTA", true)
+		if included != 0 {
+			t.Errorf("expected Claude calls to have 0 included cost, got %f", included)
+		}
+		if payg <= 0 {
+			t.Errorf("expected positive PAYG cost for Claude, got %f", payg)
+		}
+
+		_, includedOverage, paygOverage := domain.CalculateCallWTU("gemini-4.0-pro", 20000, 5000, 2000, 0, "OVERAGE_QUOTA", true)
+		if includedOverage != 0 {
+			t.Errorf("expected OVERAGE_QUOTA call to have 0 included cost, got %f", includedOverage)
+		}
+		if paygOverage <= 0 {
+			t.Errorf("expected positive PAYG cost for OVERAGE_QUOTA, got %f", paygOverage)
+		}
+	})
+
+	t.Run("NOOP_QUOTA counts as free (0 WTU, 0 cost)", func(t *testing.T) {
+		wtu, included, payg := domain.CalculateCallWTU("gemini-4.0-pro", 10000, 0, 1000, 0, "NOOP_QUOTA", true)
+		if wtu != 0 || included != 0 || payg != 0 {
+			t.Errorf("expected 0 WTU/cost for NOOP_QUOTA, got wtu=%d included=%f payg=%f", wtu, included, payg)
+		}
+	})
+}
+

@@ -29,7 +29,13 @@ type TelemetryLog struct {
 	Model            string    `json:"model"`
 	TotalTokens      int64     `json:"total_tokens"`
 	PromptTokens     int64     `json:"prompt_tokens"`
+	CachedTokens     int64     `json:"cached_tokens"`
 	CompletionTokens int64     `json:"completion_tokens"`
+	ThoughtsTokens   int64     `json:"thoughts_tokens"`
+	QuotaType        string    `json:"quota_type"`
+	EffortLevel      string    `json:"effort_level"`
+	ClientName       string    `json:"client_name"`
+	ClientVersion    string    `json:"client_version"`
 }
 
 // BilledCost represents net billed costs per SKU from Cloud Billing export.
@@ -46,9 +52,14 @@ type AllocatedUserCost struct {
 	Model            string  `json:"model"`
 	UsageDate        string  `json:"usage_date"`
 	UserTokens       int64   `json:"user_tokens"`
+	CachedTokens     int64   `json:"cached_tokens"`
+	CacheHitRate     float64 `json:"cache_hit_rate"`
 	TotalModelTokens int64   `json:"total_model_tokens"`
 	TokenShare       float64 `json:"token_share"`
 	AllocatedCost    float64 `json:"allocated_cost"`
+	WTU              int64   `json:"wtu"`
+	IncludedCost     float64 `json:"included_cost"`
+	PAYGCost         float64 `json:"payg_cost"`
 	Currency         string  `json:"currency"`
 }
 
@@ -70,6 +81,11 @@ type UserCostSummary struct {
 	UserID         string                     `json:"user_id"`
 	TotalTokens    int64                      `json:"total_tokens"`
 	TotalCost      float64                    `json:"total_cost"`
+	WTU            int64                      `json:"wtu"`
+	IncludedCost   float64                    `json:"included_cost"`
+	PAYGCost       float64                    `json:"payg_cost"`
+	CachedTokens   int64                      `json:"cached_tokens"`
+	CacheHitRate   float64                    `json:"cache_hit_rate"`
 	Currency       string                     `json:"currency"`
 	ModelBreakdown map[string]ModelCostDetail `json:"model_breakdown"`
 	LastActive     time.Time                  `json:"last_active"`
@@ -89,11 +105,17 @@ type LeaderboardEntry struct {
 	UserID          string             `json:"user_id"`
 	TotalCost       float64            `json:"total_cost"`
 	ShareOfSpend    float64            `json:"share_of_spend"`
+	WTU             int64              `json:"wtu"`
+	IncludedCost    float64            `json:"included_cost"`
+	PAYGCost        float64            `json:"payg_cost"`
 	TotalTokens     int64              `json:"total_tokens"`
+	CachedTokens    int64              `json:"cached_tokens"`
+	CacheHitRate    float64            `json:"cache_hit_rate"`
 	ShareOfTokens   float64            `json:"share_of_tokens"`
 	ActiveDays      int                `json:"active_days"`
 	CostPer1KTokens float64            `json:"cost_per_1k_tokens"`
 	TopModel        string             `json:"top_model"`
+	TopEffort       string             `json:"top_effort"`
 	ModelBreakdown  map[string]float64 `json:"model_breakdown"`
 	Currency        string             `json:"currency"`
 }
@@ -113,6 +135,44 @@ func (l LeaderboardEntry) ToCSVRow() []string {
 	}
 }
 
+// TokenCostShare compares token volume share vs. dollar cost share across token categories.
+type TokenCostShare struct {
+	Category   string  `json:"category"` // "uncached_input", "cached_input", "output", "thinking"
+	Label      string  `json:"label"`
+	Tokens     int64   `json:"tokens"`
+	TokenShare float64 `json:"token_share"` // percentage 0..100
+	CostUSD    float64 `json:"cost_usd"`
+	CostShare  float64 `json:"cost_share"` // percentage 0..100
+}
+
+// ModelEffortStats holds aggregated metrics grouped by model and thinking effort level.
+type ModelEffortStats struct {
+	Model          string  `json:"model"`
+	EffortLevel    string  `json:"effort_level"`
+	Calls          int     `json:"calls"`
+	TotalTokens    int64   `json:"total_tokens"`
+	PromptTokens   int64   `json:"prompt_tokens"`
+	CachedTokens   int64   `json:"cached_tokens"`
+	ThinkingTokens int64   `json:"thinking_tokens"`
+	CacheHitRate   float64 `json:"cache_hit_rate"`
+	WTU            int64   `json:"wtu"`
+	IncludedCost   float64 `json:"included_cost"`
+	PAYGCost       float64 `json:"payg_cost"`
+	AllocatedCost  float64 `json:"allocated_cost"`
+}
+
+// ClientStats holds aggregated metrics grouped by client name and version.
+type ClientStats struct {
+	ClientName    string  `json:"client_name"`
+	ClientVersion string  `json:"client_version"`
+	Calls         int     `json:"calls"`
+	TotalTokens   int64   `json:"total_tokens"`
+	TokenShare    float64 `json:"token_share"`
+	WTU           int64   `json:"wtu"`
+	IncludedCost  float64 `json:"included_cost"`
+	PAYGCost      float64 `json:"payg_cost"`
+	AllocatedCost float64 `json:"allocated_cost"`
+}
 
 // LicenseSeat tracks the assignment and activity for a developer's seat.
 type LicenseSeat struct {
@@ -138,7 +198,12 @@ type LicenseGovernanceSummary struct {
 // OverviewMetrics holds top-level KPIs for the web dashboard and CLI summary.
 type OverviewMetrics struct {
 	TotalBilledCost         float64                    `json:"total_billed_cost"`
+	TotalWTU                int64                      `json:"total_wtu"`
+	IncludedCost            float64                    `json:"included_cost"`
+	PAYGCost                float64                    `json:"payg_cost"`
 	TotalTokens             int64                      `json:"total_tokens"`
+	TotalCachedTokens       int64                      `json:"total_cached_tokens"`
+	CacheHitRate            float64                    `json:"cache_hit_rate"`
 	ActiveUsersCount        int                        `json:"active_users_count"`
 	SeatQuota               int                        `json:"seat_quota"`
 	AssignedSeats           int                        `json:"assigned_seats"`
@@ -146,18 +211,24 @@ type OverviewMetrics struct {
 	EstimatedMonthlySavings float64                    `json:"estimated_monthly_savings"`
 	DailyTrends             []DailySpendTrend          `json:"daily_trends"`
 	ModelBreakdown          map[string]ModelCostDetail `json:"model_breakdown"`
+	TokenCostShares         []TokenCostShare           `json:"token_cost_shares"`
+	ModelEffortStats        []ModelEffortStats         `json:"model_effort_stats"`
+	ClientBreakdown         []ClientStats              `json:"client_breakdown"`
 	Currency                string                     `json:"currency"`
 }
 
 // DailySpendTrend tracks daily spend and token volume for trend charts.
 type DailySpendTrend struct {
-	Date        string             `json:"date"`
-	TotalCost   float64            `json:"total_cost"`
-	Cost        float64            `json:"cost"`
-	TotalTokens int64              `json:"total_tokens"`
-	Tokens      int64              `json:"tokens"`
-	ActiveUsers int                `json:"active_users"`
-	ByModel     map[string]float64 `json:"by_model,omitempty"`
+	Date         string             `json:"date"`
+	TotalCost    float64            `json:"total_cost"`
+	Cost         float64            `json:"cost"`
+	IncludedCost float64            `json:"included_cost"`
+	PAYGCost     float64            `json:"payg_cost"`
+	WTU          int64              `json:"wtu"`
+	TotalTokens  int64              `json:"total_tokens"`
+	Tokens       int64              `json:"tokens"`
+	ActiveUsers  int                `json:"active_users"`
+	ByModel      map[string]float64 `json:"by_model,omitempty"`
 }
 
 // CalculateProportionalCost calculates token share and allocated cost safely.
@@ -203,7 +274,12 @@ type UserActivityLog struct {
 	Model            string    `json:"model"`
 	TotalTokens      int64     `json:"total_tokens"`
 	PromptTokens     int64     `json:"prompt_tokens"`
+	CachedTokens     int64     `json:"cached_tokens"`
 	CompletionTokens int64     `json:"completion_tokens"`
+	ThoughtsTokens   int64     `json:"thoughts_tokens"`
+	EffortLevel      string    `json:"effort_level"`
+	ClientName       string    `json:"client_name"`
+	WTU              int64     `json:"wtu"`
 	EstimatedCost    float64   `json:"estimated_cost"`
 }
 
@@ -212,7 +288,13 @@ type UserConsumptionDriving struct {
 	UserID                 string               `json:"user_id"`
 	Currency               string               `json:"currency"`
 	TotalSpendInWindow     float64              `json:"total_spend_in_window"`
+	IncludedCost           float64              `json:"included_cost"`
+	PAYGCost               float64              `json:"payg_cost"`
+	TotalWTU               int64                `json:"total_wtu"`
 	TotalTokensInWindow    int64                `json:"total_tokens_in_window"`
+	CachedTokensInWindow   int64                `json:"cached_tokens_in_window"`
+	CacheHitRate           float64              `json:"cache_hit_rate"`
+	TopEffort              string               `json:"top_effort"`
 	DailyBurnRate          float64              `json:"daily_burn_rate"`
 	WeeklyBurnRate         float64              `json:"weekly_burn_rate"`
 	OrgSpendSharePct       float64              `json:"org_spend_share_pct"`
@@ -226,10 +308,13 @@ type UserConsumptionDriving struct {
 
 // PersonalDailyTrend records day-by-day cost and token consumption for a single user.
 type PersonalDailyTrend struct {
-	Date        string             `json:"date"`
-	TotalCost   float64            `json:"total_cost"`
-	TotalTokens int64              `json:"total_tokens"`
-	ByModel     map[string]float64 `json:"by_model"`
+	Date         string             `json:"date"`
+	TotalCost    float64            `json:"total_cost"`
+	IncludedCost float64            `json:"included_cost"`
+	PAYGCost     float64            `json:"payg_cost"`
+	WTU          int64              `json:"wtu"`
+	TotalTokens  int64              `json:"total_tokens"`
+	ByModel      map[string]float64 `json:"by_model"`
 }
 
 // OptimizationTip provides an actionable insight to reduce cost or improve token efficiency.
@@ -239,6 +324,109 @@ type OptimizationTip struct {
 	Description         string  `json:"description"`
 	Severity            string  `json:"severity"` // "info", "warning", "success"
 	EstimatedSavingsUSD float64 `json:"estimated_savings_usd"`
+}
+
+// ExtractEffortLevel extracts the thinking effort level suffix from an experience or model string.
+// Supported levels: minimal, low, medium, high, xhigh, max. Defaults to "default".
+func ExtractEffortLevel(s string) string {
+	lower := strings.ToLower(strings.TrimSpace(s))
+	if lower == "" {
+		return "default"
+	}
+	validLevels := []string{"minimal", "low", "medium", "high", "xhigh", "max"}
+	for _, lvl := range validLevels {
+		if lower == lvl || strings.HasSuffix(lower, "-"+lvl) {
+			return lvl
+		}
+	}
+	return "default"
+}
+
+// modelRateSpec holds list pricing per 1M tokens (USD), WTU meter share, and whether the model is always PAYG.
+type modelRateSpec struct {
+	inputRate   float64
+	cachedRate  float64
+	outputRate  float64
+	meterShare  float64
+	alwaysPAYG  bool
+}
+
+func resolveModelRates(model string, promptTokens int64) modelRateSpec {
+	lower := strings.ToLower(model)
+	switch {
+	case strings.Contains(lower, "claude") && strings.Contains(lower, "opus"):
+		return modelRateSpec{inputRate: 5.00, cachedRate: 0.50, outputRate: 25.00, meterShare: 1.0, alwaysPAYG: true}
+	case strings.Contains(lower, "claude"):
+		return modelRateSpec{inputRate: 3.00, cachedRate: 0.30, outputRate: 15.00, meterShare: 1.0, alwaysPAYG: true}
+	case strings.Contains(lower, "argon"):
+		return modelRateSpec{inputRate: 4.00, cachedRate: 0.20, outputRate: 20.00, meterShare: 0.5, alwaysPAYG: false}
+	case strings.Contains(lower, "flash"):
+		return modelRateSpec{inputRate: 0.50, cachedRate: 0.05, outputRate: 3.00, meterShare: 0.5, alwaysPAYG: false}
+	default: // Gemini Pro or fallback
+		if promptTokens > 200000 {
+			return modelRateSpec{inputRate: 4.00, cachedRate: 0.40, outputRate: 18.00, meterShare: 1.0, alwaysPAYG: false}
+		}
+		return modelRateSpec{inputRate: 2.00, cachedRate: 0.20, outputRate: 12.00, meterShare: 1.0, alwaysPAYG: false}
+	}
+}
+
+// CalculateCallTokenCategoryCosts computes metered USD value per token category (uncached input, cached input, output, thinking).
+func CalculateCallTokenCategoryCosts(model string, promptTokens, cachedTokens, completionTokens, thoughtsTokens int64) (uncachedInputCost, cachedInputCost, outputCost, thinkingCost float64) {
+	if promptTokens < 0 {
+		promptTokens = 0
+	}
+	if cachedTokens < 0 {
+		cachedTokens = 0
+	}
+	if cachedTokens > promptTokens {
+		cachedTokens = promptTokens
+	}
+	if completionTokens < 0 {
+		completionTokens = 0
+	}
+	if thoughtsTokens < 0 {
+		thoughtsTokens = 0
+	}
+
+	rates := resolveModelRates(model, promptTokens)
+	uncachedPrompt := promptTokens - cachedTokens
+
+	uncachedInputCost = (float64(uncachedPrompt) / 1_000_000.0) * rates.inputRate * rates.meterShare
+	cachedInputCost = (float64(cachedTokens) / 1_000_000.0) * rates.cachedRate * rates.meterShare
+	outputCost = (float64(completionTokens) / 1_000_000.0) * rates.outputRate * rates.meterShare
+	thinkingCost = (float64(thoughtsTokens) / 1_000_000.0) * rates.outputRate * rates.meterShare
+
+	return uncachedInputCost, cachedInputCost, outputCost, thinkingCost
+}
+
+// CalculateCallWTU computes Weighted Token Units (WTU), Included Seat Allowance Cost (USD), and PAYG Overage Cost (USD)
+// for a single inference call following Gemini Enterprise's metered model (1M WTU = $2.00, minimum 50 WTU per call).
+func CalculateCallWTU(model string, promptTokens, cachedTokens, completionTokens, thoughtsTokens int64, quotaType string, isLicensed bool) (wtu int64, includedCost, paygCost float64) {
+	if strings.EqualFold(quotaType, "NOOP_QUOTA") {
+		return 0, 0, 0
+	}
+	totalActivity := promptTokens + completionTokens + thoughtsTokens
+	if totalActivity <= 0 {
+		return 0, 0, 0
+	}
+
+	rates := resolveModelRates(model, promptTokens)
+	uCost, cCost, oCost, tCost := CalculateCallTokenCategoryCosts(model, promptTokens, cachedTokens, completionTokens, thoughtsTokens)
+	meteredUSD := uCost + cCost + oCost + tCost
+
+	// 1 WTU = $0.000002 (1M WTU = $2.00), truncated to whole units with 50 WTU minimum
+	rawWTU := int64(meteredUSD / 0.000002)
+	if rawWTU < 50 {
+		rawWTU = 50
+	}
+	wtu = rawWTU
+	effectiveUSD := math.Round(float64(wtu)*0.000002*10000) / 10000
+
+	isPAYG := rates.alwaysPAYG || !isLicensed || strings.EqualFold(quotaType, "OVERAGE_QUOTA")
+	if isPAYG {
+		return wtu, 0.0, effectiveUSD
+	}
+	return wtu, effectiveUSD, 0.0
 }
 
 // CalculateBudgetMetrics computes budget consumption percentage, burn rate projection, and health status.
@@ -333,4 +521,5 @@ func GenerateOptimizationTips(userID string, modelBreakdown map[string]ModelCost
 
 	return tips
 }
+
 

@@ -151,10 +151,16 @@ func TestRowMappers(t *testing.T) {
 		raw := bigquery.TelemetryRow{
 			Timestamp:        now,
 			UserID:           "dev@google.com",
-			Model:            "gemini-1.5-pro",
+			Model:            "gemini-4.0-pro",
 			TotalTokens:      1500,
 			PromptTokens:     1000,
-			CompletionTokens: 500,
+			CachedTokens:     400,
+			CompletionTokens: 300,
+			ThoughtsTokens:   200,
+			QuotaType:        "OVERAGE_QUOTA",
+			Experience:       "agentic-coding-high",
+			ClientName:       "vscode",
+			ClientVersion:    "2.18.0",
 		}
 
 		mapped := bigquery.MapTelemetryRow("my-prj", raw)
@@ -166,6 +172,18 @@ func TestRowMappers(t *testing.T) {
 		}
 		if mapped.TotalTokens != 1500 {
 			t.Errorf("expected 1500 total tokens, got %d", mapped.TotalTokens)
+		}
+		if mapped.CachedTokens != 400 {
+			t.Errorf("expected 400 cached tokens, got %d", mapped.CachedTokens)
+		}
+		if mapped.EffortLevel != "high" {
+			t.Errorf("expected effort level high, got %s", mapped.EffortLevel)
+		}
+		if mapped.QuotaType != "OVERAGE_QUOTA" {
+			t.Errorf("expected OVERAGE_QUOTA, got %s", mapped.QuotaType)
+		}
+		if mapped.ClientName != "vscode" {
+			t.Errorf("expected client_name vscode, got %s", mapped.ClientName)
 		}
 	})
 
