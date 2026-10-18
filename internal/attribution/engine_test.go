@@ -530,5 +530,8 @@ func TestEngineFilterByProject(t *testing.T) {
 	if driving.DailyTrends == nil {
 		t.Errorf("expected non-nil DailyTrends slice on empty project")
 	}
+	if driving.Currency != "EUR" {
+		t.Errorf("expected empty project to preserve native billing currency 'EUR' from baseProvider, got %q", driving.Currency)
+	}
 }
 

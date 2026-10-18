@@ -292,6 +292,26 @@ func resolveCurrency(billedCosts []domain.BilledCost) string {
 	return "USD"
 }
 
+// resolveEngineCurrency extracts the ISO-4217 currency from project-filtered billedCosts,
+// falling back to the unfiltered baseProvider's billing currency before defaulting to USD.
+func (e *Engine) resolveEngineCurrency(ctx context.Context, days int, billedCosts []domain.BilledCost) string {
+	for _, b := range billedCosts {
+		if b.Currency != "" {
+			return b.Currency
+		}
+	}
+	if e.baseProvider != nil && e.baseProvider != e.provider {
+		if baseCosts, err := e.baseProvider.FetchBilledCosts(ctx, days); err == nil {
+			for _, b := range baseCosts {
+				if b.Currency != "" {
+					return b.Currency
+				}
+			}
+		}
+	}
+	return "USD"
+}
+
 // getFromCache retrieves an item from cache if not expired.
 func (e *Engine) getFromCache(key string) (any, bool) {
 	if e.shared == nil {
@@ -990,7 +1010,7 @@ func (e *Engine) GetAttributedCosts(ctx context.Context, days int, modelFilter s
 		assignedPoolLimitUSD = 30.00
 	}
 
-	currency := resolveCurrency(billedCosts)
+	currency := e.resolveEngineCurrency(ctx, days, billedCosts)
 
 	// First pass: compute 7-day window pool eligible USD vs pool overage USD for Fair Share ratio
 	type windowPoolTotals struct {
@@ -1194,8 +1214,9 @@ func (e *Engine) GetUserSummary(ctx context.Context, userID string, days int) (*
 	summaryCurrency := "USD"
 	if len(allCosts) > 0 && allCosts[0].Currency != "" {
 		summaryCurrency = allCosts[0].Currency
-	} else if billedCosts, err := e.provider.FetchBilledCosts(ctx, days); err == nil {
-		summaryCurrency = resolveCurrency(billedCosts)
+	} else {
+		billedCosts, _ := e.provider.FetchBilledCosts(ctx, days)
+		summaryCurrency = e.resolveEngineCurrency(ctx, days, billedCosts)
 	}
 
 	summary := &domain.UserCostSummary{
@@ -1292,8 +1313,9 @@ func (e *Engine) GetLeaderboard(ctx context.Context, days int) ([]domain.Leaderb
 	currency := "USD"
 	if len(allCosts) > 0 && allCosts[0].Currency != "" {
 		currency = allCosts[0].Currency
-	} else if billedCosts, err := e.provider.FetchBilledCosts(ctx, days); err == nil {
-		currency = resolveCurrency(billedCosts)
+	} else {
+		billedCosts, _ := e.provider.FetchBilledCosts(ctx, days)
+		currency = e.resolveEngineCurrency(ctx, days, billedCosts)
 	}
 
 	type userLeaderboardAgg struct {
@@ -1461,10 +1483,8 @@ func (e *Engine) GetLicenseGovernance(ctx context.Context, windowDays int) (_ *d
 
 	logs, _ := e.provider.FetchTelemetryLogs(ctx, windowDays)
 
-	govCurrency := "USD"
-	if billedCosts, err := e.provider.FetchBilledCosts(ctx, windowDays); err == nil {
-		govCurrency = resolveCurrency(billedCosts)
-	}
+	billedCosts, _ := e.provider.FetchBilledCosts(ctx, windowDays)
+	govCurrency := e.resolveEngineCurrency(ctx, windowDays, billedCosts)
 
 	summary := &domain.LicenseGovernanceSummary{
 		MonitoredProjects: e.discoverMonitoredProjects(ctx, windowDays),
@@ -1571,7 +1591,7 @@ func (e *Engine) GetOverviewMetrics(ctx context.Context, days int) (_ *domain.Ov
 		AssignedSeats:           gov.AssignedSeats,
 		UtilizationPct:          gov.UtilizationPct,
 		EstimatedMonthlySavings: gov.EstimatedMonthlySavings,
-		Currency:                resolveCurrency(billedCosts),
+		Currency:                e.resolveEngineCurrency(ctx, days, billedCosts),
 		ModelBreakdown:          make(map[string]domain.ModelCostDetail),
 		DailyTrends:             make([]domain.DailySpendTrend, 0),
 		TokenCostShares:         make([]domain.TokenCostShare, 0, 4),

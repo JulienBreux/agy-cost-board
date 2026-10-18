@@ -94,8 +94,8 @@ FROM
 WHERE
   usage_start_time >= TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL %d DAY)
   AND (
-    REGEXP_CONTAINS(sku.description, r'(?i)gemini|antigravity')
-    OR REGEXP_CONTAINS(service.description, r'(?i)gemini|antigravity')
+    REGEXP_CONTAINS(sku.description, r'(?i)gemini|antigravity|code assist|cloudaicompanion')
+    OR REGEXP_CONTAINS(service.description, r'(?i)gemini|antigravity|code assist|cloudaicompanion')
   )
 GROUP BY
   usage_date, project_id, sku_description, currency
@@ -103,12 +103,24 @@ ORDER BY
   usage_date DESC`, table, days)
 }
 
+// BuildCurrencyQuery generates a lightweight SQL query to detect the billing export's native ISO-4217 currency.
+func BuildCurrencyQuery(table string) string {
+	return fmt.Sprintf(`SELECT
+  currency
+FROM
+  `+"`%s`"+`
+WHERE
+  currency IS NOT NULL AND currency != ''
+LIMIT 1`, table)
+}
+
 // BigQueryClient queries Google Cloud BigQuery for telemetry and billing exports.
 type BigQueryClient struct {
-	client       *bigquery.Client
-	config       ClientConfig
-	mu           sync.Mutex
-	payloadField string
+	client          *bigquery.Client
+	config          ClientConfig
+	mu              sync.Mutex
+	payloadField    string
+	billingCurrency string
 }
 
 // NewBigQueryClient constructs a new BigQuery client with ADC or service account credentials.
@@ -335,6 +347,51 @@ func (c *BigQueryClient) FetchTelemetryLogs(ctx context.Context, days int) (logs
 	return logs, nil
 }
 
+// DetectBillingCurrency queries the billing export table for its native ISO-4217 currency and caches it.
+func (c *BigQueryClient) DetectBillingCurrency(ctx context.Context) string {
+	if c == nil || c.client == nil {
+		return ""
+	}
+
+	c.mu.Lock()
+	if c.billingCurrency != "" {
+		curr := c.billingCurrency
+		c.mu.Unlock()
+		return curr
+	}
+	c.mu.Unlock()
+
+	ctx, span := observability.StartSpan(ctx, "bigquery.detect_billing_currency",
+		slog.String("billing_table", c.config.BillingTable),
+	)
+	var spanErr error
+	defer func() { span.End(spanErr) }()
+
+	sql := BuildCurrencyQuery(c.config.BillingTable)
+	it, err := c.client.Query(sql).Read(ctx)
+	if err != nil {
+		spanErr = err
+		return ""
+	}
+
+	var row struct {
+		Currency string `bigquery:"currency"`
+	}
+	if err := it.Next(&row); err != nil && !errors.Is(err, iterator.Done) {
+		spanErr = err
+		return ""
+	}
+
+	detected := strings.TrimSpace(row.Currency)
+	if detected != "" {
+		span.AddAttrs(slog.String("currency", detected))
+		c.mu.Lock()
+		c.billingCurrency = detected
+		c.mu.Unlock()
+	}
+	return detected
+}
+
 // FetchBilledCosts executes the billing query and returns net billed cost records.
 func (c *BigQueryClient) FetchBilledCosts(ctx context.Context, days int) (costs []domain.BilledCost, retErr error) {
 	ctx, span := observability.StartSpan(ctx, "bigquery.fetch_billed_costs",
@@ -364,7 +421,27 @@ func (c *BigQueryClient) FetchBilledCosts(ctx context.Context, days int) (costs 
 			return nil, fmt.Errorf("read billing row: %w", err)
 		}
 
-		costs = append(costs, MapBillingRow(row))
+		mapped := MapBillingRow(row)
+		if mapped.Currency != "" {
+			c.mu.Lock()
+			if c.billingCurrency == "" {
+				c.billingCurrency = mapped.Currency
+			}
+			c.mu.Unlock()
+		}
+		costs = append(costs, mapped)
+	}
+
+	// If no Gemini/Antigravity SKU rows matched in the window, preserve the billing account's native currency
+	// via a zero-cost anchor row so downstream views still render EUR/GBP/JPY/etc. instead of falling back to USD.
+	if len(costs) == 0 {
+		if curr := c.DetectBillingCurrency(ctx); curr != "" {
+			costs = append(costs, domain.BilledCost{
+				ProjectID: c.config.ProjectID,
+				NetCost:   0,
+				Currency:  curr,
+			})
+		}
 	}
 
 	return costs, nil

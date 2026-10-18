@@ -74,6 +74,17 @@ func TestQueryBuilders(t *testing.T) {
 			t.Errorf("query does not default to 30 days: %s", defaultQuery)
 		}
 	})
+
+	t.Run("BuildCurrencyQuery generates valid SQL for native currency detection", func(t *testing.T) {
+		table := "my-project.billing.gcp_billing_export_v1_000000"
+		query := bigquery.BuildCurrencyQuery(table)
+		if !strings.Contains(query, "`my-project.billing.gcp_billing_export_v1_000000`") {
+			t.Errorf("currency query does not contain billing table name: %s", query)
+		}
+		if !strings.Contains(query, "SELECT\n  currency") || !strings.Contains(query, "LIMIT 1") {
+			t.Errorf("currency query missing expected SELECT currency / LIMIT 1: %s", query)
+		}
+	})
 }
 
 func TestClientConfigValidation(t *testing.T) {

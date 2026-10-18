@@ -62,7 +62,7 @@ export const WeeklyAllowancePoolCard: React.FC<Props> = ({ pool, currency = 'USD
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                Gemini Enterprise 7-day floating allowance pool ($2.50/wk Standard · $3.75/wk Plus) &amp; What-If simulator
+                Gemini Enterprise 7-day floating allowance pool ({formatCurrency(2.5, currency)}/wk Standard · {formatCurrency(3.75, currency)}/wk Plus) &amp; What-If simulator
               </p>
             </div>
           </div>

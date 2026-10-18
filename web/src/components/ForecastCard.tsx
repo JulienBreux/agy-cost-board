@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { TrendingUp, Calendar, AlertTriangle, CheckCircle2, RefreshCw } from 'lucide-react';
 import { UsageForecast } from '../api';
-import { formatCurrency } from '../utils/currency';
+import { formatCurrency, getCurrencySymbol } from '../utils/currency';
 
 interface Props {
   forecast?: UsageForecast;
@@ -87,7 +87,7 @@ export const ForecastCard: React.FC<Props> = ({ forecast, currency = 'USD' }) =>
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              $ USD
+              {getCurrencySymbol(currency)} {currency}
             </button>
             <button
               type="button"

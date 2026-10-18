@@ -12,6 +12,23 @@ export interface ChangelogRelease {
 
 export const CHANGELOG_DATA: ChangelogRelease[] = [
   {
+    version: 'v0.10.3',
+    date: 'October 18, 2026',
+    title: 'Native Billing Currency Preservation Across Project Filters',
+    items: [
+      {
+        title: 'Project-Scoped Currency Inheritance & BigQuery Currency Fallback',
+        description:
+          'Preserved native billing currency (EUR, GBP, JPY, CAD, AUD, USD) when filtering by a GCP project with zero project-scoped billing rows or when zero AI SKU rows match in the window by falling back to the billing account export currency.',
+      },
+      {
+        title: 'Dynamic Currency Symbols in Forecast & Weekly Pool Cards',
+        description:
+          'Replaced remaining hardcoded USD labels in the Linear Regression Forecast unit toggle and Weekly Allowance Pool subtitle with dynamic currency symbols and formatting.',
+      },
+    ],
+  },
+  {
     version: 'v0.10.2',
     date: 'October 18, 2026',
     title: 'Project Filter Resilience & My Consumption Zero-Activity Support',
