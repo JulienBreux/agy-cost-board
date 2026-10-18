@@ -64,17 +64,18 @@ export function formatCurrency(
   currency?: string | null,
   options?: Intl.NumberFormatOptions
 ): string {
+  const safeAmount = Number(amount ?? 0);
   const code = normalizeCurrency(currency);
   try {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: code,
       ...options,
-    }).format(amount);
+    }).format(safeAmount);
   } catch {
     // If Intl.NumberFormat fails on an invalid currency code, fall back to USD or manual formatting
     const symbol = getCurrencySymbol(code);
-    return `${symbol}${amount.toLocaleString('en-US', {
+    return `${symbol}${safeAmount.toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
       ...options,

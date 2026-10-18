@@ -125,4 +125,52 @@ describe('TokensEffortClientSection Component', () => {
     );
     expect(container.firstChild).toBeNull();
   });
+
+  it('handles raw Go backend JSON field names (total_tokens, allocated_cost, cost_usd, label, token_share) without throwing', () => {
+    render(
+      <TokensEffortClientSection
+        tokenCostShares={[
+          {
+            category: 'uncached_input',
+            label: 'Uncached Input',
+            tokens: 850,
+            token_share: 55.5,
+            cost_usd: 14.25,
+            cost_share: 32.1,
+          },
+        ]}
+        modelEffortStats={[
+          {
+            model: 'gemini-2.5-pro',
+            effort_level: 'high',
+            calls: 12,
+            total_tokens: 950,
+            cached_tokens: 400,
+            cache_hit_rate: 42.1,
+            wtu: 1850,
+            included_cost: 10.0,
+            payg_cost: 4.25,
+            allocated_cost: 14.25,
+          },
+        ]}
+        clientBreakdown={[
+          {
+            client_name: 'vscode',
+            calls: 12,
+            total_tokens: 950,
+            wtu: 1850,
+            allocated_cost: 14.25,
+            token_share: 100.0,
+          },
+        ]}
+        currency="USD"
+      />
+    );
+
+    expect(screen.getByText('Uncached Input')).toBeInTheDocument();
+    expect(screen.getByText(/850 tok/)).toBeInTheDocument();
+    expect(screen.getByText('950')).toBeInTheDocument();
+    expect(screen.getByText(/950 tok/)).toBeInTheDocument();
+    expect(screen.getByText('100.0%')).toBeInTheDocument();
+  });
 });

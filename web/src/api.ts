@@ -19,9 +19,11 @@ export interface ModelDetail {
 
 export interface TokenCostShare {
   category: string;
+  label?: string;
   tokens: number;
   token_share: number;
-  cost: number;
+  cost?: number;
+  cost_usd?: number;
   cost_share: number;
 }
 
@@ -29,22 +31,32 @@ export interface ModelEffortStats {
   model: string;
   effort_level: string;
   calls: number;
-  tokens: number;
+  tokens?: number;
+  total_tokens?: number;
+  prompt_tokens?: number;
   cached_tokens: number;
+  thinking_tokens?: number;
   cache_hit_rate: number;
   wtu: number;
   included_cost: number;
   payg_cost: number;
-  total_cost: number;
+  total_cost?: number;
+  allocated_cost?: number;
 }
 
 export interface ClientStats {
   client_name: string;
+  client_version?: string;
   calls: number;
-  tokens: number;
+  tokens?: number;
+  total_tokens?: number;
+  token_share?: number;
   wtu: number;
-  total_cost: number;
-  share_of_cost: number;
+  included_cost?: number;
+  payg_cost?: number;
+  total_cost?: number;
+  allocated_cost?: number;
+  share_of_cost?: number;
 }
 
 export interface OverviewMetrics {
