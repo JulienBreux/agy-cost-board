@@ -51,4 +51,9 @@ The main goal is to track the allocation of Gemini Enterprise licenses for a pro
 - Runtime toggleable via `AGY_COST_BOARD_MCP_ENABLED` (plus YAML `mcp_enabled` and `--mcp-enabled`).
 - Ships a native Antigravity plugin bundle (`.agents/plugins/agy-cost-board/`) and an interactive **MCP & Quotas** modal in the Web UI.
 
+### 8. Developer Consumption Leaderboard & Two-Line Navigation
+- **Two-Line Web Header:** Separates Brand + Global Utility Controls (Line 1) from a dedicated horizontal navigation bar (Line 2: `Overview`, `Leaderboard`, `My Consumption`, `Attributed Costs`, `Seat Governance`, `Setup & Health`).
+- **Developer Leaderboard:** Aggregates per-developer spend, spend share %, total tokens, token share %, active days, cost per 1K tokens efficiency, top model, and model mix across Web (`LeaderboardView` with Top 3 Podium cards & ranked table), CLI (`agy-cost-board leaderboard`), and interactive TUI (`[2] LEADERBOARD` tab).
+
+
 

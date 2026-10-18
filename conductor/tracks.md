@@ -42,7 +42,7 @@
 
 ---
 
-- [ ] **Track: Create a leaderboard of users, we gonna take the oppotunity to refine the navigation. Put Overview, Leaderboard, My Consumption and Attributed Cost to a second navigation line.**
+- [x] **Track: Create a leaderboard of users, we gonna take the oppotunity to refine the navigation. Put Overview, Leaderboard, My Consumption and Attributed Cost to a second navigation line.**
   *Link: [./tracks/leaderboard_nav_20261018/index.md](./tracks/leaderboard_nav_20261018/index.md)*
 
 
