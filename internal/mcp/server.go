@@ -4,12 +4,15 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"strings"
 
 	"github.com/julienbreux/agy-cost-board/internal/attribution"
+	"github.com/julienbreux/agy-cost-board/internal/observability"
 )
 
 // ProtocolVersion is the Model Context Protocol specification version supported by this server.
@@ -198,7 +201,19 @@ func (s *Server) ServeStdio(ctx context.Context, r io.Reader, w io.Writer) error
 			continue
 		}
 
-		resp, hasResponse := s.HandleMessage(ctx, []byte(line))
+		msgCtx := ctx
+		if _, ok := observability.TraceFromContext(msgCtx); !ok {
+			spanID := observability.NewSpanID()
+			msgCtx = observability.WithTrace(msgCtx, observability.TraceInfo{
+				TraceID:    observability.NewTraceID(),
+				SpanID:     spanID,
+				Sampled:    true,
+				RequestID:  spanID,
+				EntryPoint: "mcp-stdio",
+			})
+		}
+
+		resp, hasResponse := s.HandleMessage(msgCtx, []byte(line))
 		if !hasResponse {
 			continue
 		}
@@ -333,7 +348,7 @@ type toolCallParams struct {
 	Arguments map[string]any `json:"arguments"`
 }
 
-func (s *Server) handleToolCall(ctx context.Context, rawParams json.RawMessage) ToolResult {
+func (s *Server) handleToolCall(ctx context.Context, rawParams json.RawMessage) (res ToolResult) {
 	var params toolCallParams
 	if len(rawParams) > 0 {
 		if err := json.Unmarshal(rawParams, &params); err != nil {
@@ -347,6 +362,18 @@ func (s *Server) handleToolCall(ctx context.Context, rawParams json.RawMessage) 
 	}
 
 	project := stringArg(args, "project", "")
+	ctx, span := observability.StartSpan(ctx, "mcp.tool_call",
+		slog.String("tool", params.Name),
+		slog.String("project", project),
+	)
+	var spanErr error
+	defer func() {
+		if res.IsError && spanErr == nil && len(res.Content) > 0 {
+			spanErr = errors.New(res.Content[0].Text)
+		}
+		span.End(spanErr)
+	}()
+
 	engine := s.engine.FilterByProject(project)
 
 	switch params.Name {
@@ -354,6 +381,7 @@ func (s *Server) handleToolCall(ctx context.Context, rawParams json.RawMessage) 
 		days := intArg(args, "days", 30)
 		metrics, err := engine.GetOverviewMetrics(ctx, days)
 		if err != nil {
+			spanErr = err
 			return errorToolResult(fmt.Sprintf("failed to get overview metrics: %v", err))
 		}
 		poolMode := stringArg(args, "pool_mode", "")
@@ -370,6 +398,7 @@ func (s *Server) handleToolCall(ctx context.Context, rawParams json.RawMessage) 
 		days := intArg(args, "days", 30)
 		gov, err := engine.GetLicenseGovernance(ctx, days)
 		if err != nil {
+			spanErr = err
 			return errorToolResult(fmt.Sprintf("failed to get license governance: %v", err))
 		}
 		poolMode := stringArg(args, "pool_mode", "")
@@ -387,6 +416,7 @@ func (s *Server) handleToolCall(ctx context.Context, rawParams json.RawMessage) 
 		paygMode := stringArg(args, "payg_mode", "")
 		costs, err := engine.GetAttributedCosts(ctx, days, model)
 		if err != nil {
+			spanErr = err
 			return errorToolResult(fmt.Sprintf("failed to get attributed user costs: %v", err))
 		}
 		if paygMode != "" {
@@ -403,6 +433,7 @@ func (s *Server) handleToolCall(ctx context.Context, rawParams json.RawMessage) 
 		budget := floatArg(args, "monthly_budget", 150.0)
 		driving, err := engine.GetUserConsumptionDriving(ctx, userID, days, budget)
 		if err != nil {
+			spanErr = err
 			return errorToolResult(fmt.Sprintf("failed to get user dashboard for %q: %v", userID, err))
 		}
 		summary, _ := engine.GetUserSummary(ctx, userID, days)

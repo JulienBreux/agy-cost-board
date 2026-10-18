@@ -4,6 +4,7 @@ import (
 	"cmp"
 	"context"
 	"fmt"
+	"log/slog"
 	"math"
 	"slices"
 	"strings"
@@ -12,6 +13,7 @@ import (
 
 	"github.com/julienbreux/agy-cost-board/internal/bigquery"
 	"github.com/julienbreux/agy-cost-board/internal/domain"
+	"github.com/julienbreux/agy-cost-board/internal/observability"
 )
 
 // Standard license seat cost per month in USD used for savings estimates.
@@ -23,13 +25,17 @@ type cacheEntry struct {
 	expiresAt time.Time
 }
 
+type sharedCache struct {
+	mu      sync.RWMutex
+	entries map[string]cacheEntry
+}
+
 // Engine calculates proportional cost attributions and license governance metrics.
 type Engine struct {
 	provider           bigquery.DataProvider
 	baseProvider       bigquery.DataProvider
 	ttl                time.Duration
-	cacheMu            sync.RWMutex
-	cache              map[string]cacheEntry
+	shared             *sharedCache
 	configuredProjects []string
 	selectedProject    string
 }
@@ -39,13 +45,102 @@ func NewEngine(provider bigquery.DataProvider, ttl time.Duration) *Engine {
 	if ttl <= 0 {
 		ttl = 15 * time.Minute
 	}
+	sc := &sharedCache{
+		entries: make(map[string]cacheEntry),
+	}
+	var wrapped bigquery.DataProvider
+	if provider != nil {
+		wrapped = &cachedDataProvider{
+			base:   provider,
+			ttl:    ttl,
+			shared: sc,
+		}
+	}
 	return &Engine{
-		provider:        provider,
-		baseProvider:    provider,
+		provider:        wrapped,
+		baseProvider:    wrapped,
 		ttl:             ttl,
-		cache:           make(map[string]cacheEntry),
+		shared:          sc,
 		selectedProject: "all",
 	}
+}
+
+type cachedSeatsResult struct {
+	seats []domain.LicenseSeat
+	quota int
+}
+
+// cachedDataProvider wraps a raw DataProvider with TTL caching so multi-step attribution
+// workflows (e.g. GetOverviewMetrics) only query BigQuery once per time window.
+type cachedDataProvider struct {
+	base   bigquery.DataProvider
+	ttl    time.Duration
+	shared *sharedCache
+}
+
+func (c *cachedDataProvider) get(key string) (any, bool) {
+	if c.shared == nil {
+		return nil, false
+	}
+	c.shared.mu.RLock()
+	defer c.shared.mu.RUnlock()
+	entry, ok := c.shared.entries[key]
+	if !ok || time.Now().After(entry.expiresAt) {
+		return nil, false
+	}
+	return entry.value, true
+}
+
+func (c *cachedDataProvider) set(key string, val any) {
+	if c.shared == nil {
+		return
+	}
+	c.shared.mu.Lock()
+	defer c.shared.mu.Unlock()
+	c.shared.entries[key] = cacheEntry{
+		value:     val,
+		expiresAt: time.Now().Add(c.ttl),
+	}
+}
+
+func (c *cachedDataProvider) FetchTelemetryLogs(ctx context.Context, days int) ([]domain.TelemetryLog, error) {
+	key := fmt.Sprintf("raw:telemetry:%d", days)
+	if val, ok := c.get(key); ok {
+		return val.([]domain.TelemetryLog), nil
+	}
+	logs, err := c.base.FetchTelemetryLogs(ctx, days)
+	if err != nil {
+		return nil, err
+	}
+	c.set(key, logs)
+	return logs, nil
+}
+
+func (c *cachedDataProvider) FetchBilledCosts(ctx context.Context, days int) ([]domain.BilledCost, error) {
+	key := fmt.Sprintf("raw:billing:%d", days)
+	if val, ok := c.get(key); ok {
+		return val.([]domain.BilledCost), nil
+	}
+	costs, err := c.base.FetchBilledCosts(ctx, days)
+	if err != nil {
+		return nil, err
+	}
+	c.set(key, costs)
+	return costs, nil
+}
+
+func (c *cachedDataProvider) FetchLicenseSeats(ctx context.Context, windowDays int) ([]domain.LicenseSeat, int, error) {
+	key := fmt.Sprintf("raw:seats:%d", windowDays)
+	if val, ok := c.get(key); ok {
+		res := val.(cachedSeatsResult)
+		return res.seats, res.quota, nil
+	}
+	seats, quota, err := c.base.FetchLicenseSeats(ctx, windowDays)
+	if err != nil {
+		return nil, 0, err
+	}
+	c.set(key, cachedSeatsResult{seats: seats, quota: quota})
+	return seats, quota, nil
 }
 
 // SetMonitoredProjects configures the explicit list of monitored GCP project IDs on the Engine.
@@ -74,7 +169,7 @@ func (e *Engine) FilterByProject(projectID string) *Engine {
 			provider:           base,
 			baseProvider:       base,
 			ttl:                e.ttl,
-			cache:              make(map[string]cacheEntry),
+			shared:             e.shared,
 			configuredProjects: e.configuredProjects,
 			selectedProject:    "all",
 		}
@@ -89,7 +184,7 @@ func (e *Engine) FilterByProject(projectID string) *Engine {
 		},
 		baseProvider:       base,
 		ttl:                e.ttl,
-		cache:              make(map[string]cacheEntry),
+		shared:             e.shared,
 		configuredProjects: e.configuredProjects,
 		selectedProject:    trimmed,
 	}
@@ -198,11 +293,14 @@ func resolveCurrency(billedCosts []domain.BilledCost) string {
 
 // getFromCache retrieves an item from cache if not expired.
 func (e *Engine) getFromCache(key string) (any, bool) {
-	e.cacheMu.RLock()
-	defer e.cacheMu.RUnlock()
+	if e.shared == nil {
+		return nil, false
+	}
+	e.shared.mu.RLock()
+	defer e.shared.mu.RUnlock()
 
 	fullKey := cmp.Or(e.selectedProject, "all") + ":" + key
-	entry, ok := e.cache[fullKey]
+	entry, ok := e.shared.entries[fullKey]
 	if !ok || time.Now().After(entry.expiresAt) {
 		return nil, false
 	}
@@ -211,11 +309,14 @@ func (e *Engine) getFromCache(key string) (any, bool) {
 
 // setToCache stores an item in cache with TTL.
 func (e *Engine) setToCache(key string, val any) {
-	e.cacheMu.Lock()
-	defer e.cacheMu.Unlock()
+	if e.shared == nil {
+		return
+	}
+	e.shared.mu.Lock()
+	defer e.shared.mu.Unlock()
 
 	fullKey := cmp.Or(e.selectedProject, "all") + ":" + key
-	e.cache[fullKey] = cacheEntry{
+	e.shared.entries[fullKey] = cacheEntry{
 		value:     val,
 		expiresAt: time.Now().Add(e.ttl),
 	}
@@ -841,11 +942,23 @@ func (e *Engine) isUserLicensedMap(ctx context.Context, days int) map[string]boo
 }
 
 // GetAttributedCosts computes proportional costs per user, date, and model, including Fair Share and When Used PAYG attribution.
-func (e *Engine) GetAttributedCosts(ctx context.Context, days int, modelFilter string) ([]domain.AllocatedUserCost, error) {
+func (e *Engine) GetAttributedCosts(ctx context.Context, days int, modelFilter string) (results []domain.AllocatedUserCost, retErr error) {
+	ctx, span := observability.StartSpan(ctx, "attribution.get_attributed_costs",
+		slog.Int("days", days),
+		slog.String("model_filter", modelFilter),
+		slog.String("project", cmp.Or(e.selectedProject, "all")),
+	)
+	defer func() {
+		span.AddAttrs(slog.Int("record_count", len(results)))
+		span.End(retErr)
+	}()
+
 	cacheKey := fmt.Sprintf("costs_%d_%s", days, modelFilter)
 	if val, ok := e.getFromCache(cacheKey); ok {
+		span.AddAttrs(slog.Bool("cache_hit", true))
 		return val.([]domain.AllocatedUserCost), nil
 	}
+	span.AddAttrs(slog.Bool("cache_hit", false))
 
 	logs, err := e.provider.FetchTelemetryLogs(ctx, days)
 	if err != nil {
@@ -999,8 +1112,6 @@ func (e *Engine) GetAttributedCosts(ctx context.Context, days int, modelFilter s
 		dayModelMap[dateStr][l.Model].totalTokens += l.TotalTokens
 		dayTotalTokens[dateStr] += l.TotalTokens
 	}
-
-	var results []domain.AllocatedUserCost
 
 	for dateStr, modelMap := range dayModelMap {
 		dayCost := dailyBilled[dateStr]
@@ -1326,11 +1437,19 @@ func (e *Engine) GetLeaderboard(ctx context.Context, days int) ([]domain.Leaderb
 }
 
 // GetLicenseGovernance computes seat quotas, multi-tier/location breakdowns, active vs dormant licenses, and the Weekly Allowance Pool.
-func (e *Engine) GetLicenseGovernance(ctx context.Context, windowDays int) (*domain.LicenseGovernanceSummary, error) {
+func (e *Engine) GetLicenseGovernance(ctx context.Context, windowDays int) (_ *domain.LicenseGovernanceSummary, retErr error) {
+	ctx, span := observability.StartSpan(ctx, "attribution.get_license_governance",
+		slog.Int("window_days", windowDays),
+		slog.String("project", cmp.Or(e.selectedProject, "all")),
+	)
+	defer func() { span.End(retErr) }()
+
 	cacheKey := fmt.Sprintf("governance_%d", windowDays)
 	if val, ok := e.getFromCache(cacheKey); ok {
+		span.AddAttrs(slog.Bool("cache_hit", true))
 		return val.(*domain.LicenseGovernanceSummary), nil
 	}
+	span.AddAttrs(slog.Bool("cache_hit", false))
 
 	seats, quota, err := e.provider.FetchLicenseSeats(ctx, windowDays)
 	if err != nil {
@@ -1406,11 +1525,19 @@ func (e *Engine) GetLicenseGovernance(ctx context.Context, windowDays int) (*dom
 }
 
 // GetOverviewMetrics compiles top KPIs, daily trends, model distributions, and Weekly Allowance Pool for dashboards.
-func (e *Engine) GetOverviewMetrics(ctx context.Context, days int) (*domain.OverviewMetrics, error) {
+func (e *Engine) GetOverviewMetrics(ctx context.Context, days int) (_ *domain.OverviewMetrics, retErr error) {
+	ctx, span := observability.StartSpan(ctx, "attribution.get_overview_metrics",
+		slog.Int("days", days),
+		slog.String("project", cmp.Or(e.selectedProject, "all")),
+	)
+	defer func() { span.End(retErr) }()
+
 	cacheKey := fmt.Sprintf("overview_%d", days)
 	if val, ok := e.getFromCache(cacheKey); ok {
+		span.AddAttrs(slog.Bool("cache_hit", true))
 		return val.(*domain.OverviewMetrics), nil
 	}
+	span.AddAttrs(slog.Bool("cache_hit", false))
 
 	allCosts, err := e.GetAttributedCosts(ctx, days, "")
 	if err != nil {

@@ -85,6 +85,8 @@ Launch the full-screen keyboard-driven terminal dashboard:
 | `--format` | — | `table` | CLI output format (`table`, `json`, `csv`) |
 | `--demo` | `AGY_COST_BOARD_DEMO` | `false` | Use offline synthetic multi-project demonstration data |
 | `--mcp-enabled` | `AGY_COST_BOARD_MCP_ENABLED` | `true` | Enable or disable the built-in MCP server (`/mcp` and `mcp` subcommand) |
+| `--log-level` | `AGY_COST_BOARD_LOG_LEVEL` | `info` | Log verbosity level (`debug`, `info`, `warn`, `error`) |
+| `--log-format` | `AGY_COST_BOARD_LOG_FORMAT` | `auto` | Log output format (`auto`, `json`, `text`) |
 
 ---
 

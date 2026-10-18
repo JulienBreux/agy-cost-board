@@ -570,3 +570,37 @@ func TestUserDashboardEndpoint(t *testing.T) {
 		}
 	})
 }
+
+func TestTraceAndErrorCorrelation(t *testing.T) {
+	router := setupTestServer(t)
+
+	t.Run("X-Cloud-Trace-Context is propagated to X-Trace-Id and error payload", func(t *testing.T) {
+		req := httptest.NewRequest(http.MethodGet, "/api/v1/users/unknown.nobody@google.com?days=30", nil)
+		req.Header.Set("X-Cloud-Trace-Context", "105445aa7843bc8bf206b12000100000/1;o=1")
+		req.Header.Set("X-Request-Id", "req-test-999")
+		rec := httptest.NewRecorder()
+
+		router.ServeHTTP(rec, req)
+
+		if rec.Code != http.StatusNotFound {
+			t.Fatalf("expected 404, got %d", rec.Code)
+		}
+		if got := rec.Header().Get("X-Trace-Id"); got != "105445aa7843bc8bf206b12000100000" {
+			t.Errorf("X-Trace-Id header = %q, want 105445aa7843bc8bf206b12000100000", got)
+		}
+		if got := rec.Header().Get("X-Request-Id"); got != "req-test-999" {
+			t.Errorf("X-Request-Id header = %q, want req-test-999", got)
+		}
+
+		var errBody map[string]string
+		if err := json.NewDecoder(rec.Body).Decode(&errBody); err != nil {
+			t.Fatalf("decode error body: %v", err)
+		}
+		if errBody["trace_id"] != "105445aa7843bc8bf206b12000100000" {
+			t.Errorf("errBody[trace_id] = %q, want 105445aa7843bc8bf206b12000100000", errBody["trace_id"])
+		}
+		if errBody["request_id"] != "req-test-999" {
+			t.Errorf("errBody[request_id] = %q, want req-test-999", errBody["request_id"])
+		}
+	})
+}

@@ -29,6 +29,8 @@ type Config struct {
 	Port              int      `mapstructure:"port" yaml:"port" json:"port"`
 	Host              string   `mapstructure:"host" yaml:"host" json:"host"`
 	MCPEnabled        bool     `mapstructure:"mcp_enabled" yaml:"mcp_enabled" json:"mcp_enabled"`
+	LogLevel          string   `mapstructure:"log_level" yaml:"log_level,omitempty" json:"log_level,omitempty"`
+	LogFormat         string   `mapstructure:"log_format" yaml:"log_format,omitempty" json:"log_format,omitempty"`
 }
 
 // ParseMonitoredProjects splits and deduplicates comma- or whitespace-separated project IDs.
@@ -90,6 +92,8 @@ func SetupViper(v *viper.Viper) {
 	_ = v.BindEnv("port", "AGY_COST_BOARD_PORT")
 	_ = v.BindEnv("host", "AGY_COST_BOARD_HOST")
 	_ = v.BindEnv("mcp_enabled", "AGY_COST_BOARD_MCP_ENABLED")
+	_ = v.BindEnv("log_level", "AGY_COST_BOARD_LOG_LEVEL")
+	_ = v.BindEnv("log_format", "AGY_COST_BOARD_LOG_FORMAT")
 
 	// Aliases for seamless flag name and config key resolution
 	v.RegisterAlias("project", "project_id")
@@ -99,6 +103,8 @@ func SetupViper(v *viper.Viper) {
 	v.RegisterAlias("seat-quota", "seat_quota")
 	v.RegisterAlias("sink-name", "sink_name")
 	v.RegisterAlias("mcp-enabled", "mcp_enabled")
+	v.RegisterAlias("log-level", "log_level")
+	v.RegisterAlias("log-format", "log_format")
 
 	// Default fallback values
 	v.SetDefault("seat_quota", 10)
@@ -108,6 +114,8 @@ func SetupViper(v *viper.Viper) {
 	v.SetDefault("sink_name", "agy-inference-sink")
 	v.SetDefault("dataset", "antigravity_telemetry")
 	v.SetDefault("mcp_enabled", true)
+	v.SetDefault("log_level", "info")
+	v.SetDefault("log_format", "auto")
 }
 
 // LoadViper reads and unmarshals the configuration into a strongly typed Config struct

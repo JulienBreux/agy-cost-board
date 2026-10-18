@@ -3,11 +3,14 @@ package server
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/fs"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -15,6 +18,7 @@ import (
 	"github.com/julienbreux/agy-cost-board/internal/attribution"
 	"github.com/julienbreux/agy-cost-board/internal/domain"
 	"github.com/julienbreux/agy-cost-board/internal/mcp"
+	"github.com/julienbreux/agy-cost-board/internal/observability"
 	"github.com/julienbreux/agy-cost-board/internal/setup"
 )
 
@@ -99,15 +103,15 @@ func (s *Server) setupRoutes() {
 
 	// Standard middlewares
 	r.Use(middleware.RequestID)
-	r.Use(middleware.Logger)
+	r.Use(s.traceAndLogMiddleware)
 	r.Use(middleware.Recoverer)
 
 	// Cross-Origin Resource Sharing
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"*"},
 		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type"},
-		ExposedHeaders:   []string{"Link"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-Request-Id", "X-Cloud-Trace-Context", "traceparent"},
+		ExposedHeaders:   []string{"Link", "X-Request-Id", "X-Trace-Id"},
 		AllowCredentials: true,
 		MaxAge:           300,
 	}))
@@ -154,6 +158,87 @@ func (s *Server) setupRoutes() {
 	}
 }
 
+func (s *Server) traceAndLogMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+
+		traceID, parentSpanID, sampled := observability.ParseCloudTraceHeader(r.Header.Get("X-Cloud-Trace-Context"))
+		if traceID == "" {
+			traceID, parentSpanID, sampled = observability.ParseTraceparentHeader(r.Header.Get("traceparent"))
+		}
+		if traceID == "" {
+			traceID = observability.NewTraceID()
+		}
+		spanID := observability.NewSpanID()
+
+		reqID := strings.TrimSpace(r.Header.Get("X-Request-Id"))
+		if reqID == "" {
+			reqID = middleware.GetReqID(r.Context())
+		}
+		if reqID == "" {
+			reqID = spanID
+		}
+
+		entryPoint := "http"
+		if strings.HasPrefix(r.URL.Path, "/mcp") {
+			entryPoint = "mcp-http"
+		}
+
+		info := observability.TraceInfo{
+			TraceID:      traceID,
+			SpanID:       spanID,
+			ParentSpanID: parentSpanID,
+			Sampled:      sampled,
+			RequestID:    reqID,
+			EntryPoint:   entryPoint,
+			ProjectID:    s.setupCfg.ProjectID,
+		}
+
+		w.Header().Set("X-Request-Id", reqID)
+		w.Header().Set("X-Trace-Id", traceID)
+
+		ctx := observability.WithTrace(r.Context(), info)
+		ww := middleware.NewWrapResponseWriter(w, r.ProtoMajor)
+		next.ServeHTTP(ww, r.WithContext(ctx))
+
+		status := ww.Status()
+		if status == 0 {
+			status = http.StatusOK
+		}
+		duration := time.Since(start)
+		durationMs := float64(duration.Microseconds()) / 1000.0
+
+		level := slog.LevelInfo
+		switch {
+		case status >= 500:
+			level = slog.LevelError
+		case status >= 400:
+			level = slog.LevelWarn
+		case r.URL.Path == "/healthz" || (!strings.HasPrefix(r.URL.Path, "/api/") && !strings.HasPrefix(r.URL.Path, "/mcp")):
+			level = slog.LevelDebug
+		}
+
+		slog.LogAttrs(ctx, level, fmt.Sprintf("%s %s %d", r.Method, r.URL.Path, status),
+			slog.String("event", "http_request"),
+			slog.String("method", r.Method),
+			slog.String("path", r.URL.Path),
+			slog.String("query", r.URL.RawQuery),
+			slog.Int("status", status),
+			slog.Int("bytes", ww.BytesWritten()),
+			slog.Float64("duration_ms", durationMs),
+			slog.Group("httpRequest",
+				slog.String("requestMethod", r.Method),
+				slog.String("requestUrl", r.URL.RequestURI()),
+				slog.Int("status", status),
+				slog.Int("responseSize", ww.BytesWritten()),
+				slog.String("userAgent", r.UserAgent()),
+				slog.String("remoteIp", r.RemoteAddr),
+				slog.String("latency", fmt.Sprintf("%.6fs", duration.Seconds())),
+			),
+		)
+	})
+}
+
 func (s *Server) handleMCP(w http.ResponseWriter, r *http.Request) {
 	if !s.mcpEnabled || s.mcpServer == nil {
 		http.NotFound(w, r)
@@ -188,7 +273,7 @@ func (s *Server) handleOverviewMetrics(w http.ResponseWriter, r *http.Request) {
 	engine := s.scopedEngine(r)
 	overview, err := engine.GetOverviewMetrics(r.Context(), days)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		respondError(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
 	poolMode := r.URL.Query().Get("pool_mode")
@@ -207,7 +292,7 @@ func (s *Server) handleLeaderboard(w http.ResponseWriter, r *http.Request) {
 	engine := s.scopedEngine(r)
 	entries, err := engine.GetLeaderboard(r.Context(), days)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		respondError(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
 	if paygMode := r.URL.Query().Get("payg_mode"); paygMode != "" {
@@ -223,7 +308,7 @@ func (s *Server) handleAttributedCosts(w http.ResponseWriter, r *http.Request) {
 
 	costs, err := engine.GetAttributedCosts(r.Context(), days, modelFilter)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		respondError(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
 	if paygMode := r.URL.Query().Get("payg_mode"); paygMode != "" {
@@ -234,11 +319,9 @@ func (s *Server) handleAttributedCosts(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleLicenseGovernance(w http.ResponseWriter, r *http.Request) {
 	days := parseIntQuery(r, "days", 30)
-	engine := s.scopedEngine(r)
 	gov, err := s.scopedEngine(r).GetLicenseGovernance(r.Context(), days)
-	_ = engine
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		respondError(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
 	poolMode := r.URL.Query().Get("pool_mode")
@@ -262,7 +345,7 @@ func extractUserID(r *http.Request) string {
 func (s *Server) handleUserSummary(w http.ResponseWriter, r *http.Request) {
 	userID := extractUserID(r)
 	if userID == "" {
-		respondError(w, http.StatusBadRequest, "missing user id parameter")
+		respondError(w, r, http.StatusBadRequest, "missing user id parameter")
 		return
 	}
 	days := parseIntQuery(r, "days", 30)
@@ -270,10 +353,10 @@ func (s *Server) handleUserSummary(w http.ResponseWriter, r *http.Request) {
 	summary, err := s.scopedEngine(r).GetUserSummary(r.Context(), userID, days)
 	if err != nil {
 		if errors.Is(err, domain.ErrUserNotFound) {
-			respondError(w, http.StatusNotFound, "user not found in telemetry window")
+			respondError(w, r, http.StatusNotFound, "user not found in telemetry window")
 			return
 		}
-		respondError(w, http.StatusInternalServerError, err.Error())
+		respondError(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
 	respondJSON(w, http.StatusOK, summary)
@@ -315,7 +398,7 @@ func (s *Server) handleCurrentUser(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleUserActivity(w http.ResponseWriter, r *http.Request) {
 	userID := extractUserID(r)
 	if userID == "" {
-		respondError(w, http.StatusBadRequest, "missing user id parameter")
+		respondError(w, r, http.StatusBadRequest, "missing user id parameter")
 		return
 	}
 	days := parseIntQuery(r, "days", 30)
@@ -323,7 +406,7 @@ func (s *Server) handleUserActivity(w http.ResponseWriter, r *http.Request) {
 
 	activity, err := s.scopedEngine(r).GetUserActivity(r.Context(), userID, days, limit)
 	if err != nil {
-		respondError(w, http.StatusInternalServerError, err.Error())
+		respondError(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
 	respondJSON(w, http.StatusOK, activity)
@@ -332,7 +415,7 @@ func (s *Server) handleUserActivity(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleUserDashboard(w http.ResponseWriter, r *http.Request) {
 	userID := extractUserID(r)
 	if userID == "" {
-		respondError(w, http.StatusBadRequest, "missing user id parameter")
+		respondError(w, r, http.StatusBadRequest, "missing user id parameter")
 		return
 	}
 	days := parseIntQuery(r, "days", 30)
@@ -344,10 +427,10 @@ func (s *Server) handleUserDashboard(w http.ResponseWriter, r *http.Request) {
 	driving, err := s.scopedEngine(r).GetUserConsumptionDriving(r.Context(), userID, days, budget)
 	if err != nil {
 		if errors.Is(err, domain.ErrUserNotFound) {
-			respondError(w, http.StatusNotFound, "user not found in telemetry window")
+			respondError(w, r, http.StatusNotFound, "user not found in telemetry window")
 			return
 		}
-		respondError(w, http.StatusInternalServerError, err.Error())
+		respondError(w, r, http.StatusInternalServerError, err.Error())
 		return
 	}
 	respondJSON(w, http.StatusOK, driving)
@@ -422,8 +505,31 @@ func respondJSON(w http.ResponseWriter, status int, data any) {
 	_ = json.NewEncoder(w).Encode(data)
 }
 
-func respondError(w http.ResponseWriter, status int, message string) {
-	respondJSON(w, status, map[string]string{
+func respondError(w http.ResponseWriter, r *http.Request, status int, message string) {
+	res := map[string]string{
 		"error": message,
-	})
+	}
+	if r != nil {
+		ctx := r.Context()
+		if info, ok := observability.TraceFromContext(ctx); ok {
+			if info.RequestID != "" {
+				res["request_id"] = info.RequestID
+			}
+			if info.TraceID != "" {
+				res["trace_id"] = info.TraceID
+			}
+		}
+		level := slog.LevelWarn
+		if status >= 500 {
+			level = slog.LevelError
+		}
+		slog.LogAttrs(ctx, level, "HTTP handler error",
+			slog.String("event", "http_handler_error"),
+			slog.String("method", r.Method),
+			slog.String("path", r.URL.Path),
+			slog.Int("status", status),
+			slog.String("error", message),
+		)
+	}
+	respondJSON(w, status, res)
 }

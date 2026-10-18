@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -115,6 +116,15 @@ func newServeCommand(v *viper.Viper) *cobra.Command {
 			shutdownCtx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 			defer stop()
 
+			slog.InfoContext(ctx, "starting HTTP server",
+				slog.String("event", "server_start"),
+				slog.String("addr", addr),
+				slog.String("data_source", source),
+				slog.String("project_id", projectID),
+				slog.Bool("demo", demo || projectID == ""),
+				slog.Bool("mcp_enabled", mcpEnabled),
+			)
+
 			serverErr := make(chan error, 1)
 			go func() {
 				cmd.Printf("Starting HTTP server on %s...\n", addr)
@@ -125,11 +135,18 @@ func newServeCommand(v *viper.Viper) *cobra.Command {
 
 			select {
 			case <-shutdownCtx.Done():
+				slog.InfoContext(ctx, "received shutdown signal, shutting down gracefully",
+					slog.String("event", "server_shutdown"),
+				)
 				cmd.Printf("\nReceived shutdown signal: shutting down gracefully...\n")
 				stopCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 				defer cancel()
 				return httpServer.Shutdown(stopCtx)
 			case err := <-serverErr:
+				slog.ErrorContext(ctx, "HTTP server fatal error",
+					slog.String("event", "server_error"),
+					slog.String("error", err.Error()),
+				)
 				return fmt.Errorf("HTTP server error: %w", err)
 			}
 		},

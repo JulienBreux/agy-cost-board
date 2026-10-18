@@ -11,6 +11,7 @@ import (
 	"github.com/julienbreux/agy-cost-board/internal/attribution"
 	"github.com/julienbreux/agy-cost-board/internal/bigquery"
 	"github.com/julienbreux/agy-cost-board/internal/config"
+	"github.com/julienbreux/agy-cost-board/internal/observability"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -33,6 +34,8 @@ var (
 	flagSeatQuota         int
 	flagFormat            string
 	flagMCPEnabled        = true
+	flagLogLevel          = "info"
+	flagLogFormat         = "auto"
 )
 
 // ResetFlags restores default flag values across unit test runs.
@@ -46,6 +49,8 @@ func ResetFlags() {
 	flagSeatQuota = 10
 	flagFormat = "table"
 	flagMCPEnabled = true
+	flagLogLevel = "info"
+	flagLogFormat = "auto"
 	flagSetupSave = false
 	flagSetupCreate = false
 	flagSetupDryRun = false
@@ -81,6 +86,12 @@ func SyncFlags(cfg *config.Config) {
 	if cfg.DatasetName != "" {
 		flagSetupDataset = cfg.DatasetName
 	}
+	if cfg.LogLevel != "" {
+		flagLogLevel = cfg.LogLevel
+	}
+	if cfg.LogFormat != "" {
+		flagLogFormat = cfg.LogFormat
+	}
 }
 
 // NewRootCommand creates the top-level Cobra command with an isolated Viper instance.
@@ -113,6 +124,15 @@ to compute proportional, per-user AI costs and track Gemini Enterprise seat util
 			// Synchronize flag variables so direct references observe resolved configuration
 			SyncFlags(cfg)
 
+			// Initialize structured logger and trace correlation
+			observability.InitLogger(observability.Config{
+				Level:     flagLogLevel,
+				Format:    flagLogFormat,
+				Service:   "agy-cost-board",
+				Version:   Version,
+				ProjectID: flagProjectID,
+			})
+
 			return nil
 		},
 	}
@@ -126,6 +146,8 @@ to compute proportional, per-user AI costs and track Gemini Enterprise seat util
 	rootCmd.PersistentFlags().IntVar(&flagSeatQuota, "seat-quota", 10, "Gemini Enterprise seat quota")
 	rootCmd.PersistentFlags().StringVar(&flagFormat, "format", "table", "Output format: table, json, or csv")
 	rootCmd.PersistentFlags().BoolVar(&flagMCPEnabled, "mcp-enabled", true, "Enable Model Context Protocol (MCP) server (or set AGY_COST_BOARD_MCP_ENABLED)")
+	rootCmd.PersistentFlags().StringVar(&flagLogLevel, "log-level", "info", "Log verbosity level: debug, info, warn, error (or set AGY_COST_BOARD_LOG_LEVEL)")
+	rootCmd.PersistentFlags().StringVar(&flagLogFormat, "log-format", "auto", "Log output format: auto, json, text (or set AGY_COST_BOARD_LOG_FORMAT)")
 
 	// Bind persistent Cobra flags directly to Viper keys
 	_ = v.BindPFlag("demo", rootCmd.PersistentFlags().Lookup("demo"))
@@ -142,6 +164,10 @@ to compute proportional, per-user AI costs and track Gemini Enterprise seat util
 	_ = v.BindPFlag("format", rootCmd.PersistentFlags().Lookup("format"))
 	_ = v.BindPFlag("mcp_enabled", rootCmd.PersistentFlags().Lookup("mcp-enabled"))
 	_ = v.BindPFlag("mcp-enabled", rootCmd.PersistentFlags().Lookup("mcp-enabled"))
+	_ = v.BindPFlag("log_level", rootCmd.PersistentFlags().Lookup("log-level"))
+	_ = v.BindPFlag("log-level", rootCmd.PersistentFlags().Lookup("log-level"))
+	_ = v.BindPFlag("log_format", rootCmd.PersistentFlags().Lookup("log-format"))
+	_ = v.BindPFlag("log-format", rootCmd.PersistentFlags().Lookup("log-format"))
 
 	rootCmd.AddCommand(newSetupCommand(v))
 	rootCmd.AddCommand(newCostCommand(v))

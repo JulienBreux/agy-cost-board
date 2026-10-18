@@ -93,3 +93,5 @@ By default, `agy-cost-board` should be deployed with **IAM authentication requir
 | `AGY_COST_BOARD_PORT` / `PORT` | `port` | `--port` | `8080` | HTTP listen port for `agy-cost-board serve` |
 | `AGY_COST_BOARD_DEMO` | `demo_mode` | `--demo` | `false` | Run with 100% offline synthetic multi-project demonstration data |
 | `AGY_COST_BOARD_MCP_ENABLED` | `mcp_enabled` | `--mcp-enabled` | `true` | Enable or disable the Model Context Protocol (`2025-03-26`) server |
+| `AGY_COST_BOARD_LOG_LEVEL` | `log_level` | `--log-level` | `"info"` | Log verbosity level (`debug`, `info`, `warn`, `error`) |
+| `AGY_COST_BOARD_LOG_FORMAT` | `log_format` | `--log-format` | `"auto"` | Log output format (`auto`: Cloud Logging `json` on Cloud Run, `text` locally) |

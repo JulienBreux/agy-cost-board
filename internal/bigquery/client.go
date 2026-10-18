@@ -5,21 +5,24 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
+	"sync"
 	"time"
 
 	"cloud.google.com/go/bigquery"
 	"github.com/julienbreux/agy-cost-board/internal/domain"
+	"github.com/julienbreux/agy-cost-board/internal/observability"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 )
 
 // ClientConfig holds configuration parameters for the Google BigQuery client.
 type ClientConfig struct {
-	ProjectID      string
-	TelemetryTable string
-	BillingTable   string
-	SeatQuota      int
+	ProjectID       string
+	TelemetryTable  string
+	BillingTable    string
+	SeatQuota       int
 	CredentialsFile string
 }
 
@@ -43,6 +46,10 @@ func BuildTelemetryQuery(table string, days int) string {
 }
 
 // BuildTelemetryQueryForField generates SQL to extract Antigravity inference logs with a specified payload column.
+// Uses TO_JSON_STRING + JSON_VALUE for optional struct subfields (such as resource.labels.project_id vs.
+// resource.labels.resource_container, cachedContentTokenCount, thoughtsTokenCount, quotaType, experience,
+// client_name, and client_version) so Cloud Logging sink tables with narrower static STRUCT schemas
+// never fail with `Error 400: Field name ... does not exist in STRUCT<...>`.
 func BuildTelemetryQueryForField(table string, days int, payloadField string) string {
 	if days <= 0 {
 		days = 30
@@ -50,18 +57,18 @@ func BuildTelemetryQueryForField(table string, days int, payloadField string) st
 	payloadField = cmp.Or(payloadField, "jsonPayload")
 	return fmt.Sprintf(`SELECT
   timestamp,
-  IFNULL(resource.labels.project_id, '') AS project_id,
+  IFNULL(COALESCE(JSON_VALUE(TO_JSON_STRING(resource.labels), '$.project_id'), REGEXP_EXTRACT(JSON_VALUE(TO_JSON_STRING(resource.labels), '$.resource_container'), r'^(?:projects/)?(.+)$')), '') AS project_id,
   labels.user_id AS user_id,
   labels.model AS model,
   IFNULL(CAST(%s.metadata.totalTokenCount AS INT64), 0) AS total_tokens,
   IFNULL(CAST(%s.metadata.promptTokenCount AS INT64), 0) AS prompt_tokens,
-  IFNULL(CAST(%s.metadata.cachedContentTokenCount AS INT64), 0) AS cached_tokens,
+  IFNULL(SAFE_CAST(JSON_VALUE(TO_JSON_STRING(%s.metadata), '$.cachedContentTokenCount') AS INT64), 0) AS cached_tokens,
   IFNULL(CAST(%s.metadata.candidatesTokenCount AS INT64), 0) AS completion_tokens,
-  IFNULL(CAST(%s.metadata.thoughtsTokenCount AS INT64), 0) AS thoughts_tokens,
-  IFNULL(%s.metadata.quotaType, 'REGULAR_QUOTA') AS quota_type,
-  IFNULL(%s.experience, '') AS experience,
-  IFNULL(labels.client_name, 'antigravity') AS client_name,
-  IFNULL(labels.client_version, '') AS client_version
+  IFNULL(SAFE_CAST(JSON_VALUE(TO_JSON_STRING(%s.metadata), '$.thoughtsTokenCount') AS INT64), 0) AS thoughts_tokens,
+  IFNULL(JSON_VALUE(TO_JSON_STRING(%s.metadata), '$.quotaType'), 'REGULAR_QUOTA') AS quota_type,
+  IFNULL(JSON_VALUE(TO_JSON_STRING(%s), '$.experience'), '') AS experience,
+  IFNULL(JSON_VALUE(TO_JSON_STRING(labels), '$.client_name'), 'antigravity') AS client_name,
+  IFNULL(JSON_VALUE(TO_JSON_STRING(labels), '$.client_version'), '') AS client_version
 FROM
   `+"`%s`"+`
 WHERE
@@ -98,8 +105,10 @@ ORDER BY
 
 // BigQueryClient queries Google Cloud BigQuery for telemetry and billing exports.
 type BigQueryClient struct {
-	client *bigquery.Client
-	config ClientConfig
+	client       *bigquery.Client
+	config       ClientConfig
+	mu           sync.Mutex
+	payloadField string
 }
 
 // NewBigQueryClient constructs a new BigQuery client with ADC or service account credentials.
@@ -245,26 +254,63 @@ func (c *BigQueryClient) DetectPayloadField(ctx context.Context) string {
 	if c == nil || c.client == nil {
 		return "jsonPayload"
 	}
+
+	c.mu.Lock()
+	if c.payloadField != "" {
+		field := c.payloadField
+		c.mu.Unlock()
+		return field
+	}
+	c.mu.Unlock()
+
+	ctx, span := observability.StartSpan(ctx, "bigquery.detect_payload_field",
+		slog.String("telemetry_table", c.config.TelemetryTable),
+	)
+	var spanErr error
+	defer func() { span.End(spanErr) }()
+
+	detected := "jsonPayload"
 	project, rest, ok1 := strings.Cut(c.config.TelemetryTable, ".")
 	if ok1 {
 		dataset, table, ok2 := strings.Cut(rest, ".")
 		if ok2 {
 			md, err := c.client.DatasetInProject(project, dataset).Table(table).Metadata(ctx)
-			if err == nil && md != nil {
+			if err != nil {
+				spanErr = err
+			} else if md != nil {
 				for _, f := range md.Schema {
 					if strings.EqualFold(f.Name, "jsonpayload_v1_inferenceresponselog") {
-						return "jsonpayload_v1_inferenceresponselog"
+						detected = "jsonpayload_v1_inferenceresponselog"
+						break
 					}
 				}
 			}
 		}
 	}
-	return "jsonPayload"
+
+	span.AddAttrs(slog.String("payload_field", detected))
+	if spanErr == nil {
+		c.mu.Lock()
+		c.payloadField = detected
+		c.mu.Unlock()
+	}
+	return detected
 }
 
 // FetchTelemetryLogs executes the telemetry query and returns individual events.
-func (c *BigQueryClient) FetchTelemetryLogs(ctx context.Context, days int) ([]domain.TelemetryLog, error) {
+func (c *BigQueryClient) FetchTelemetryLogs(ctx context.Context, days int) (logs []domain.TelemetryLog, retErr error) {
+	ctx, span := observability.StartSpan(ctx, "bigquery.fetch_telemetry_logs",
+		slog.String("telemetry_table", c.config.TelemetryTable),
+		slog.Int("days", days),
+	)
+	defer func() {
+		span.AddAttrs(slog.Int("row_count", len(logs)))
+		span.End(retErr)
+	}()
+
 	field := c.DetectPayloadField(ctx)
+	span.AddAttrs(slog.String("payload_field", field))
+
 	sql := BuildTelemetryQueryForField(c.config.TelemetryTable, days, field)
 	q := c.client.Query(sql)
 
@@ -273,7 +319,6 @@ func (c *BigQueryClient) FetchTelemetryLogs(ctx context.Context, days int) ([]do
 		return nil, fmt.Errorf("execute telemetry query: %w", err)
 	}
 
-	var logs []domain.TelemetryLog
 	for {
 		var row TelemetryRow
 		err := it.Next(&row)
@@ -291,7 +336,16 @@ func (c *BigQueryClient) FetchTelemetryLogs(ctx context.Context, days int) ([]do
 }
 
 // FetchBilledCosts executes the billing query and returns net billed cost records.
-func (c *BigQueryClient) FetchBilledCosts(ctx context.Context, days int) ([]domain.BilledCost, error) {
+func (c *BigQueryClient) FetchBilledCosts(ctx context.Context, days int) (costs []domain.BilledCost, retErr error) {
+	ctx, span := observability.StartSpan(ctx, "bigquery.fetch_billed_costs",
+		slog.String("billing_table", c.config.BillingTable),
+		slog.Int("days", days),
+	)
+	defer func() {
+		span.AddAttrs(slog.Int("row_count", len(costs)))
+		span.End(retErr)
+	}()
+
 	sql := BuildBillingQuery(c.config.BillingTable, days)
 	q := c.client.Query(sql)
 
@@ -300,7 +354,6 @@ func (c *BigQueryClient) FetchBilledCosts(ctx context.Context, days int) ([]doma
 		return nil, fmt.Errorf("execute billing query: %w", err)
 	}
 
-	var costs []domain.BilledCost
 	for {
 		var row BillingRow
 		err := it.Next(&row)
@@ -319,11 +372,19 @@ func (c *BigQueryClient) FetchBilledCosts(ctx context.Context, days int) ([]doma
 
 // FetchLicenseSeats derives assigned seat usage and dormant status from BigQuery telemetry.
 func (c *BigQueryClient) FetchLicenseSeats(ctx context.Context, windowDays int) ([]domain.LicenseSeat, int, error) {
+	ctx, span := observability.StartSpan(ctx, "bigquery.fetch_license_seats",
+		slog.Int("window_days", windowDays),
+	)
+	var spanErr error
+	defer func() { span.End(spanErr) }()
+
 	logs, err := c.FetchTelemetryLogs(ctx, windowDays)
 	if err != nil {
+		spanErr = err
 		return nil, 0, err
 	}
 
 	seats, quota := DeriveLicenseSeats(logs, windowDays, c.config.SeatQuota)
+	span.AddAttrs(slog.Int("seat_count", len(seats)), slog.Int("seat_quota", quota))
 	return seats, quota, nil
 }

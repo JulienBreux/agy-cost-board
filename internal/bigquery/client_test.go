@@ -38,6 +38,12 @@ func TestQueryBuilders(t *testing.T) {
 		if !strings.Contains(query, "jsonpayload_v1_inferenceresponselog.metadata.totalTokenCount") {
 			t.Errorf("query does not contain custom payload field: %s", query)
 		}
+		if strings.Contains(query, "resource.labels.project_id") {
+			t.Errorf("query must not reference resource.labels.project_id directly (fails on STRUCT<location, resource_container>): %s", query)
+		}
+		if !strings.Contains(query, "TO_JSON_STRING(resource.labels)") {
+			t.Errorf("query should extract project_id safely via TO_JSON_STRING(resource.labels): %s", query)
+		}
 
 		fallbackQuery := bigquery.BuildTelemetryQueryForField(table, 7, "")
 		if !strings.Contains(fallbackQuery, "jsonPayload.metadata.totalTokenCount") {
