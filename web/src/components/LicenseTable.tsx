@@ -1,21 +1,73 @@
 import React from 'react';
-import { ShieldCheck, AlertCircle, Clock, Trash2, CheckCircle2 } from 'lucide-react';
-import { LicenseGovernance } from '../api';
+import { ShieldCheck, AlertCircle, Clock, Trash2, CheckCircle2, Globe, Sparkles } from 'lucide-react';
+import { LicenseGovernance, LicenseSeat } from '../api';
 import { formatCurrency } from '../utils/currency';
+import { WeeklyAllowancePoolCard } from './WeeklyAllowancePoolCard';
 
 interface LicenseTableProps {
   governance: LicenseGovernance;
   onSelectUser: (userId: string) => void;
 }
 
+const renderTierBadge = (seat: LicenseSeat) => {
+  const tier = (seat.tier || 'standard').toLowerCase();
+  const isPlus = tier === 'plus';
+  return (
+    <div className="flex items-center gap-1.5 flex-wrap">
+      <span
+        className={`px-2 py-0.5 rounded text-[11px] font-semibold border ${
+          isPlus
+            ? 'bg-purple-500/15 text-purple-300 border-purple-500/30'
+            : 'bg-blue-500/15 text-blue-300 border-blue-500/30'
+        }`}
+      >
+        {isPlus ? 'Plus ($3.75/wk)' : 'Standard ($2.50/wk)'}
+      </span>
+      {seat.is_trial && (
+        <span
+          className="px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30"
+          title={seat.trial_ends_at ? `Ends ${seat.trial_ends_at}` : 'Free Trial'}
+        >
+          Free Trial
+        </span>
+      )}
+    </div>
+  );
+};
+
+const renderLocationBadge = (location?: string) => {
+  const loc = (location || 'global').toUpperCase();
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono bg-slate-800 text-slate-300 border border-slate-700">
+      <Globe className="w-3 h-3 text-slate-400" />
+      {loc}
+    </span>
+  );
+};
+
 export const LicenseTable: React.FC<LicenseTableProps> = ({ governance, onSelectUser }) => {
   const dormantUsers = Array.isArray(governance?.dormant_users) ? governance.dormant_users : [];
+  const allSeats = Array.isArray(governance?.all_seats) ? governance.all_seats : [];
   const seatQuota = governance?.seat_quota > 0 ? governance.seat_quota : 1;
+  const standardSeats = Number(governance?.standard_seats ?? 0);
+  const plusSeats = Number(governance?.plus_seats ?? 0);
+  const trialSeats = Number(governance?.trial_seats ?? 0);
+  const locations = Array.isArray(governance?.locations) && governance.locations.length > 0
+    ? governance.locations
+    : ['global', 'eu', 'us'];
 
   return (
     <div className="space-y-6">
+      {/* Weekly Allowance Pool & What-If Simulator */}
+      {governance?.weekly_pool && (
+        <WeeklyAllowancePoolCard
+          pool={governance.weekly_pool}
+          currency={governance.currency || 'USD'}
+        />
+      )}
+
       {/* Governance Summary Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Active Seats */}
         <div className="bg-[#14171f] border border-[#222836] rounded-xl p-5 shadow-sm">
           <div className="flex items-center space-x-2 text-google-green mb-2">
@@ -24,8 +76,30 @@ export const LicenseTable: React.FC<LicenseTableProps> = ({ governance, onSelect
           </div>
           <div className="text-3xl font-bold text-white">{governance.active_seats}</div>
           <p className="text-xs text-google-gray-400 mt-1">
-            Actively consuming Gemini & Antigravity tokens in window
+            Actively consuming Gemini &amp; Antigravity tokens in window
           </p>
+        </div>
+
+        {/* Multi-Tier & Trial Distribution */}
+        <div className="bg-[#14171f] border border-[#222836] rounded-xl p-5 shadow-sm">
+          <div className="flex items-center space-x-2 text-purple-400 mb-2">
+            <Sparkles className="h-5 w-5" />
+            <h4 className="text-sm font-semibold">Multi-Tier &amp; Regions</h4>
+          </div>
+          <div className="flex items-baseline gap-3">
+            <span className="text-2xl font-bold text-white">{standardSeats} Std</span>
+            <span className="text-2xl font-bold text-purple-300">{plusSeats} Plus</span>
+          </div>
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
+            {trialSeats > 0 && (
+              <span className="px-2 py-0.5 rounded text-[11px] font-medium bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                {trialSeats} Free Trial
+              </span>
+            )}
+            <span className="text-xs text-google-gray-400 font-mono">
+              Regions: {locations.map((l) => l.toUpperCase()).join(', ')}
+            </span>
+          </div>
         </div>
 
         {/* Dormant Seats */}
@@ -60,7 +134,7 @@ export const LicenseTable: React.FC<LicenseTableProps> = ({ governance, onSelect
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-semibold text-white">License Quota Consumption</span>
           <span className="text-xs font-mono text-google-gray-400">
-            {governance.assigned_seats} assigned of {governance.seat_quota} licensed seats ({governance.utilization_pct.toFixed(1)}%)
+            {governance.assigned_seats} assigned of {governance.seat_quota} licensed seats ({Number(governance.utilization_pct ?? 0).toFixed(1)}%)
           </span>
         </div>
 
@@ -109,6 +183,8 @@ export const LicenseTable: React.FC<LicenseTableProps> = ({ governance, onSelect
             <thead className="bg-[#181c26] text-google-gray-400 text-[11px] uppercase tracking-wider border-b border-[#222836]">
               <tr>
                 <th className="py-3 px-4 font-semibold">User</th>
+                <th className="py-3 px-4 font-semibold">Tier &amp; Allowance</th>
+                <th className="py-3 px-4 font-semibold">Location</th>
                 <th className="py-3 px-4 font-semibold">Status</th>
                 <th className="py-3 px-4 font-semibold">Last Recorded Activity</th>
                 <th className="py-3 px-4 font-semibold text-right">Window Tokens</th>
@@ -118,7 +194,7 @@ export const LicenseTable: React.FC<LicenseTableProps> = ({ governance, onSelect
             <tbody className="divide-y divide-[#1e2330]">
               {dormantUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-google-gray-500">
+                  <td colSpan={7} className="py-8 text-center text-google-gray-500">
                     No dormant licenses detected. All assigned seats are active!
                   </td>
                 </tr>
@@ -135,6 +211,8 @@ export const LicenseTable: React.FC<LicenseTableProps> = ({ governance, onSelect
                       </span>
                       <span>{seat.user_id}</span>
                     </td>
+                    <td className="py-3 px-4">{renderTierBadge(seat)}</td>
+                    <td className="py-3 px-4">{renderLocationBadge(seat.location)}</td>
                     <td className="py-3 px-4">
                       <span className="px-2 py-0.5 rounded text-[11px] font-semibold bg-google-red/15 text-google-red border border-google-red/20">
                         {seat.status.toUpperCase()}
@@ -145,7 +223,7 @@ export const LicenseTable: React.FC<LicenseTableProps> = ({ governance, onSelect
                       <span>{seat.last_activity ? new Date(seat.last_activity).toLocaleDateString() : 'Never'}</span>
                     </td>
                     <td className="py-3 px-4 text-right font-mono text-google-gray-300">
-                      {seat.total_tokens_in_window.toLocaleString()}
+                      {Number(seat.total_tokens_in_window ?? 0).toLocaleString()}
                     </td>
                     <td className="py-3 px-4 text-center">
                       <button
@@ -166,6 +244,66 @@ export const LicenseTable: React.FC<LicenseTableProps> = ({ governance, onSelect
           </table>
         </div>
       </div>
+
+      {/* Full Multi-Tier & Multi-Location Seat Roster */}
+      {allSeats.length > 0 && (
+        <div className="bg-[#14171f] border border-[#222836] rounded-xl overflow-hidden shadow-sm">
+          <div className="p-4 border-b border-[#222836] flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-white">Assigned Seats Roster (Multi-Tier &amp; Multi-Location Discovery)</h3>
+              <p className="text-xs text-google-gray-400">
+                Discovered Gemini Enterprise subscriptions across global, eu, and us regions
+              </p>
+            </div>
+            <span className="text-xs bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 px-2.5 py-1 rounded font-medium">
+              {allSeats.length} assigned seats
+            </span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs sm:text-sm">
+              <thead className="bg-[#181c26] text-google-gray-400 text-[11px] uppercase tracking-wider border-b border-[#222836]">
+                <tr>
+                  <th className="py-3 px-4 font-semibold">User</th>
+                  <th className="py-3 px-4 font-semibold">Tier &amp; Weekly Allowance</th>
+                  <th className="py-3 px-4 font-semibold">Location</th>
+                  <th className="py-3 px-4 font-semibold">Status</th>
+                  <th className="py-3 px-4 font-semibold text-right">Window Tokens</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#1e2330]">
+                {allSeats.map((seat) => (
+                  <tr
+                    key={`roster-${seat.user_id}`}
+                    className="hover:bg-[#1a1e28]/70 transition-colors cursor-pointer"
+                    onClick={() => onSelectUser(seat.user_id)}
+                  >
+                    <td className="py-3 px-4 font-medium text-white">{seat.user_id}</td>
+                    <td className="py-3 px-4">{renderTierBadge(seat)}</td>
+                    <td className="py-3 px-4">{renderLocationBadge(seat.location)}</td>
+                    <td className="py-3 px-4">
+                      <span
+                        className={`px-2 py-0.5 rounded text-[11px] font-semibold border ${
+                          seat.status === 'active'
+                            ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                            : seat.status === 'at_risk'
+                            ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                            : 'bg-google-red/15 text-google-red border-google-red/20'
+                        }`}
+                      >
+                        {seat.status.toUpperCase()}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-right font-mono text-google-gray-300">
+                      {Number(seat.total_tokens_in_window ?? 0).toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

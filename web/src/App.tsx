@@ -20,6 +20,7 @@ import { Navbar, NavTab } from './components/Navbar';
 import { KPICards } from './components/KPICards';
 import { CostChart } from './components/CostChart';
 import { TokensEffortClientSection } from './components/TokensEffortClientSection';
+import { WeeklyAllowancePoolCard } from './components/WeeklyAllowancePoolCard';
 import { CostTable } from './components/CostTable';
 import { LeaderboardView } from './components/LeaderboardView';
 import { LicenseTable } from './components/LicenseTable';
@@ -258,6 +259,12 @@ export function App() {
             {/* Tab: Overview */}
             {activeTab === 'overview' && (
               <div className="space-y-6">
+                {overview.weekly_pool && (
+                  <WeeklyAllowancePoolCard
+                    pool={overview.weekly_pool}
+                    currency={overview.currency}
+                  />
+                )}
                 <CostChart
                   trends={overview.daily_trends}
                   modelBreakdown={overview.model_breakdown}
