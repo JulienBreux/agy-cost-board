@@ -19,6 +19,7 @@ import {
 import { Navbar, NavTab } from './components/Navbar';
 import { KPICards } from './components/KPICards';
 import { CostChart } from './components/CostChart';
+import { TokensEffortClientSection } from './components/TokensEffortClientSection';
 import { CostTable } from './components/CostTable';
 import { LeaderboardView } from './components/LeaderboardView';
 import { LicenseTable } from './components/LicenseTable';
@@ -260,6 +261,12 @@ export function App() {
                 <CostChart
                   trends={overview.daily_trends}
                   modelBreakdown={overview.model_breakdown}
+                  currency={overview.currency}
+                />
+                <TokensEffortClientSection
+                  tokenCostShares={overview.token_cost_shares}
+                  modelEffortStats={overview.model_effort_stats}
+                  clientBreakdown={overview.client_breakdown}
                   currency={overview.currency}
                 />
                 <div>

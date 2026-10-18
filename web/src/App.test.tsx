@@ -274,6 +274,42 @@ describe('App Component Navigation', () => {
         expect(screen.queryByText('Total Billed Cost')).not.toBeInTheDocument();
         expect(window.location.search).toContain('tab=leaderboard');
     });
+
+    it('renders Tokens, Effort & Clients FinOps section in Overview tab when telemetry is present', async () => {
+        vi.spyOn(api, 'fetchOverview').mockResolvedValue({
+            ...mockOverview,
+            token_cost_shares: [
+                { category: 'Thinking', tokens: 50000, token_share: 5.0, cost: 15.0, cost_share: 30.0 }
+            ],
+            model_effort_stats: [
+                {
+                    model: 'gemini-2.5-pro',
+                    effort_level: 'high',
+                    calls: 10,
+                    tokens: 100000,
+                    cached_tokens: 40000,
+                    cache_hit_rate: 40.0,
+                    wtu: 8000,
+                    included_cost: 12.0,
+                    payg_cost: 3.0,
+                    total_cost: 15.0
+                }
+            ],
+            client_breakdown: [
+                { client_name: 'agy-cli', calls: 10, tokens: 100000, wtu: 8000, total_cost: 15.0, share_of_cost: 100.0 }
+            ]
+        });
+
+        render(<App />);
+
+        await waitFor(() => {
+            expect(screen.getByText('Where Tokens and Money Go')).toBeInTheDocument();
+            expect(screen.getByText('Models & Thinking Effort')).toBeInTheDocument();
+            expect(screen.getByText('Antigravity Clients')).toBeInTheDocument();
+            expect(screen.getByText('agy-cli')).toBeInTheDocument();
+        });
+    });
 });
+
 
 
