@@ -48,19 +48,23 @@ type BilledCost struct {
 
 // AllocatedUserCost represents the calculated proportional cost for a single user, model, and date.
 type AllocatedUserCost struct {
-	UserID           string  `json:"user_id"`
-	Model            string  `json:"model"`
-	UsageDate        string  `json:"usage_date"`
-	UserTokens       int64   `json:"user_tokens"`
-	CachedTokens     int64   `json:"cached_tokens"`
-	CacheHitRate     float64 `json:"cache_hit_rate"`
-	TotalModelTokens int64   `json:"total_model_tokens"`
-	TokenShare       float64 `json:"token_share"`
-	AllocatedCost    float64 `json:"allocated_cost"`
-	WTU              int64   `json:"wtu"`
-	IncludedCost     float64 `json:"included_cost"`
-	PAYGCost         float64 `json:"payg_cost"`
-	Currency         string  `json:"currency"`
+	UserID                string  `json:"user_id"`
+	Model                 string  `json:"model"`
+	UsageDate             string  `json:"usage_date"`
+	UserTokens            int64   `json:"user_tokens"`
+	CachedTokens          int64   `json:"cached_tokens"`
+	CacheHitRate          float64 `json:"cache_hit_rate"`
+	TotalModelTokens      int64   `json:"total_model_tokens"`
+	TokenShare            float64 `json:"token_share"`
+	AllocatedCost         float64 `json:"allocated_cost"`
+	WTU                   int64   `json:"wtu"`
+	IncludedCost          float64 `json:"included_cost"`
+	PAYGCost              float64 `json:"payg_cost"`
+	FairShareIncludedCost float64 `json:"fair_share_included_cost"`
+	FairSharePAYGCost     float64 `json:"fair_share_payg_cost"`
+	WhenUsedIncludedCost  float64 `json:"when_used_included_cost"`
+	WhenUsedPAYGCost      float64 `json:"when_used_payg_cost"`
+	Currency              string  `json:"currency"`
 }
 
 // ToCSVRow converts the allocated cost item to a slice of strings for CSV output.
@@ -78,18 +82,22 @@ func (a AllocatedUserCost) ToCSVRow() []string {
 
 // UserCostSummary represents aggregated metrics for an individual developer.
 type UserCostSummary struct {
-	UserID         string                     `json:"user_id"`
-	TotalTokens    int64                      `json:"total_tokens"`
-	TotalCost      float64                    `json:"total_cost"`
-	WTU            int64                      `json:"wtu"`
-	IncludedCost   float64                    `json:"included_cost"`
-	PAYGCost       float64                    `json:"payg_cost"`
-	CachedTokens   int64                      `json:"cached_tokens"`
-	CacheHitRate   float64                    `json:"cache_hit_rate"`
-	Currency       string                     `json:"currency"`
-	ModelBreakdown map[string]ModelCostDetail `json:"model_breakdown"`
-	LastActive     time.Time                  `json:"last_active"`
-	SeatStatus     SeatStatus                 `json:"seat_status"`
+	UserID                string                     `json:"user_id"`
+	TotalTokens           int64                      `json:"total_tokens"`
+	TotalCost             float64                    `json:"total_cost"`
+	WTU                   int64                      `json:"wtu"`
+	IncludedCost          float64                    `json:"included_cost"`
+	PAYGCost              float64                    `json:"payg_cost"`
+	FairShareIncludedCost float64                    `json:"fair_share_included_cost"`
+	FairSharePAYGCost     float64                    `json:"fair_share_payg_cost"`
+	WhenUsedIncludedCost  float64                    `json:"when_used_included_cost"`
+	WhenUsedPAYGCost      float64                    `json:"when_used_payg_cost"`
+	CachedTokens          int64                      `json:"cached_tokens"`
+	CacheHitRate          float64                    `json:"cache_hit_rate"`
+	Currency              string                     `json:"currency"`
+	ModelBreakdown        map[string]ModelCostDetail `json:"model_breakdown"`
+	LastActive            time.Time                  `json:"last_active"`
+	SeatStatus            SeatStatus                 `json:"seat_status"`
 }
 
 // ModelCostDetail holds metrics for a specific model under a user.
@@ -101,23 +109,27 @@ type ModelCostDetail struct {
 
 // LeaderboardEntry represents a ranked developer's aggregated spend, token efficiency, and model usage.
 type LeaderboardEntry struct {
-	Rank            int                `json:"rank"`
-	UserID          string             `json:"user_id"`
-	TotalCost       float64            `json:"total_cost"`
-	ShareOfSpend    float64            `json:"share_of_spend"`
-	WTU             int64              `json:"wtu"`
-	IncludedCost    float64            `json:"included_cost"`
-	PAYGCost        float64            `json:"payg_cost"`
-	TotalTokens     int64              `json:"total_tokens"`
-	CachedTokens    int64              `json:"cached_tokens"`
-	CacheHitRate    float64            `json:"cache_hit_rate"`
-	ShareOfTokens   float64            `json:"share_of_tokens"`
-	ActiveDays      int                `json:"active_days"`
-	CostPer1KTokens float64            `json:"cost_per_1k_tokens"`
-	TopModel        string             `json:"top_model"`
-	TopEffort       string             `json:"top_effort"`
-	ModelBreakdown  map[string]float64 `json:"model_breakdown"`
-	Currency        string             `json:"currency"`
+	Rank                  int                `json:"rank"`
+	UserID                string             `json:"user_id"`
+	TotalCost             float64            `json:"total_cost"`
+	ShareOfSpend          float64            `json:"share_of_spend"`
+	WTU                   int64              `json:"wtu"`
+	IncludedCost          float64            `json:"included_cost"`
+	PAYGCost              float64            `json:"payg_cost"`
+	FairShareIncludedCost float64            `json:"fair_share_included_cost"`
+	FairSharePAYGCost     float64            `json:"fair_share_payg_cost"`
+	WhenUsedIncludedCost  float64            `json:"when_used_included_cost"`
+	WhenUsedPAYGCost      float64            `json:"when_used_payg_cost"`
+	TotalTokens           int64              `json:"total_tokens"`
+	CachedTokens          int64              `json:"cached_tokens"`
+	CacheHitRate          float64            `json:"cache_hit_rate"`
+	ShareOfTokens         float64            `json:"share_of_tokens"`
+	ActiveDays            int                `json:"active_days"`
+	CostPer1KTokens       float64            `json:"cost_per_1k_tokens"`
+	TopModel              string             `json:"top_model"`
+	TopEffort             string             `json:"top_effort"`
+	ModelBreakdown        map[string]float64 `json:"model_breakdown"`
+	Currency              string             `json:"currency"`
 }
 
 // ToCSVRow converts the leaderboard entry to a slice of strings for CSV output.
@@ -174,25 +186,88 @@ type ClientStats struct {
 	AllocatedCost float64 `json:"allocated_cost"`
 }
 
-// LicenseSeat tracks the assignment and activity for a developer's seat.
+// LicenseSeat tracks the assignment, subscription tier, region, and activity for a developer's seat.
 type LicenseSeat struct {
 	UserID              string     `json:"user_id"`
 	Assigned            bool       `json:"assigned"`
 	Status              SeatStatus `json:"status"`
+	Tier                string     `json:"tier,omitempty"` // "standard" or "plus"
+	WeeklyAllowanceUSD  float64    `json:"weekly_allowance_usd,omitempty"`
+	WeeklyAllowanceWTU  int64      `json:"weekly_allowance_wtu,omitempty"`
+	Location            string     `json:"location,omitempty"` // "global", "eu", "us"
+	IsTrial             bool       `json:"is_trial,omitempty"`
+	TrialEndsAt         string     `json:"trial_ends_at,omitempty"`
 	LastActivity        time.Time  `json:"last_activity"`
 	TotalTokensInWindow int64      `json:"total_tokens_in_window"`
 }
 
-// LicenseGovernanceSummary provides high-level seat quota and utilization metrics.
+// WeeklyPoolWindow represents a single 7-day allowance window's limit vs. actual consumption.
+type WeeklyPoolWindow struct {
+	WindowLabel     string  `json:"window_label"`
+	WindowStart     string  `json:"window_start"`
+	WindowEnd       string  `json:"window_end"`
+	PoolLimitUSD    float64 `json:"pool_limit_usd"`
+	PoolLimitWTU    int64   `json:"pool_limit_wtu"`
+	IncludedUsedUSD float64 `json:"included_used_usd"`
+	IncludedUsedWTU int64   `json:"included_used_wtu"`
+	PAYGOverageUSD  float64 `json:"payg_overage_usd"`
+	PAYGOverageWTU  int64   `json:"payg_overage_wtu"`
+	UtilizationPct  float64 `json:"utilization_pct"`
+}
+
+// PoolWhatIfScenario represents the current 7-day window metrics under a specific What-If configuration.
+type PoolWhatIfScenario struct {
+	PoolMode        string             `json:"pool_mode"`  // "pooled" or "per_user"
+	SeatBasis       string             `json:"seat_basis"` // "assigned" or "purchased"
+	PoolLimitUSD    float64            `json:"pool_limit_usd"`
+	PoolLimitWTU    int64              `json:"pool_limit_wtu"`
+	IncludedUsedUSD float64            `json:"included_used_usd"`
+	IncludedUsedWTU int64              `json:"included_used_wtu"`
+	PAYGOverageUSD  float64            `json:"payg_overage_usd"`
+	PAYGOverageWTU  int64              `json:"payg_overage_wtu"`
+	RemainingUSD    float64            `json:"remaining_usd"`
+	RemainingWTU    int64              `json:"remaining_wtu"`
+	UtilizationPct  float64            `json:"utilization_pct"`
+	Windows         []WeeklyPoolWindow `json:"windows,omitempty"`
+}
+
+// WeeklyAllowancePool represents Gemini Enterprise's floating 7-day Weekly Allowance Pool and What-If simulations.
+type WeeklyAllowancePool struct {
+	WindowStart     string                        `json:"window_start"`
+	WindowEnd       string                        `json:"window_end"`
+	ResetInHours    int                           `json:"reset_in_hours"`
+	ResetCountdown  string                        `json:"reset_countdown"`
+	PoolMode        string                        `json:"pool_mode"`  // "pooled" or "per_user"
+	SeatBasis       string                        `json:"seat_basis"` // "assigned" or "purchased"
+	PoolLimitUSD    float64                       `json:"pool_limit_usd"`
+	PoolLimitWTU    int64                         `json:"pool_limit_wtu"`
+	IncludedUsedUSD float64                       `json:"included_used_usd"`
+	IncludedUsedWTU int64                         `json:"included_used_wtu"`
+	PAYGOverageUSD  float64                       `json:"payg_overage_usd"`
+	PAYGOverageWTU  int64                         `json:"payg_overage_wtu"`
+	RemainingUSD    float64                       `json:"remaining_usd"`
+	RemainingWTU    int64                         `json:"remaining_wtu"`
+	UtilizationPct  float64                       `json:"utilization_pct"`
+	Windows         []WeeklyPoolWindow            `json:"windows,omitempty"`
+	Scenarios       map[string]PoolWhatIfScenario `json:"scenarios,omitempty"`
+}
+
+// LicenseGovernanceSummary provides high-level seat quota, tier distribution, and weekly allowance pool metrics.
 type LicenseGovernanceSummary struct {
-	SeatQuota               int           `json:"seat_quota"`
-	AssignedSeats           int           `json:"assigned_seats"`
-	ActiveSeats             int           `json:"active_seats"`
-	DormantSeats            int           `json:"dormant_seats"`
-	UtilizationPct          float64       `json:"utilization_pct"`
-	EstimatedMonthlySavings float64       `json:"estimated_monthly_savings"`
-	Currency                string        `json:"currency"`
-	DormantUsers            []LicenseSeat `json:"dormant_users"`
+	SeatQuota               int                  `json:"seat_quota"`
+	AssignedSeats           int                  `json:"assigned_seats"`
+	ActiveSeats             int                  `json:"active_seats"`
+	DormantSeats            int                  `json:"dormant_seats"`
+	StandardSeats           int                  `json:"standard_seats"`
+	PlusSeats               int                  `json:"plus_seats"`
+	TrialSeats              int                  `json:"trial_seats"`
+	Locations               []string             `json:"locations,omitempty"`
+	UtilizationPct          float64              `json:"utilization_pct"`
+	EstimatedMonthlySavings float64              `json:"estimated_monthly_savings"`
+	Currency                string               `json:"currency"`
+	DormantUsers            []LicenseSeat        `json:"dormant_users"`
+	AllSeats                []LicenseSeat        `json:"all_seats,omitempty"`
+	WeeklyPool              *WeeklyAllowancePool `json:"weekly_pool,omitempty"`
 }
 
 // OverviewMetrics holds top-level KPIs for the web dashboard and CLI summary.
@@ -214,6 +289,7 @@ type OverviewMetrics struct {
 	TokenCostShares         []TokenCostShare           `json:"token_cost_shares"`
 	ModelEffortStats        []ModelEffortStats         `json:"model_effort_stats"`
 	ClientBreakdown         []ClientStats              `json:"client_breakdown"`
+	WeeklyPool              *WeeklyAllowancePool       `json:"weekly_pool,omitempty"`
 	Currency                string                     `json:"currency"`
 }
 
@@ -522,4 +598,21 @@ func GenerateOptimizationTips(userID string, modelBreakdown map[string]ModelCost
 	return tips
 }
 
+// ResolveSeatAllowance normalizes a Gemini Enterprise subscription tier and returns its weekly pool allowance in USD and WTU.
+// Standard: $2.50/week (1,250,000 WTU/week at $2.00 per 1M WTU)
+// Plus:     $3.75/week (1,875,000 WTU/week at $2.00 per 1M WTU)
+func ResolveSeatAllowance(rawTier string) (tier string, weeklyUSD float64, weeklyWTU int64) {
+	t := strings.ToLower(strings.TrimSpace(rawTier))
+	switch {
+	case t == "standard" || strings.Contains(t, "standard") || strings.Contains(t, "enterprise"):
+		return "standard", 2.50, 1250000
+	default:
+		return "plus", 3.75, 1875000
+	}
+}
 
+// IsPoolEligibleModel returns true if the model can consume from the Weekly Allowance Pool (Gemini & Argon models),
+// and false if the model is always 100% PAYG (e.g., Anthropic Claude models).
+func IsPoolEligibleModel(model string) bool {
+	return !resolveModelRates(model, 0).alwaysPAYG
+}

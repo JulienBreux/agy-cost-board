@@ -307,3 +307,84 @@ func TestCalculateCallWTU(t *testing.T) {
 	})
 }
 
+func TestResolveSeatAllowance(t *testing.T) {
+	tests := []struct {
+		rawTier     string
+		wantTier    string
+		wantUSD     float64
+		wantWTU     int64
+	}{
+		{"standard", "standard", 2.50, 1250000},
+		{"SUBSCRIPTION_TIER_STANDARD", "standard", 2.50, 1250000},
+		{"SUBSCRIPTION_TIER_ENTERPRISE", "standard", 2.50, 1250000},
+		{"plus", "plus", 3.75, 1875000},
+		{"SUBSCRIPTION_TIER_PLUS", "plus", 3.75, 1875000},
+		{"SUBSCRIPTION_TIER_SEARCH_AND_ASSISTANT", "plus", 3.75, 1875000},
+		{"", "plus", 3.75, 1875000},
+	}
+
+	for _, tc := range tests {
+		tier, usd, wtu := domain.ResolveSeatAllowance(tc.rawTier)
+		if tier != tc.wantTier || usd != tc.wantUSD || wtu != tc.wantWTU {
+			t.Errorf("ResolveSeatAllowance(%q) = (%q, %.2f, %d), want (%q, %.2f, %d)",
+				tc.rawTier, tier, usd, wtu, tc.wantTier, tc.wantUSD, tc.wantWTU)
+		}
+	}
+}
+
+func TestIsPoolEligibleModel(t *testing.T) {
+	if !domain.IsPoolEligibleModel("gemini-2.5-pro") {
+		t.Errorf("expected gemini-2.5-pro to be pool-eligible")
+	}
+	if !domain.IsPoolEligibleModel("gemini-4.0-argon") {
+		t.Errorf("expected gemini-4.0-argon to be pool-eligible")
+	}
+	if domain.IsPoolEligibleModel("claude-3-7-sonnet") {
+		t.Errorf("expected claude-3-7-sonnet to NOT be pool-eligible (100%% PAYG)")
+	}
+}
+
+func TestWeeklyAllowancePoolAndPhase2Fields(t *testing.T) {
+	pool := domain.WeeklyAllowancePool{
+		WindowStart:     "2026-10-12",
+		WindowEnd:       "2026-10-18",
+		ResetInHours:    38,
+		ResetCountdown:  "1d 14h",
+		PoolMode:        "pooled",
+		SeatBasis:       "assigned",
+		PoolLimitUSD:    30.00,
+		PoolLimitWTU:    15000000,
+		IncludedUsedUSD: 24.50,
+		IncludedUsedWTU: 12250000,
+		PAYGOverageUSD:  5.20,
+		PAYGOverageWTU:  2600000,
+		RemainingUSD:    5.50,
+		RemainingWTU:    2750000,
+		UtilizationPct:  81.7,
+		Scenarios: map[string]domain.PoolWhatIfScenario{
+			"pooled_assigned": {
+				PoolMode:        "pooled",
+				SeatBasis:       "assigned",
+				PoolLimitUSD:    30.00,
+				PoolLimitWTU:    15000000,
+				IncludedUsedUSD: 24.50,
+				PAYGOverageUSD:  5.20,
+				UtilizationPct:  81.7,
+			},
+		},
+	}
+
+	b, err := json.Marshal(pool)
+	if err != nil {
+		t.Fatalf("marshal WeeklyAllowancePool: %v", err)
+	}
+	var decoded domain.WeeklyAllowancePool
+	if err := json.Unmarshal(b, &decoded); err != nil {
+		t.Fatalf("unmarshal WeeklyAllowancePool: %v", err)
+	}
+	if decoded.PoolLimitUSD != 30.00 || decoded.Scenarios["pooled_assigned"].PAYGOverageUSD != 5.20 {
+		t.Errorf("unexpected decoded pool: %+v", decoded)
+	}
+}
+
+
