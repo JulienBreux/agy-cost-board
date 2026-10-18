@@ -1211,7 +1211,7 @@ func (e *Engine) GetUserSummary(ctx context.Context, userID string, days int) (*
 		return nil, err
 	}
 
-	summaryCurrency := "USD"
+	var summaryCurrency string
 	if len(allCosts) > 0 && allCosts[0].Currency != "" {
 		summaryCurrency = allCosts[0].Currency
 	} else {
@@ -1310,7 +1310,7 @@ func (e *Engine) GetLeaderboard(ctx context.Context, days int) ([]domain.Leaderb
 
 	logs, _ := e.provider.FetchTelemetryLogs(ctx, days)
 
-	currency := "USD"
+	var currency string
 	if len(allCosts) > 0 && allCosts[0].Currency != "" {
 		currency = allCosts[0].Currency
 	} else {
