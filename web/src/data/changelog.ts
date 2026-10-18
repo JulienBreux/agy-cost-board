@@ -12,6 +12,28 @@ export interface ChangelogRelease {
 
 export const CHANGELOG_DATA: ChangelogRelease[] = [
   {
+    version: 'v0.9.0',
+    date: 'October 18, 2026',
+    title: 'Developer Leaderboard & Two-Line Navigation Bar',
+    items: [
+      {
+        title: 'Developer Consumption Leaderboard',
+        description:
+          'New Leaderboard view featuring Top 3 Podium cards, ranked developer spend and token tables, active day counts, cost efficiency per 1K tokens, and stacked model mix bars.',
+      },
+      {
+        title: 'Refined Two-Line Navigation Bar',
+        description:
+          'Dedicated second navigation row housing Overview, Leaderboard, My Consumption, Attributed Costs, Seat Governance, and Setup & Health tabs while keeping brand and global controls on the top bar.',
+      },
+      {
+        title: 'CLI & TUI Leaderboard Support',
+        description:
+          'Added the agy-cost-board leaderboard CLI subcommand (table, json, csv) and interactive [2] LEADERBOARD tab in the Bubble Tea terminal UI.',
+      },
+    ],
+  },
+  {
     version: 'v0.8.0',
     date: 'October 18, 2026',
     title: 'Unified AGY_COST_BOARD_ Environment Variable Standard',
