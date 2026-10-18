@@ -138,4 +138,30 @@ describe('WeeklyAllowancePoolCard', () => {
     expect(screen.getByText('$21.00')).toBeInTheDocument();
     expect(screen.getByText('$9.50')).toBeInTheDocument();
   });
+
+  it('renders Cloud Monitoring Quota Meter vs. Log Estimate reconciliation banner when monitoring_meter is provided', () => {
+    const poolWithMeter: WeeklyAllowancePool = {
+      ...mockPool,
+      monitoring_meter: {
+        metric_type: 'discoveryengine.googleapis.com/quota/agentic_wtu_tier_pp_weekly_regional',
+        metered_used_wtu: 15523500,
+        metered_used_usd: 31.05,
+        log_estimated_wtu: 15250000,
+        log_estimated_usd: 30.5,
+        drift_wtu: 273500,
+        drift_pct: 1.79,
+        status: 'synced',
+        last_synced_at: '2026-10-18T12:00:00Z',
+      },
+    };
+
+    render(<WeeklyAllowancePoolCard pool={poolWithMeter} currency="USD" />);
+
+    expect(screen.getByText(/Cloud Monitoring Quota Meter/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/discoveryengine\.googleapis\.com\/quota\/agentic_wtu_tier_pp_weekly_regional/i)
+    ).toBeInTheDocument();
+    expect(screen.getByText(/Synced/i)).toBeInTheDocument();
+    expect(screen.getByText(/\+1\.79%/i)).toBeInTheDocument();
+  });
 });

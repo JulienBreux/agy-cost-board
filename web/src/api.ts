@@ -87,6 +87,48 @@ export interface PoolWhatIfScenario {
   windows?: WeeklyPoolWindow[];
 }
 
+export interface MonitoringQuotaMeter {
+  metric_type: string;
+  metered_used_wtu: number;
+  metered_used_usd: number;
+  log_estimated_wtu: number;
+  log_estimated_usd: number;
+  drift_wtu: number;
+  drift_pct: number;
+  status: 'synced' | 'minor_drift' | 'diverged' | 'unavailable' | string;
+  last_synced_at?: string;
+}
+
+export interface ForecastDay {
+  date: string;
+  window_start: string;
+  window_end: string;
+  projected_wtu: number;
+  included_wtu: number;
+  payg_overage_wtu: number;
+  included_cost_usd: number;
+  payg_overage_usd: number;
+  cumulative_pool_wtu: number;
+  pool_limit_wtu: number;
+  spillover_triggered: boolean;
+}
+
+export interface UsageForecast {
+  horizon_days: number;
+  daily_velocity_wtu: number;
+  daily_pool_eligible_wtu?: number;
+  daily_always_payg_wtu?: number;
+  daily_velocity_usd: number;
+  projected_30d_total_wtu: number;
+  projected_30d_total_usd: number;
+  projected_30d_included_usd: number;
+  projected_30d_payg_usd: number;
+  will_spillover_in_current_window: boolean;
+  spillover_date?: string;
+  days_until_spillover: number;
+  forecast_days: ForecastDay[];
+}
+
 export interface WeeklyAllowancePool {
   window_start: string;
   window_end: string;
@@ -105,9 +147,12 @@ export interface WeeklyAllowancePool {
   utilization_pct: number;
   windows?: WeeklyPoolWindow[];
   scenarios?: Record<string, PoolWhatIfScenario>;
+  monitoring_meter?: MonitoringQuotaMeter;
 }
 
 export interface OverviewMetrics {
+  monitored_projects?: string[];
+  selected_project?: string;
   total_billed_cost: number;
   total_wtu?: number;
   included_cost?: number;
@@ -126,10 +171,12 @@ export interface OverviewMetrics {
   model_effort_stats?: ModelEffortStats[];
   client_breakdown?: ClientStats[];
   weekly_pool?: WeeklyAllowancePool;
+  forecast?: UsageForecast;
   currency: string;
 }
 
 export interface AllocatedUserCost {
+  project_id?: string;
   user_id: string;
   model: string;
   usage_date: string;
@@ -150,6 +197,7 @@ export interface AllocatedUserCost {
 }
 
 export interface LicenseSeat {
+  project_id?: string;
   user_id: string;
   assigned?: boolean;
   status: 'active' | 'at_risk' | 'dormant';
@@ -164,6 +212,8 @@ export interface LicenseSeat {
 }
 
 export interface LicenseGovernance {
+  monitored_projects?: string[];
+  selected_project?: string;
   seat_quota: number;
   assigned_seats: number;
   active_seats: number;
@@ -192,6 +242,7 @@ export interface UserSummary {
 
 export interface LeaderboardEntry {
   rank: number;
+  project_id?: string;
   user_id: string;
   total_cost: number;
   included_cost?: number;
@@ -406,9 +457,11 @@ export const aggregateLeaderboardFromCosts = (costs: AllocatedUserCost[]): Leade
 
 export const fetchLeaderboard = async (
   days = 30,
-  paygMode?: 'fair_share' | 'when_used'
+  paygMode?: 'fair_share' | 'when_used',
+  project?: string
 ): Promise<LeaderboardEntry[]> => {
-  const url = `/api/v1/leaderboard?days=${days}${paygMode ? `&payg_mode=${encodeURIComponent(paygMode)}` : ''}`;
+  const projectParam = project && project !== 'all' ? `&project=${encodeURIComponent(project)}` : '';
+  const url = `/api/v1/leaderboard?days=${days}${paygMode ? `&payg_mode=${encodeURIComponent(paygMode)}` : ''}${projectParam}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch developer leaderboard`);
   const data = await res.json();
@@ -416,8 +469,9 @@ export const fetchLeaderboard = async (
   return data.map((item, idx) => normalizeLeaderboardEntry(item, idx));
 };
 
-export const fetchOverview = async (days = 30): Promise<OverviewMetrics> => {
-  const res = await fetch(`/api/v1/metrics/overview?days=${days}`);
+export const fetchOverview = async (days = 30, project?: string): Promise<OverviewMetrics> => {
+  const projectParam = project && project !== 'all' ? `&project=${encodeURIComponent(project)}` : '';
+  const res = await fetch(`/api/v1/metrics/overview?days=${days}${projectParam}`);
   if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch overview metrics`);
   return res.json();
 };
@@ -425,18 +479,21 @@ export const fetchOverview = async (days = 30): Promise<OverviewMetrics> => {
 export const fetchAttributedCosts = async (
   days = 30,
   model = '',
-  paygMode?: 'fair_share' | 'when_used'
+  paygMode?: 'fair_share' | 'when_used',
+  project?: string
 ): Promise<AllocatedUserCost[]> => {
+  const projectParam = project && project !== 'all' ? `&project=${encodeURIComponent(project)}` : '';
   const url = `/api/v1/costs/users?days=${days}${model ? `&model=${encodeURIComponent(model)}` : ''}${
     paygMode ? `&payg_mode=${encodeURIComponent(paygMode)}` : ''
-  }`;
+  }${projectParam}`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch attributed costs`);
   return res.json();
 };
 
-export const fetchLicenseGovernance = async (days = 30): Promise<LicenseGovernance> => {
-  const res = await fetch(`/api/v1/licenses/status?days=${days}`);
+export const fetchLicenseGovernance = async (days = 30, project?: string): Promise<LicenseGovernance> => {
+  const projectParam = project && project !== 'all' ? `&project=${encodeURIComponent(project)}` : '';
+  const res = await fetch(`/api/v1/licenses/status?days=${days}${projectParam}`);
   if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to fetch license governance`);
   return res.json();
 };

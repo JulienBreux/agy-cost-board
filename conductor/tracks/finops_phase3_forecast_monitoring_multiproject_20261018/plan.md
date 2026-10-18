@@ -15,10 +15,10 @@
     - [x] Update HTTP handlers, CLI formatters, TUI views, and MCP tools.
 
 ## Phase 2: Web UI Components (30-Day Forecast Card, Cloud Monitoring Meter Badge & Navbar Project Selector)
-- [~] Task: Update `web/src/api.ts`, create `web/src/components/ForecastCard.tsx`, and add Cloud Monitoring Quota Meter badge to `WeeklyAllowancePoolCard.tsx`
-    - [ ] Add unit tests in `web/src/components/ForecastCard.test.tsx` and `web/src/components/WeeklyAllowancePoolCard.test.tsx`.
-    - [ ] Implement `ForecastCard.tsx` and update `WeeklyAllowancePoolCard.tsx` and `web/src/api.ts`.
-- [ ] Task: Add Multi-Project Selector to `Navbar.tsx` and integrate `ForecastCard` and `selectedProject` state into `App.tsx`
+- [x] Task: Update `web/src/api.ts`, create `web/src/components/ForecastCard.tsx`, and add Cloud Monitoring Quota Meter badge to `WeeklyAllowancePoolCard.tsx`
+    - [x] Add unit tests in `web/src/components/ForecastCard.test.tsx` and `web/src/components/WeeklyAllowancePoolCard.test.tsx`.
+    - [x] Implement `ForecastCard.tsx` and update `WeeklyAllowancePoolCard.tsx` and `web/src/api.ts`.
+- [~] Task: Add Multi-Project Selector to `Navbar.tsx` and integrate `ForecastCard` and `selectedProject` state into `App.tsx`
     - [ ] Add unit tests in `web/src/App.test.tsx` verifying project selector filtering and 30-day forecast card rendering.
     - [ ] Update `web/src/components/Navbar.tsx` and `web/src/App.tsx`.
 - [ ] Task: Rebuild embedded frontend (`web/dist`), run full Go & Web test suites, and restart `--demo` server on port `8080`

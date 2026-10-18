@@ -203,6 +203,70 @@ export const WeeklyAllowancePoolCard: React.FC<Props> = ({ pool, currency = 'USD
         </div>
       </div>
 
+      {/* Cloud Monitoring Quota Meter vs. Log Estimate Reconciliation Banner */}
+      {pool.monitoring_meter && (
+        <div className="mb-6 bg-slate-900/60 border border-slate-700/60 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="flex items-start sm:items-center gap-2.5">
+            <span
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wide border ${
+                pool.monitoring_meter.status === 'synced'
+                  ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30'
+                  : pool.monitoring_meter.status === 'minor_drift'
+                  ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+                  : 'bg-rose-500/15 text-rose-300 border-rose-500/30'
+              }`}
+            >
+              {pool.monitoring_meter.status === 'synced'
+                ? 'Synced'
+                : pool.monitoring_meter.status === 'minor_drift'
+                ? 'Minor Drift'
+                : 'Diverged'}
+            </span>
+            <div>
+              <div className="text-xs font-medium text-slate-200">
+                Cloud Monitoring Quota Meter vs. Log Estimate
+              </div>
+              <div className="text-[11px] text-slate-400 font-mono truncate max-w-xl">
+                {pool.monitoring_meter.metric_type}
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4 text-xs font-mono">
+            <div>
+              <span className="text-slate-400">Metered: </span>
+              <span className="text-white font-semibold">
+                {formatWTU(pool.monitoring_meter.metered_used_wtu)}
+              </span>{' '}
+              <span className="text-slate-400">
+                ({formatCurrency(Number(pool.monitoring_meter.metered_used_usd ?? 0), currency)})
+              </span>
+            </div>
+            <div>
+              <span className="text-slate-400">Log Est.: </span>
+              <span className="text-slate-200">
+                {formatWTU(pool.monitoring_meter.log_estimated_wtu)}
+              </span>
+            </div>
+            <div>
+              <span className="text-slate-400">Drift: </span>
+              <span
+                className={`font-semibold ${
+                  Math.abs(Number(pool.monitoring_meter.drift_pct ?? 0)) <= 5
+                    ? 'text-emerald-400'
+                    : Math.abs(Number(pool.monitoring_meter.drift_pct ?? 0)) <= 15
+                    ? 'text-amber-400'
+                    : 'text-rose-400'
+                }`}
+              >
+                {Number(pool.monitoring_meter.drift_pct ?? 0) >= 0 ? '+' : ''}
+                {Number(pool.monitoring_meter.drift_pct ?? 0).toFixed(2)}%
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Rolling 7-Day Window History */}
       {windows.length > 0 && (
         <div className="border-t border-slate-700/50 pt-4">
