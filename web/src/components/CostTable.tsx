@@ -115,6 +115,7 @@ export const CostTable: React.FC<CostTableProps> = ({ costs, onSelectUser }) => 
                   <ArrowUpDown className="h-3 w-3" />
                 </div>
               </th>
+              <th className="py-3 px-4 font-semibold text-right">Cache Hit %</th>
               <th className="py-3 px-4 font-semibold text-center">Model Share</th>
               <th
                 onClick={() => toggleSort('cost')}
@@ -130,7 +131,7 @@ export const CostTable: React.FC<CostTableProps> = ({ costs, onSelectUser }) => 
           <tbody className="divide-y divide-[#1e2330]">
             {paginatedRows.length === 0 ? (
               <tr>
-                <td colSpan={6} className="py-8 text-center text-google-gray-500">
+                <td colSpan={7} className="py-8 text-center text-google-gray-500">
                   No attributed cost records found matching your filters.
                 </td>
               </tr>
@@ -154,7 +155,15 @@ export const CostTable: React.FC<CostTableProps> = ({ costs, onSelectUser }) => 
                     {r.usage_date}
                   </td>
                   <td className="py-3 px-4 text-google-gray-200 text-right font-mono">
-                    {r.user_tokens.toLocaleString()}
+                    <div>{r.user_tokens.toLocaleString()}</div>
+                    {(r.wtu ?? 0) > 0 && (
+                      <div className="text-[10px] text-indigo-400">
+                        {Math.round(r.wtu ?? 0).toLocaleString()} WTU
+                      </div>
+                    )}
+                  </td>
+                  <td className="py-3 px-4 text-right font-mono text-emerald-400">
+                    {(r.cache_hit_rate ?? 0) > 0 ? `${Number(r.cache_hit_rate).toFixed(1)}%` : '—'}
                   </td>
                   <td className="py-3 px-4 text-center">
                     <div className="inline-flex items-center space-x-2">
@@ -170,7 +179,13 @@ export const CostTable: React.FC<CostTableProps> = ({ costs, onSelectUser }) => 
                     </div>
                   </td>
                   <td className="py-3 px-4 text-right font-semibold text-white font-mono">
-                    {formatCurrency(r.allocated_cost, r.currency)}
+                    <div>{formatCurrency(r.allocated_cost, r.currency)}</div>
+                    {((r.included_cost ?? 0) > 0 || (r.payg_cost ?? 0) > 0) && (
+                      <div className="text-[10px] font-normal text-google-gray-400">
+                        Inc: {formatCurrency(r.included_cost ?? 0, r.currency)} · PAYG:{' '}
+                        {formatCurrency(r.payg_cost ?? 0, r.currency)}
+                      </div>
+                    )}
                   </td>
                 </tr>
               ))

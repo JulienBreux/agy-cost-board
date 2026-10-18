@@ -190,6 +190,16 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
                   <div className="text-2xl font-extrabold text-white font-mono mt-1">
                     {formatCurrency(entry.total_cost ?? 0, entry.currency)}
                   </div>
+                  {((entry.included_cost ?? 0) > 0 || (entry.payg_cost ?? 0) > 0) && (
+                    <div className="flex flex-wrap items-center gap-1.5 mt-1.5 text-[11px] font-mono">
+                      <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        Inc: {formatCurrency(entry.included_cost ?? 0, entry.currency)}
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                        PAYG: {formatCurrency(entry.payg_cost ?? 0, entry.currency)}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 pt-3 border-t border-[#222836]/80 text-xs">
@@ -201,6 +211,11 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
                     <div className="font-mono font-semibold text-google-gray-200 mt-0.5">
                       {formatCompactTokens(entry.total_tokens)}
                     </div>
+                    {(entry.cache_hit_rate ?? 0) > 0 && (
+                      <div className="text-[10px] font-mono text-emerald-400">
+                        {Number(entry.cache_hit_rate).toFixed(1)}% cache
+                      </div>
+                    )}
                   </div>
                   <div>
                     <div className="text-google-gray-500 flex items-center space-x-1">
@@ -222,6 +237,13 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
                     >
                       {entry.top_model || 'N/A'}
                     </div>
+                    {entry.top_effort && (
+                      <div className="mt-0.5">
+                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20 font-mono">
+                          {entry.top_effort}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -286,6 +308,7 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
                     <ArrowUpDown className="h-3 w-3" />
                   </div>
                 </th>
+                <th className="py-3 px-4 font-semibold text-right">Cache Hit %</th>
                 <th
                   onClick={() => toggleSort('active_days')}
                   className="py-3 px-4 font-semibold cursor-pointer hover:text-white text-right"
@@ -310,7 +333,7 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
             <tbody className="divide-y divide-[#1e2330]">
               {filteredAndSorted.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-google-gray-500">
+                  <td colSpan={9} className="py-8 text-center text-google-gray-500">
                     No developers found matching your filter.
                   </td>
                 </tr>
@@ -355,7 +378,13 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
                         </div>
                       </td>
                       <td className="py-3 px-4 text-right font-semibold text-white font-mono">
-                        {formatCurrency(entry.total_cost ?? 0, entry.currency)}
+                        <div>{formatCurrency(entry.total_cost ?? 0, entry.currency)}</div>
+                        {((entry.included_cost ?? 0) > 0 || (entry.payg_cost ?? 0) > 0) && (
+                          <div className="text-[10px] font-normal text-google-gray-400">
+                            Inc: {formatCurrency(entry.included_cost ?? 0, entry.currency)} · PAYG:{' '}
+                            {formatCurrency(entry.payg_cost ?? 0, entry.currency)}
+                          </div>
+                        )}
                       </td>
                       <td className="py-3 px-4 text-center">
                         <div className="inline-flex items-center space-x-2">
@@ -371,7 +400,17 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
                         </div>
                       </td>
                       <td className="py-3 px-4 text-right text-google-gray-200 font-mono">
-                        {Number(entry.total_tokens ?? 0).toLocaleString()}
+                        <div>{Number(entry.total_tokens ?? 0).toLocaleString()}</div>
+                        {(entry.wtu ?? 0) > 0 && (
+                          <div className="text-[10px] text-indigo-400">
+                            {formatCompactTokens(entry.wtu ?? 0)} WTU
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-right font-mono text-emerald-400">
+                        {(entry.cache_hit_rate ?? 0) > 0
+                          ? `${Number(entry.cache_hit_rate).toFixed(1)}%`
+                          : '—'}
                       </td>
                       <td className="py-3 px-4 text-right font-mono text-google-gray-300">
                         <span className="inline-flex items-center space-x-1">
@@ -403,8 +442,13 @@ export const LeaderboardView: React.FC<LeaderboardViewProps> = ({
                               );
                             })}
                           </div>
-                          <div className="text-[11px] text-google-gray-400 font-mono truncate">
-                            {entry.top_model}
+                          <div className="flex items-center justify-between gap-1 text-[11px] text-google-gray-400 font-mono">
+                            <span className="truncate">{entry.top_model}</span>
+                            {entry.top_effort && (
+                              <span className="px-1.5 py-0.2 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20 text-[10px]">
+                                {entry.top_effort}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </td>

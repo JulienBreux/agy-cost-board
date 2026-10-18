@@ -38,6 +38,16 @@ export const PersonalKPICards: React.FC<PersonalKPICardsProps> = ({ kpis, curren
               {formatCurrency(safeKpis.daily_burn_rate, currency)}/day average velocity
             </span>
           </div>
+          {((safeKpis.included_cost ?? 0) > 0 || (safeKpis.payg_cost ?? 0) > 0) && (
+            <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] font-mono">
+              <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                Included: {formatCurrency(safeKpis.included_cost ?? 0, currency)}
+              </span>
+              <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                PAYG: {formatCurrency(safeKpis.payg_cost ?? 0, currency)}
+              </span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -78,6 +88,20 @@ export const PersonalKPICards: React.FC<PersonalKPICardsProps> = ({ kpis, curren
           <div className="mt-1 flex items-center text-xs text-google-gray-400">
             <span>{(safeKpis.total_user_tokens || 0).toLocaleString()} tokens total</span>
           </div>
+          {((safeKpis.total_wtu ?? 0) > 0 || (safeKpis.cache_hit_rate ?? 0) > 0) && (
+            <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] font-mono">
+              {(safeKpis.total_wtu ?? 0) > 0 && (
+                <span className="px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                  {((safeKpis.total_wtu ?? 0) / 1_000_000).toFixed(2)}M WTU
+                </span>
+              )}
+              {(safeKpis.cache_hit_rate ?? 0) > 0 && (
+                <span className="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  {Number(safeKpis.cache_hit_rate).toFixed(1)}% cache
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

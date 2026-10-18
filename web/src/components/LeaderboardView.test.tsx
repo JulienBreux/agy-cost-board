@@ -168,5 +168,26 @@ describe('LeaderboardView Component', () => {
     expect(screen.getByText('19.3% of org')).toBeInTheDocument();
     expect(screen.getAllByText('elena.rostova@google.com').length).toBeGreaterThan(0);
   });
+
+  it('displays Included vs PAYG cost split, Cache Hit %, and Top Effort badges when available', () => {
+    const onSelectUser = vi.fn();
+    const enrichedEntries: LeaderboardEntry[] = [
+      {
+        ...mockEntries[0],
+        included_cost: 290.5,
+        payg_cost: 130.0,
+        wtu: 14500000,
+        cache_hit_rate: 76.4,
+        top_effort: 'high',
+      },
+    ];
+
+    render(<LeaderboardView entries={enrichedEntries} onSelectUser={onSelectUser} days={30} />);
+
+    expect(screen.getAllByText(/Inc: €290\.50/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/PAYG: €130\.00/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText('76.4%').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('high').length).toBeGreaterThan(0);
+  });
 });
 

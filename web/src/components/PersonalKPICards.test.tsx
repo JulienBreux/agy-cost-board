@@ -47,5 +47,23 @@ describe('PersonalKPICards Component', () => {
     expect(screen.getByText('€8.05')).toBeInTheDocument();
     expect(screen.getByText(/€1\.15\/day average velocity/)).toBeInTheDocument();
   });
+
+  it('renders Included vs PAYG coexistence and WTU + Cache Hit % when provided', () => {
+    const kpisWithFinOps: UserConsumptionKPIs = {
+      ...mockKpis,
+      included_cost: 22.0,
+      payg_cost: 12.5,
+      total_wtu: 6400000,
+      cache_hit_rate: 79.2,
+      top_effort: 'high',
+    };
+
+    render(<PersonalKPICards kpis={kpisWithFinOps} currency="USD" />);
+
+    expect(screen.getByText(/Included: \$22\.00/)).toBeInTheDocument();
+    expect(screen.getByText(/PAYG: \$12\.50/)).toBeInTheDocument();
+    expect(screen.getByText(/6\.40M WTU/)).toBeInTheDocument();
+    expect(screen.getByText(/79\.2% cache/)).toBeInTheDocument();
+  });
 });
 

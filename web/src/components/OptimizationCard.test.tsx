@@ -60,5 +60,29 @@ describe('OptimizationCard', () => {
     expect(screen.getByText('Save €24.50/mo')).toBeInTheDocument();
     expect(screen.getByText('Save €12.00/mo')).toBeInTheDocument();
   });
+
+  it('formats effort-tier-downgrade and prompt-cache-warming tip types with human-readable labels', () => {
+    const finopsTips: OptimizationTip[] = [
+      {
+        type: 'effort-tier-downgrade',
+        title: 'Right-size High/Max Thinking Effort',
+        description: '42% of your requests run at high/max thinking effort.',
+        potential_savings_monthly: 18.2,
+        severity: 'warning',
+      },
+      {
+        type: 'prompt-cache-warming',
+        title: 'Improve Context Cache Reuse',
+        description: 'Your cache hit rate is 48% vs org 75%.',
+        potential_savings_monthly: 9.5,
+        severity: 'info',
+      },
+    ];
+
+    render(<OptimizationCard tips={finopsTips} currency="USD" />);
+
+    expect(screen.getByText('Thinking Effort')).toBeInTheDocument();
+    expect(screen.getByText('Context Caching')).toBeInTheDocument();
+  });
 });
 

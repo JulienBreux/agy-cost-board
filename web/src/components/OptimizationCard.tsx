@@ -31,13 +31,19 @@ export const OptimizationCard: FC<OptimizationCardProps> = ({
   const getTypeLabel = (type: string) => {
     switch (type) {
       case 'model_switch':
+      case 'claude-to-gemini':
+      case 'pro-to-flash':
         return 'Model Selection';
       case 'caching':
+      case 'prompt-cache-warming':
         return 'Context Caching';
+      case 'effort-tier-downgrade':
+        return 'Thinking Effort';
       case 'budget':
+      case 'budget-alert':
         return 'Budget & Quota';
       default:
-        return type.replace(/_/g, ' ').toUpperCase();
+        return type.replace(/[-_]/g, ' ').toUpperCase();
     }
   };
 
