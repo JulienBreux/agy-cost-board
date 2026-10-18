@@ -8,9 +8,9 @@ DEFAULT_DAYS="{{.DefaultDays}}"
 DEFAULT_TTL="{{.DefaultTTL}}"
 
 BOARD_URL="${AGY_COST_BOARD_URL:-$DEFAULT_BOARD_URL}"
-DAYS="${AGY_COST_DAYS:-$DEFAULT_DAYS}"
-CACHE_TTL="${AGY_COST_CACHE_TTL:-$DEFAULT_TTL}"
-DISABLED="${AGY_COST_DISABLED:-false}"
+DAYS="${AGY_COST_BOARD_DAYS:-$DEFAULT_DAYS}"
+CACHE_TTL="${AGY_COST_BOARD_CACHE_TTL:-$DEFAULT_TTL}"
+DISABLED="${AGY_COST_BOARD_DISABLED:-false}"
 
 # ─── ANSI Helpers (Standard 16-color palette only) ───────────────────────────
 R="\033[0m"         # Reset
@@ -152,8 +152,8 @@ DOT="${FG_GRAY} · ${R}"
 COST_FMT=""
 
 resolve_cost_user() {
-  if [ -n "${AGY_COST_USER:-}" ]; then
-    echo "$AGY_COST_USER"
+  if [ -n "${AGY_COST_BOARD_USER:-}" ]; then
+    echo "$AGY_COST_BOARD_USER"
     return
   fi
   if [ -n "${DEFAULT_USER:-}" ]; then

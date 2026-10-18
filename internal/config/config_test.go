@@ -186,7 +186,9 @@ func TestViperConfigFeatures(t *testing.T) {
 	})
 
 	t.Run("environment variable override with AGY_COST_BOARD_ prefix", func(t *testing.T) {
-		t.Setenv("AGY_COST_BOARD_PROJECT", "env-prefixed-project")
+		t.Setenv("AGY_COST_BOARD_PROJECT_ID", "env-prefixed-project")
+		t.Setenv("AGY_COST_BOARD_TELEMETRY_TABLE", "prefixed.ds.telemetry")
+		t.Setenv("AGY_COST_BOARD_BILLING_TABLE", "prefixed.billing.export")
 		t.Setenv("AGY_COST_BOARD_SEAT_QUOTA", "77")
 		t.Setenv("AGY_COST_BOARD_PORT", "9999")
 
@@ -198,6 +200,12 @@ func TestViperConfigFeatures(t *testing.T) {
 		if cfg.ProjectID != "env-prefixed-project" {
 			t.Errorf("expected env-prefixed-project, got %s", cfg.ProjectID)
 		}
+		if cfg.TelemetryTable != "prefixed.ds.telemetry" {
+			t.Errorf("expected prefixed.ds.telemetry, got %s", cfg.TelemetryTable)
+		}
+		if cfg.BillingTable != "prefixed.billing.export" {
+			t.Errorf("expected prefixed.billing.export, got %s", cfg.BillingTable)
+		}
 		if cfg.SeatQuota != 77 {
 			t.Errorf("expected seat quota 77, got %d", cfg.SeatQuota)
 		}
@@ -206,36 +214,42 @@ func TestViperConfigFeatures(t *testing.T) {
 		}
 	})
 
-	t.Run("legacy environment variable fallback", func(t *testing.T) {
+	t.Run("unprefixed legacy environment variables are ignored", func(t *testing.T) {
 		t.Setenv("GCP_PROJECT", "legacy-gcp-project")
+		t.Setenv("PROJECT_ID", "legacy-project-id")
 		t.Setenv("TELEMETRY_TABLE", "legacy.ds.telemetry")
 		t.Setenv("BILLING_TABLE", "legacy.billing.export")
 		t.Setenv("SEAT_QUOTA", "52")
 		t.Setenv("PORT", "7777")
+		t.Setenv("_MCP_ENABLED", "false")
+		t.Setenv("MCP_ENABLED", "false")
 
 		cfg, err := config.Load(filepath.Join(t.TempDir(), "nonexistent.yaml"))
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
 		}
 
-		if cfg.ProjectID != "legacy-gcp-project" {
-			t.Errorf("expected legacy-gcp-project, got %s", cfg.ProjectID)
+		if cfg.ProjectID != "" {
+			t.Errorf("expected empty ProjectID when only unprefixed vars set, got %s", cfg.ProjectID)
 		}
-		if cfg.TelemetryTable != "legacy.ds.telemetry" {
-			t.Errorf("expected legacy.ds.telemetry, got %s", cfg.TelemetryTable)
+		if cfg.TelemetryTable != "" {
+			t.Errorf("expected empty TelemetryTable when only unprefixed vars set, got %s", cfg.TelemetryTable)
 		}
-		if cfg.BillingTable != "legacy.billing.export" {
-			t.Errorf("expected legacy.billing.export, got %s", cfg.BillingTable)
+		if cfg.BillingTable != "" {
+			t.Errorf("expected empty BillingTable when only unprefixed vars set, got %s", cfg.BillingTable)
 		}
-		if cfg.SeatQuota != 52 {
-			t.Errorf("expected seat quota 52, got %d", cfg.SeatQuota)
+		if cfg.SeatQuota != 10 {
+			t.Errorf("expected default seat quota 10, got %d", cfg.SeatQuota)
 		}
-		if cfg.Port != 7777 {
-			t.Errorf("expected port 7777, got %d", cfg.Port)
+		if cfg.Port != 8080 {
+			t.Errorf("expected default port 8080, got %d", cfg.Port)
+		}
+		if !cfg.MCPEnabled {
+			t.Errorf("expected MCPEnabled to remain true when only unprefixed _MCP_ENABLED/MCP_ENABLED are set")
 		}
 	})
 
-	t.Run("mcp_enabled defaults to true and respects _MCP_ENABLED env overrides", func(t *testing.T) {
+	t.Run("mcp_enabled defaults to true and respects AGY_COST_BOARD_MCP_ENABLED override", func(t *testing.T) {
 		cfgDefault, err := config.Load(filepath.Join(t.TempDir(), "nonexistent.yaml"))
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -243,17 +257,6 @@ func TestViperConfigFeatures(t *testing.T) {
 		if !cfgDefault.MCPEnabled {
 			t.Errorf("expected MCPEnabled to default to true, got false")
 		}
-
-		t.Run("disabled via _MCP_ENABLED=false", func(t *testing.T) {
-			t.Setenv("_MCP_ENABLED", "false")
-			cfg, err := config.Load(filepath.Join(t.TempDir(), "nonexistent.yaml"))
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
-			if cfg.MCPEnabled {
-				t.Errorf("expected MCPEnabled to be false when _MCP_ENABLED=false")
-			}
-		})
 
 		t.Run("disabled via AGY_COST_BOARD_MCP_ENABLED=false", func(t *testing.T) {
 			t.Setenv("AGY_COST_BOARD_MCP_ENABLED", "false")
@@ -263,17 +266,6 @@ func TestViperConfigFeatures(t *testing.T) {
 			}
 			if cfg.MCPEnabled {
 				t.Errorf("expected MCPEnabled to be false when AGY_COST_BOARD_MCP_ENABLED=false")
-			}
-		})
-
-		t.Run("disabled via MCP_ENABLED=false", func(t *testing.T) {
-			t.Setenv("MCP_ENABLED", "false")
-			cfg, err := config.Load(filepath.Join(t.TempDir(), "nonexistent.yaml"))
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
-			if cfg.MCPEnabled {
-				t.Errorf("expected MCPEnabled to be false when MCP_ENABLED=false")
 			}
 		})
 	})

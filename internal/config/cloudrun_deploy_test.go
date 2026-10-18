@@ -113,7 +113,7 @@ func TestCloudRunDeployYaml(t *testing.T) {
 
 	// Check environment variables match app.json
 	expectedEnvs := map[string]string{
-		"PROJECT_ID":                     "PROJECT_ID",
+		"AGY_COST_BOARD_PROJECT_ID":      "PROJECT_ID",
 		"AGY_COST_BOARD_DEMO":            "false",
 		"AGY_COST_BOARD_TELEMETRY_TABLE": "",
 		"AGY_COST_BOARD_BILLING_TABLE":   "",

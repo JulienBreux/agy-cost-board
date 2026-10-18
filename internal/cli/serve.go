@@ -23,9 +23,8 @@ func newServeCommand(v *viper.Viper) *cobra.Command {
 	var port int
 	var host string
 
-	// Cloud Run sets PORT environment variable
 	defaultPort := 8080
-	if envPort := os.Getenv("PORT"); envPort != "" {
+	if envPort := os.Getenv("AGY_COST_BOARD_PORT"); envPort != "" {
 		if p, err := strconv.Atoi(envPort); err == nil && p > 0 {
 			defaultPort = p
 		}
@@ -98,7 +97,7 @@ func newServeCommand(v *viper.Viper) *cobra.Command {
 				IdleTimeout:  60 * time.Second,
 			}
 
-			mcpBanner := "disabled (_MCP_ENABLED=false)"
+			mcpBanner := "disabled (AGY_COST_BOARD_MCP_ENABLED=false)"
 			if mcpEnabled {
 				mcpBanner = fmt.Sprintf("http://localhost:%d/mcp", port)
 			}
@@ -136,7 +135,7 @@ func newServeCommand(v *viper.Viper) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().IntVarP(&port, "port", "p", defaultPort, "Port to listen on (defaults to $PORT or 8080)")
+	cmd.Flags().IntVarP(&port, "port", "p", defaultPort, "Port to listen on (defaults to $AGY_COST_BOARD_PORT or 8080)")
 	cmd.Flags().StringVar(&host, "host", "0.0.0.0", "Host address to bind to")
 
 	if v != nil {

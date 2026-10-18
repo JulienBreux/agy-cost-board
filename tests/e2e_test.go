@@ -335,7 +335,7 @@ func TestEndToEndHTTPServerFlows(t *testing.T) {
 
 		body, _ := io.ReadAll(res.Body)
 		script := string(body)
-		if !strings.Contains(script, "AGY_COST_USER") || !strings.Contains(script, "sophia.chen@google.com") {
+		if !strings.Contains(script, "AGY_COST_BOARD_USER") || !strings.Contains(script, "sophia.chen@google.com") {
 			t.Errorf("expected user in statusline script")
 		}
 		if !strings.Contains(script, "cost") {

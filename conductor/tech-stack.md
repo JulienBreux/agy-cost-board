@@ -12,7 +12,7 @@
 ## 3. Web Backend & APIs
 - **HTTP Routing:** `github.com/go-chi/chi/v5` - lightweight, idiomatic, fast HTTP router.
 - **Asset Embedding:** Go standard library `embed` package bundling the compiled React SPA.
-- **Configuration & Environment:** Support for standard Cloud Run `$PORT`, standard GCP environment variables, and YAML/flag overrides.
+- **Configuration & Environment:** Strict `AGY_COST_BOARD_*` environment variable namespace (`AGY_COST_BOARD_PORT`, `AGY_COST_BOARD_PROJECT_ID`, `AGY_COST_BOARD_MCP_ENABLED`, etc.) with YAML/flag overrides.
 
 ## 4. Frontend Web Application
 - **Framework & Build:** React with TypeScript, bundled using Vite.
@@ -33,6 +33,6 @@
 
 ## 7. Developer Tooling & Integrations
 - **Antigravity CLI Statusline:** Dynamic POSIX/bash 3.2+ compatible statusline script served via `GET /statusline.sh`, with zero-latency `/tmp` caching, background asynchronous subshell refresh, stampede locking, and Cloud Run IAM Bearer token authentication.
-- **Model Context Protocol (MCP) Server (`internal/mcp`):** Pure Go JSON-RPC 2.0 MCP (`2025-03-26`) implementation supporting Streamable HTTP (`POST /mcp`) and Stdio (`agy-cost-board mcp`), toggleable via `_MCP_ENABLED`.
+- **Model Context Protocol (MCP) Server (`internal/mcp`):** Pure Go JSON-RPC 2.0 MCP (`2025-03-26`) implementation supporting Streamable HTTP (`POST /mcp`) and Stdio (`agy-cost-board mcp`), toggleable via `AGY_COST_BOARD_MCP_ENABLED`.
 - **Antigravity Plugin Bundle (`.agents/plugins/agy-cost-board/`):** Declarative `plugin.json`, `mcp_config.json`, `rules/AGENTS.md`, and `skills/cost-and-quota-advisor/SKILL.md`.
 

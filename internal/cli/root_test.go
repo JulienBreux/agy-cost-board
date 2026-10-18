@@ -323,7 +323,7 @@ func TestCLICommandsWithDemo(t *testing.T) {
 	})
 
 	t.Run("serve command registers flags properly", func(t *testing.T) {
-		t.Setenv("PORT", "9090")
+		t.Setenv("AGY_COST_BOARD_PORT", "9090")
 		rootCmd := cli.NewRootCommand()
 		serveCmd, _, err := rootCmd.Find([]string{"serve"})
 		if err != nil {

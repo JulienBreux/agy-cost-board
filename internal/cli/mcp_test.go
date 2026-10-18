@@ -76,9 +76,9 @@ func TestMCPCommand(t *testing.T) {
 		}
 	})
 
-	t.Run("mcp command returns error when _MCP_ENABLED=false", func(t *testing.T) {
+	t.Run("mcp command returns error when AGY_COST_BOARD_MCP_ENABLED=false", func(t *testing.T) {
 		cli.ResetFlags()
-		t.Setenv("_MCP_ENABLED", "false")
+		t.Setenv("AGY_COST_BOARD_MCP_ENABLED", "false")
 
 		inBuf := bytes.NewBufferString(`{"jsonrpc":"2.0","id":1,"method":"ping"}` + "\n")
 		outBuf := new(bytes.Buffer)
@@ -92,7 +92,7 @@ func TestMCPCommand(t *testing.T) {
 
 		err := rootCmd.Execute()
 		if err == nil {
-			t.Fatalf("expected error when _MCP_ENABLED=false, got nil")
+			t.Fatalf("expected error when AGY_COST_BOARD_MCP_ENABLED=false, got nil")
 		}
 		if !strings.Contains(strings.ToLower(err.Error()), "disabled") {
 			t.Errorf("expected disabled error message, got: %v", err)
@@ -113,7 +113,7 @@ func TestMCPCommand(t *testing.T) {
 		rootCmd.SetArgs([]string{"serve", "--demo", "--port=65536", "--mcp-enabled=false"})
 
 		_ = rootCmd.Execute()
-		if !strings.Contains(outBuf.String(), "MCP Server  : disabled (_MCP_ENABLED=false)") {
+		if !strings.Contains(outBuf.String(), "MCP Server  : disabled (AGY_COST_BOARD_MCP_ENABLED=false)") {
 			t.Errorf("expected disabled MCP Server in serve banner, got: %s", outBuf.String())
 		}
 	})

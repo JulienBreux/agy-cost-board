@@ -32,7 +32,7 @@ The main goal is to track the allocation of Gemini Enterprise licenses for a pro
 
 ### 4. Unified Dual-Mode Architecture (Single Binary)
 - **CLI Subcommands:** Provides rapid commands such as `serve`, `cost`, `license`, `user`, and `init` with formatted table, JSON, and CSV outputs.
-- **Web Interface (Cloud Run):** Triggered via `serve` (binding to `$PORT`), offering an intuitive analytics dashboard with charts, KPI summary cards, and user drill-downs.
+- **Web Interface (Cloud Run):** Triggered via `serve` (binding to `AGY_COST_BOARD_PORT`), offering an intuitive analytics dashboard with charts, KPI summary cards, and user drill-downs.
 - Packaged as a lightweight, scratch/distroless Docker container ready for Google Cloud Run deployment, including a one-click Cloud Run Button deployment workflow (`app.json`).
 
 ### 5. Seamless Ingestion & Local Developer Experience
@@ -48,7 +48,7 @@ The main goal is to track the allocation of Gemini Enterprise licenses for a pro
 ### 7. Model Context Protocol (MCP) Server & Antigravity Plugin
 - Built-in JSON-RPC 2.0 MCP server (`2025-03-26`) supporting both Streamable HTTP (`POST /mcp` on `serve`) and Stdio (`agy-cost-board mcp`).
 - Exposes 4 FinOps & quota tools (`get_overview_metrics`, `get_license_status`, `get_users_costs`, `get_user_dashboard`) backed by `attribution.Engine`.
-- Runtime toggleable via `_MCP_ENABLED` (plus `AGY_COST_BOARD_MCP_ENABLED`, `MCP_ENABLED`, YAML `mcp_enabled`, and `--mcp-enabled`).
+- Runtime toggleable via `AGY_COST_BOARD_MCP_ENABLED` (plus YAML `mcp_enabled` and `--mcp-enabled`).
 - Ships a native Antigravity plugin bundle (`.agents/plugins/agy-cost-board/`) and an interactive **MCP & Quotas** modal in the Web UI.
 
 

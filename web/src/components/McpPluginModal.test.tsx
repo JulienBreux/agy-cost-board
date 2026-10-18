@@ -71,7 +71,7 @@ describe('McpPluginModal Component', () => {
     expect(screen.getByTestId('mcp-config-snippet').textContent).toContain('/mcp');
   });
 
-  it('renders disabled badge and _MCP_ENABLED hint when mcpEnabled is false', () => {
+  it('renders disabled badge and AGY_COST_BOARD_MCP_ENABLED hint when mcpEnabled is false', () => {
     render(
       <McpPluginModal
         isOpen={true}
@@ -83,7 +83,7 @@ describe('McpPluginModal Component', () => {
     );
 
     expect(screen.getByTestId('mcp-status-badge')).toHaveTextContent(/Disabled/i);
-    expect(screen.getByText(/_MCP_ENABLED/i)).toBeInTheDocument();
+    expect(screen.getByText(/AGY_COST_BOARD_MCP_ENABLED/i)).toBeInTheDocument();
   });
 
   it('switches between Streamable HTTP and Stdio mcp_config.json snippets', () => {
@@ -101,7 +101,7 @@ describe('McpPluginModal Component', () => {
     fireEvent.click(stdioTab);
 
     expect(screen.getByTestId('mcp-config-snippet').textContent).toContain('"command": "agy-cost-board"');
-    expect(screen.getByTestId('mcp-config-snippet').textContent).toContain('"_MCP_ENABLED": "true"');
+    expect(screen.getByTestId('mcp-config-snippet').textContent).toContain('"AGY_COST_BOARD_MCP_ENABLED": "true"');
   });
 
   it('calls onClose when Escape key is pressed or close button is clicked', () => {

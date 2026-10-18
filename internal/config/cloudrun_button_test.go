@@ -88,7 +88,7 @@ func TestCloudRunButtonAppJsonSpecification(t *testing.T) {
 
 	// 5. Environment Variables
 	expectedEnvKeys := []string{
-		"PROJECT_ID",
+		"AGY_COST_BOARD_PROJECT_ID",
 		"AGY_COST_BOARD_DEMO",
 		"AGY_COST_BOARD_TELEMETRY_TABLE",
 		"AGY_COST_BOARD_BILLING_TABLE",

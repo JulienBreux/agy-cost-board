@@ -44,8 +44,8 @@ WORKDIR /
 COPY --from=go-builder /app/bin/agy-cost-board /agy-cost-board
 COPY --from=go-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
-# Cloud Run dynamic port binding
-ENV PORT=8080
+# Default port binding
+ENV AGY_COST_BOARD_PORT=8080
 EXPOSE 8080
 
 # Run as non-privileged user

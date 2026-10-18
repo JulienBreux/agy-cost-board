@@ -99,7 +99,7 @@ export const McpPluginModal: React.FC<McpPluginModalProps> = ({
           command: 'agy-cost-board',
           args: ['mcp', '--demo'],
           env: {
-            _MCP_ENABLED: 'true',
+            AGY_COST_BOARD_MCP_ENABLED: 'true',
           },
         },
       },
@@ -358,7 +358,7 @@ export const McpPluginModal: React.FC<McpPluginModalProps> = ({
               </div>
               <div>
                 <strong className="text-white">Runtime Toggle:</strong> Set{' '}
-                <code className="text-amber-300 font-mono">_MCP_ENABLED=false</code> (or{' '}
+                <code className="text-amber-300 font-mono">AGY_COST_BOARD_MCP_ENABLED=false</code> (or{' '}
                 <code className="font-mono">--mcp-enabled=false</code>) to disable the MCP server on HTTP and stdio.
               </div>
             </div>

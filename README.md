@@ -60,7 +60,7 @@ flowchart LR
 | **Gemini Enterprise Shelfware** | Blind seat purchases; shelfware goes unnoticed             | **Automated dormancy detection (<1k tokens / 0 activity) with instant ROI savings**          |
 | **Setup & Diagnostics**         | Manual SQL writing & error-prone IAM debugging             | **5-Point automated verification engine with 1-click cloud provisioning (`setup --create`)** |
 | **User Interfaces**             | Spreadsheet exports or fragmented monitoring tools         | **Triple-interface in 1 binary: Full CLI, interactive Terminal UI (TUI), & React 19 SPA**    |
-| **Cloud Run Native**            | Complex multi-container deployments                        | **Zero-config single static binary (`CGO_ENABLED=0`), dynamic `$PORT`, & `/healthz`**        |
+| **Cloud Run Native**            | Complex multi-container deployments                        | **Zero-config single static binary (`CGO_ENABLED=0`), `AGY_COST_BOARD_PORT`, & `/healthz`**   |
 | **Local Evaluation**            | Requires full GCP credentials and BigQuery permissions     | **Offline synthetic Demo Mode (`--demo`) with 30 days of multi-user data**                   |
 | **BigQuery Efficiency**         | Costly repetitive full-table scans                         | **Thread-safe in-memory TTL caching with 0 redundant scan charges**                          |
 | **Multi-Currency**             | Hardcoded USD assumptions with manual conversions          | **Native ISO-4217 billing currency ingestion (EUR, USD, GBP, JPY...) with zero FX loss**     |
@@ -238,20 +238,20 @@ The built-in HTTP server exposes clean JSON APIs consumed by the embedded fronte
          "command": "agy-cost-board",
          "args": ["mcp", "--demo"],
          "env": {
-           "_MCP_ENABLED": "true"
+           "AGY_COST_BOARD_MCP_ENABLED": "true"
          }
        }
      }
    }
    ```
 
-### Disabling MCP (`_MCP_ENABLED`)
+### Disabling MCP (`AGY_COST_BOARD_MCP_ENABLED`)
 
-MCP is **enabled by default** (`true`). To disable the MCP server (causing `POST /mcp` and `GET /mcp` to return `404 Not Found` and `agy-cost-board mcp` to exit immediately), set `_MCP_ENABLED=false`:
+MCP is **enabled by default** (`true`). To disable the MCP server (causing `POST /mcp` and `GET /mcp` to return `404 Not Found` and `agy-cost-board mcp` to exit immediately), set `AGY_COST_BOARD_MCP_ENABLED=false`:
 
 ```bash
-# Disable via _MCP_ENABLED environment variable
-_MCP_ENABLED=false ./bin/agy-cost-board serve --demo
+# Disable via AGY_COST_BOARD_MCP_ENABLED environment variable
+AGY_COST_BOARD_MCP_ENABLED=false ./bin/agy-cost-board serve --demo
 
 # Or via CLI flag
 ./bin/agy-cost-board serve --mcp-enabled=false
@@ -259,7 +259,7 @@ _MCP_ENABLED=false ./bin/agy-cost-board serve --demo
 
 ### Web UI Quota & MCP Integration (`MCP & Quotas`)
 
-Click the **MCP & Quotas** button in the top navigation bar of the Web UI to inspect live seat quota telemetry, verify whether `_MCP_ENABLED` is active, browse the exposed MCP tools, and copy ready-to-use `mcp_config.json` snippets for Streamable HTTP or Stdio.
+Click the **MCP & Quotas** button in the top navigation bar of the Web UI to inspect live seat quota telemetry, verify whether `AGY_COST_BOARD_MCP_ENABLED` is active, browse the exposed MCP tools, and copy ready-to-use `mcp_config.json` snippets for Streamable HTTP or Stdio.
 
 ---
 
@@ -316,7 +316,7 @@ curl -sS "https://<YOUR_AGY_COST_BOARD_URL>/statusline.sh?user=julienbreux@googl
 ### User Resolution Hierarchy
 
 When executing, the script resolves the developer's user identity in the following order:
-1. `AGY_COST_USER` environment variable
+1. `AGY_COST_BOARD_USER` environment variable
 2. Pre-baked `user` query parameter
 3. Active Google Cloud account (`gcloud config get-value account`)
 4. Git author email (`git config user.email`)
@@ -326,13 +326,13 @@ When executing, the script resolves the developer's user identity in the followi
 
 Developers can override runtime behavior without redownloading the script:
 
-| Environment Variable | Default       | Description                                     |
-| -------------------- | ------------- | ----------------------------------------------- |
-| `AGY_COST_USER`      | *(detected)*  | Force a specific developer email or identity    |
-| `AGY_COST_SERVER`    | *(baked URL)* | Override the `agy-cost-board` server base URL   |
-| `AGY_COST_DAYS`      | `30`          | Number of days for spend calculation            |
-| `AGY_COST_CACHE_TTL` | `300`         | Local cache TTL in seconds                      |
-| `AGY_COST_DISABLED`  | `false`       | Set to `true` or `1` to disable the cost suffix |
+| Environment Variable       | Default       | Description                                     |
+| -------------------------- | ------------- | ----------------------------------------------- |
+| `AGY_COST_BOARD_USER`      | *(detected)*  | Force a specific developer email or identity    |
+| `AGY_COST_BOARD_URL`       | *(baked URL)* | Override the `agy-cost-board` server base URL   |
+| `AGY_COST_BOARD_DAYS`      | `30`          | Number of days for spend calculation            |
+| `AGY_COST_BOARD_CACHE_TTL` | `300`         | Local cache TTL in seconds                      |
+| `AGY_COST_BOARD_DISABLED`  | `false`       | Set to `true` or `1` to disable the cost suffix |
 
 ### Cloud Run IAM & Security
 
@@ -361,7 +361,7 @@ Before deploying, ensure you have:
 
 ### Configuration Parameters
 When clicking the deployment button, Cloud Run prompts for parameters defined in `app.json`:
-- **`PROJECT_ID`**: Google Cloud Project ID hosting your BigQuery telemetry and billing tables.
+- **`AGY_COST_BOARD_PROJECT_ID`**: Google Cloud Project ID hosting your BigQuery telemetry and billing tables.
 - **`AGY_COST_BOARD_DEMO`**: Set to `"true"` to explore immediately with simulated demonstration data, or `"false"` (default) to query production BigQuery tables.
 - **`AGY_COST_BOARD_TELEMETRY_TABLE`**: Full BigQuery table path for inference telemetry logs (e.g., `project.dataset.table`).
 - **`AGY_COST_BOARD_BILLING_TABLE`**: Full BigQuery table path for the Google Cloud Billing export.
@@ -394,8 +394,8 @@ gcloud run services replace deploy.yaml --region=us-central1
 You can also build and deploy manually using the Google Cloud CLI:
 
 ```bash
-export PROJECT_ID="YOUR_GCP_PROJECT_ID"
-export IMAGE="gcr.io/${PROJECT_ID}/agy-cost-board:latest"
+export AGY_COST_BOARD_PROJECT_ID="YOUR_GCP_PROJECT_ID"
+export IMAGE="gcr.io/${AGY_COST_BOARD_PROJECT_ID}/agy-cost-board:latest"
 
 # 1. Build and push container using Google Cloud Build
 gcloud builds submit --tag ${IMAGE} .
@@ -403,11 +403,11 @@ gcloud builds submit --tag ${IMAGE} .
 # 2. Deploy to Cloud Run
 gcloud run deploy agy-cost-board \
   --image=${IMAGE} \
-  --project=${PROJECT_ID} \
+  --project=${AGY_COST_BOARD_PROJECT_ID} \
   --region=us-central1 \
   --platform=managed \
   --no-allow-unauthenticated \
-  --set-env-vars="GCP_PROJECT=${PROJECT_ID},TELEMETRY_TABLE=${PROJECT_ID}.antigravity_telemetry.logs,BILLING_TABLE=${PROJECT_ID}.billing_export.gcp_billing_export_v1_XXXXXX,SEAT_QUOTA=50"
+  --set-env-vars="AGY_COST_BOARD_PROJECT_ID=${AGY_COST_BOARD_PROJECT_ID},AGY_COST_BOARD_TELEMETRY_TABLE=${AGY_COST_BOARD_PROJECT_ID}.antigravity_telemetry.logs,AGY_COST_BOARD_BILLING_TABLE=${AGY_COST_BOARD_PROJECT_ID}.billing_export.gcp_billing_export_v1_XXXXXX,AGY_COST_BOARD_SEAT_QUOTA=50"
 ```
 
 ---

@@ -33,7 +33,7 @@ When presenting quota or cost status to the user in Antigravity IDE or CLI, rend
 
 ## Troubleshooting
 
-- If MCP tools are unavailable, verify that `_MCP_ENABLED` is not set to `false` in the server environment or `mcp_config.json`.
+- If MCP tools are unavailable, verify that `AGY_COST_BOARD_MCP_ENABLED` is not set to `false` in the server environment or `mcp_config.json`.
 - To connect to a remote Cloud Run instance over Streamable HTTP instead of local `stdio`, configure `~/.gemini/antigravity-cli/mcp_config.json`:
   ```json
   {

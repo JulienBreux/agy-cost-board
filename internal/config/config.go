@@ -51,25 +51,25 @@ func FromContext(ctx context.Context) *Config {
 	return nil
 }
 
-// SetupViper initializes a Viper instance with environment variable prefixes,
-// key replacers, legacy GCP environment mappings, aliases, and sane defaults.
+// SetupViper initializes a Viper instance with the AGY_COST_BOARD_ environment
+// variable prefix, key replacers, aliases, and sane defaults.
 func SetupViper(v *viper.Viper) {
 	v.SetEnvPrefix("AGY_COST_BOARD")
 	v.SetEnvKeyReplacer(strings.NewReplacer("-", "_", ".", "_"))
 	v.AutomaticEnv()
 
-	// Legacy and alternative environment variables
-	_ = v.BindEnv("project_id", "AGY_COST_BOARD_PROJECT", "AGY_COST_BOARD_PROJECT_ID", "GCP_PROJECT", "PROJECT_ID")
-	_ = v.BindEnv("telemetry_table", "AGY_COST_BOARD_TELEMETRY_TABLE", "TELEMETRY_TABLE")
-	_ = v.BindEnv("billing_table", "AGY_COST_BOARD_BILLING_TABLE", "BILLING_TABLE")
-	_ = v.BindEnv("seat_quota", "AGY_COST_BOARD_SEAT_QUOTA", "SEAT_QUOTA")
+	// Strictly AGY_COST_BOARD_ prefixed environment variables
+	_ = v.BindEnv("project_id", "AGY_COST_BOARD_PROJECT_ID", "AGY_COST_BOARD_PROJECT")
+	_ = v.BindEnv("telemetry_table", "AGY_COST_BOARD_TELEMETRY_TABLE")
+	_ = v.BindEnv("billing_table", "AGY_COST_BOARD_BILLING_TABLE")
+	_ = v.BindEnv("seat_quota", "AGY_COST_BOARD_SEAT_QUOTA")
 	_ = v.BindEnv("sink_name", "AGY_COST_BOARD_SINK_NAME")
 	_ = v.BindEnv("dataset", "AGY_COST_BOARD_DATASET")
 	_ = v.BindEnv("demo", "AGY_COST_BOARD_DEMO")
 	_ = v.BindEnv("format", "AGY_COST_BOARD_FORMAT")
-	_ = v.BindEnv("port", "AGY_COST_BOARD_PORT", "PORT")
+	_ = v.BindEnv("port", "AGY_COST_BOARD_PORT")
 	_ = v.BindEnv("host", "AGY_COST_BOARD_HOST")
-	_ = v.BindEnv("mcp_enabled", "AGY_COST_BOARD_MCP_ENABLED", "_MCP_ENABLED", "MCP_ENABLED")
+	_ = v.BindEnv("mcp_enabled", "AGY_COST_BOARD_MCP_ENABLED")
 
 	// Aliases for seamless flag name and config key resolution
 	v.RegisterAlias("project", "project_id")
@@ -107,18 +107,6 @@ func LoadViper(v *viper.Viper, path string) (*Config, error) {
 		var notFound viper.ConfigFileNotFoundError
 		if !errors.As(err, &notFound) && !errors.Is(err, os.ErrNotExist) {
 			return nil, fmt.Errorf("reading config file: %w", err)
-		}
-		// If default config was not found and path was empty, check for legacy files
-		if path == "" {
-			for _, legacy := range []string{".agy-ge-board.yaml", ".agy-ge-board.json"} {
-				if _, statErr := os.Stat(legacy); statErr == nil {
-					v.SetConfigFile(legacy)
-					if readErr := v.ReadInConfig(); readErr != nil {
-						return nil, fmt.Errorf("reading legacy config file %s: %w", legacy, readErr)
-					}
-					break
-				}
-			}
 		}
 	}
 

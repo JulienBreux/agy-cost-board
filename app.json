@@ -1,7 +1,7 @@
 {
   "name": "agy-cost-board",
   "env": {
-    "PROJECT_ID": {
+    "AGY_COST_BOARD_PROJECT_ID": {
       "description": "Google Cloud Project ID hosting BigQuery telemetry and billing tables",
       "required": false
     },

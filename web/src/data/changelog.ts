@@ -12,6 +12,23 @@ export interface ChangelogRelease {
 
 export const CHANGELOG_DATA: ChangelogRelease[] = [
   {
+    version: 'v0.8.0',
+    date: 'October 18, 2026',
+    title: 'Unified AGY_COST_BOARD_ Environment Variable Standard',
+    items: [
+      {
+        title: 'Strict AGY_COST_BOARD_ Prefix',
+        description:
+          'Standardized all configuration and statusline environment variables under the AGY_COST_BOARD_ prefix (including AGY_COST_BOARD_MCP_ENABLED, AGY_COST_BOARD_PROJECT_ID, and AGY_COST_BOARD_PORT).',
+      },
+      {
+        title: 'Legacy Environment Variable Removal',
+        description:
+          'Removed unprefixed legacy environment variable fallbacks (such as _MCP_ENABLED, GCP_PROJECT, PROJECT_ID, PORT, and AGY_COST_*) for clean, collision-free configuration.',
+      },
+    ],
+  },
+  {
     version: 'v0.7.0',
     date: 'October 18, 2026',
     title: 'Model Context Protocol (MCP) Server & Antigravity Quota Plugin',

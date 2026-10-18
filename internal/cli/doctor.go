@@ -33,7 +33,7 @@ func newDoctorCommand(v *viper.Viper) *cobra.Command {
 			}
 
 			if projectID == "" {
-				cmd.Println("[WARN] Project ID is not specified. (Set --project or GCP_PROJECT)")
+				cmd.Println("[WARN] Project ID is not specified. (Set --project or AGY_COST_BOARD_PROJECT_ID)")
 				cmd.Println("[TIP] You can test immediately using the --demo flag:")
 				cmd.Println("      agy-cost-board cost --demo")
 				return nil
@@ -43,13 +43,13 @@ func newDoctorCommand(v *viper.Viper) *cobra.Command {
 			if telemetryTable != "" {
 				cmd.Printf("[OK] Telemetry Table: %s\n", telemetryTable)
 			} else {
-				cmd.Println("[WARN] Missing telemetry table (Set --telemetry-table or TELEMETRY_TABLE)")
+				cmd.Println("[WARN] Missing telemetry table (Set --telemetry-table or AGY_COST_BOARD_TELEMETRY_TABLE)")
 			}
 
 			if billingTable != "" {
 				cmd.Printf("[OK] Billing Export Table: %s\n", billingTable)
 			} else {
-				cmd.Println("[WARN] Missing billing export table (Set --billing-table or BILLING_TABLE)")
+				cmd.Println("[WARN] Missing billing export table (Set --billing-table or AGY_COST_BOARD_BILLING_TABLE)")
 			}
 
 			return nil

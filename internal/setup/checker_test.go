@@ -12,8 +12,8 @@ import (
 
 func TestADCChecker(t *testing.T) {
 	t.Run("returns warning when ProjectID is empty", func(t *testing.T) {
-		t.Setenv("GOOGLE_CLOUD_PROJECT", "")
-		t.Setenv("GCP_PROJECT", "")
+		t.Setenv("AGY_COST_BOARD_PROJECT_ID", "")
+		t.Setenv("AGY_COST_BOARD_PROJECT", "")
 		cfg := setup.Config{
 			ProjectID: "",
 		}
@@ -29,9 +29,9 @@ func TestADCChecker(t *testing.T) {
 		}
 	})
 
-	t.Run("resolves project ID from GOOGLE_CLOUD_PROJECT", func(t *testing.T) {
-		t.Setenv("GOOGLE_CLOUD_PROJECT", "env-project-1")
-		t.Setenv("GCP_PROJECT", "")
+	t.Run("resolves project ID from AGY_COST_BOARD_PROJECT_ID", func(t *testing.T) {
+		t.Setenv("AGY_COST_BOARD_PROJECT_ID", "env-project-1")
+		t.Setenv("AGY_COST_BOARD_PROJECT", "")
 		t.Setenv("GOOGLE_APPLICATION_CREDENTIALS", "")
 		cfg := setup.Config{ProjectID: "", Demo: false}
 		res := setup.CheckADC(t.Context(), cfg)
@@ -40,9 +40,9 @@ func TestADCChecker(t *testing.T) {
 		}
 	})
 
-	t.Run("resolves project ID from GCP_PROJECT", func(t *testing.T) {
-		t.Setenv("GOOGLE_CLOUD_PROJECT", "")
-		t.Setenv("GCP_PROJECT", "env-project-2")
+	t.Run("resolves project ID from AGY_COST_BOARD_PROJECT", func(t *testing.T) {
+		t.Setenv("AGY_COST_BOARD_PROJECT_ID", "")
+		t.Setenv("AGY_COST_BOARD_PROJECT", "env-project-2")
 		t.Setenv("GOOGLE_APPLICATION_CREDENTIALS", "")
 		cfg := setup.Config{ProjectID: "", Demo: false}
 		res := setup.CheckADC(t.Context(), cfg)

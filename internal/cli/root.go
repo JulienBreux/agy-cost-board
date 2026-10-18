@@ -121,7 +121,7 @@ to compute proportional, per-user AI costs and track Gemini Enterprise seat util
 	rootCmd.PersistentFlags().StringVar(&flagBillingTable, "billing-table", "", "BigQuery table for GCP billing export")
 	rootCmd.PersistentFlags().IntVar(&flagSeatQuota, "seat-quota", 10, "Gemini Enterprise seat quota")
 	rootCmd.PersistentFlags().StringVar(&flagFormat, "format", "table", "Output format: table, json, or csv")
-	rootCmd.PersistentFlags().BoolVar(&flagMCPEnabled, "mcp-enabled", true, "Enable Model Context Protocol (MCP) server (or set _MCP_ENABLED)")
+	rootCmd.PersistentFlags().BoolVar(&flagMCPEnabled, "mcp-enabled", true, "Enable Model Context Protocol (MCP) server (or set AGY_COST_BOARD_MCP_ENABLED)")
 
 	// Bind persistent Cobra flags directly to Viper keys
 	_ = v.BindPFlag("demo", rootCmd.PersistentFlags().Lookup("demo"))

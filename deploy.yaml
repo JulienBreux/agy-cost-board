@@ -47,7 +47,7 @@ spec:
               cpu: "1"
               memory: 512Mi
           env:
-            - name: PROJECT_ID
+            - name: AGY_COST_BOARD_PROJECT_ID
               value: "PROJECT_ID"
             - name: AGY_COST_BOARD_DEMO
               value: "false"

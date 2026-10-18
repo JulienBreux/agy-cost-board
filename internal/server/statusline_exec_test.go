@@ -171,14 +171,14 @@ func TestStatuslineScriptExecution(t *testing.T) {
 		}
 	})
 
-	t.Run("Script respects AGY_COST_DISABLED=true", func(t *testing.T) {
+	t.Run("Script respects AGY_COST_BOARD_DISABLED=true", func(t *testing.T) {
 		cacheFile := "/tmp/agy_cost_alice_example_com.cache"
 		_ = os.WriteFile(cacheFile, []byte("123\n"), 0644)
 		defer os.Remove(cacheFile)
 
 		cmd := exec.Command("bash", scriptPath)
 		cmd.Stdin = strings.NewReader(stdinJSON)
-		cmd.Env = append(os.Environ(), "AGY_COST_BOARD_URL="+mockServer.URL, "AGY_COST_DISABLED=true")
+		cmd.Env = append(os.Environ(), "AGY_COST_BOARD_URL="+mockServer.URL, "AGY_COST_BOARD_DISABLED=true")
 
 		var stdout, stderr bytes.Buffer
 		cmd.Stdout = &stdout
@@ -190,7 +190,7 @@ func TestStatuslineScriptExecution(t *testing.T) {
 
 		outStr := stdout.String()
 		if strings.Contains(outStr, "cost") {
-			t.Errorf("expected cost to be hidden when AGY_COST_DISABLED=true, got: %q", outStr)
+			t.Errorf("expected cost to be hidden when AGY_COST_BOARD_DISABLED=true, got: %q", outStr)
 		}
 	})
 
@@ -269,7 +269,7 @@ func TestStatuslineScriptExecution(t *testing.T) {
 		cmd.Stdin = strings.NewReader(stdinJSON)
 		cmd.Env = append(os.Environ(),
 			"AGY_COST_BOARD_URL="+eurServer.URL,
-			"AGY_COST_USER=euro.user@example.com",
+			"AGY_COST_BOARD_USER=euro.user@example.com",
 			"PATH="+mockBinDir+":"+os.Getenv("PATH"),
 		)
 
@@ -303,7 +303,7 @@ func TestStatuslineScriptExecution(t *testing.T) {
 		cmd2.Stdin = strings.NewReader(stdinJSON)
 		cmd2.Env = append(os.Environ(),
 			"AGY_COST_BOARD_URL="+eurServer.URL,
-			"AGY_COST_USER=euro.user@example.com",
+			"AGY_COST_BOARD_USER=euro.user@example.com",
 		)
 		var stdout2 bytes.Buffer
 		cmd2.Stdout = &stdout2
@@ -315,7 +315,7 @@ func TestStatuslineScriptExecution(t *testing.T) {
 		}
 	})
 
-	t.Run("Script respects AGY_COST_USER override over DEFAULT_USER", func(t *testing.T) {
+	t.Run("Script respects AGY_COST_BOARD_USER override over DEFAULT_USER", func(t *testing.T) {
 		cacheBob := "/tmp/agy_cost_bob_example_com.cache"
 		_ = os.WriteFile(cacheBob, []byte("456\n"), 0644)
 		defer os.Remove(cacheBob)
@@ -324,7 +324,7 @@ func TestStatuslineScriptExecution(t *testing.T) {
 		cmd.Stdin = strings.NewReader(stdinJSON)
 		cmd.Env = append(os.Environ(),
 			"AGY_COST_BOARD_URL="+mockServer.URL,
-			"AGY_COST_USER=bob@example.com",
+			"AGY_COST_BOARD_USER=bob@example.com",
 		)
 
 		var stdout bytes.Buffer
@@ -336,7 +336,7 @@ func TestStatuslineScriptExecution(t *testing.T) {
 
 		outStr := stdout.String()
 		if !strings.Contains(outStr, "$456") {
-			t.Errorf("expected output to contain '$456' for AGY_COST_USER, got: %q", outStr)
+			t.Errorf("expected output to contain '$456' for AGY_COST_BOARD_USER, got: %q", outStr)
 		}
 	})
 
@@ -414,7 +414,7 @@ func TestStatuslineScriptExecution(t *testing.T) {
 		cmd.Stdin = strings.NewReader(stdinJSON)
 		cmd.Env = append(os.Environ(),
 			"AGY_COST_BOARD_URL="+errorServer.URL,
-			"AGY_COST_USER=unknown@example.com",
+			"AGY_COST_BOARD_USER=unknown@example.com",
 		)
 
 		var stdout bytes.Buffer

@@ -8,8 +8,8 @@ WORKDIR /
 ARG TARGETPLATFORM
 COPY $TARGETPLATFORM/agy-cost-board /agy-cost-board
 
-# Cloud Run and container dynamic port binding
-ENV PORT=8080
+# Default port binding
+ENV AGY_COST_BOARD_PORT=8080
 EXPOSE 8080
 
 # Run as non-privileged user

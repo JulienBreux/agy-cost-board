@@ -88,8 +88,7 @@ func CheckADC(ctx context.Context, cfg Config) domain.CheckResult {
 	}
 
 	if cfg.ProjectID == "" {
-		// Attempt to read from GCP env vars
-		cfg.ProjectID = cmp.Or(os.Getenv("GOOGLE_CLOUD_PROJECT"), os.Getenv("GCP_PROJECT"))
+		cfg.ProjectID = cmp.Or(os.Getenv("AGY_COST_BOARD_PROJECT_ID"), os.Getenv("AGY_COST_BOARD_PROJECT"))
 	}
 
 	if cfg.ProjectID == "" {
