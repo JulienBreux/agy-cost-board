@@ -1,0 +1,8 @@
+{
+  "track_id": "leaderboard_nav_20261018",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2026-10-18T13:28:00+02:00",
+  "updated_at": "2026-10-18T13:28:00+02:00",
+  "description": "Create a leaderboard of users, we gonna take the oppotunity to refine the navigation. Put Overview, Leaderboard, My Consumption and Attributed Cost to a second navigation line."
+}
