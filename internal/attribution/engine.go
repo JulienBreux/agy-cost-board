@@ -76,6 +76,367 @@ func (e *Engine) setToCache(key string, val any) {
 	}
 }
 
+// weekWindowBounds returns Monday 00:00:00 UTC to Sunday 23:59:59 UTC for the ISO week containing t.
+func weekWindowBounds(t time.Time) (start time.Time, end time.Time, key string, label string) {
+	utc := t.UTC()
+	weekday := int(utc.Weekday())
+	if weekday == 0 {
+		weekday = 7
+	}
+	monday := time.Date(utc.Year(), utc.Month(), utc.Day()-(weekday-1), 0, 0, 0, 0, time.UTC)
+	sunday := monday.AddDate(0, 0, 6)
+	key = monday.Format("2006-01-02")
+	label = fmt.Sprintf("%s → %s", monday.Format("Jan 02"), sunday.Format("Jan 02"))
+	return monday, sunday, key, label
+}
+
+// computeWeeklyAllowancePool computes the floating 7-day Weekly Allowance Pool and all 4 What-If scenarios.
+func computeWeeklyAllowancePool(logs []domain.TelemetryLog, seats []domain.LicenseSeat, quota int) *domain.WeeklyAllowancePool {
+	licensed := make(map[string]bool)
+	userSeatUSD := make(map[string]float64)
+	userSeatWTU := make(map[string]int64)
+	var assignedLimitUSD float64
+	var assignedLimitWTU int64
+	var assignedCount int
+
+	for _, s := range seats {
+		if !s.Assigned {
+			continue
+		}
+		_, usd, wtu := domain.ResolveSeatAllowance(s.Tier)
+		if s.WeeklyAllowanceUSD > 0 {
+			usd = s.WeeklyAllowanceUSD
+		}
+		if s.WeeklyAllowanceWTU > 0 {
+			wtu = s.WeeklyAllowanceWTU
+		}
+		licensed[s.UserID] = true
+		userSeatUSD[s.UserID] = usd
+		userSeatWTU[s.UserID] = wtu
+		assignedLimitUSD += usd
+		assignedLimitWTU += wtu
+		assignedCount++
+	}
+
+	if assignedCount == 0 {
+		// Fallback if no seats returned: derive from unique users in logs at Plus tier ($3.75 / 1.875M WTU)
+		for _, l := range logs {
+			if !licensed[l.UserID] {
+				licensed[l.UserID] = true
+				userSeatUSD[l.UserID] = 3.75
+				userSeatWTU[l.UserID] = 1875000
+				assignedLimitUSD += 3.75
+				assignedLimitWTU += 1875000
+				assignedCount++
+			}
+		}
+		if assignedCount == 0 {
+			assignedLimitUSD = 30.00
+			assignedLimitWTU = 15000000
+		}
+	}
+
+	unassigned := max(quota-assignedCount, 0)
+	purchasedLimitUSD := math.Round((assignedLimitUSD+float64(unassigned)*3.75)*100) / 100
+	purchasedLimitWTU := assignedLimitWTU + int64(unassigned)*1875000
+	assignedLimitUSD = math.Round(assignedLimitUSD*100) / 100
+
+	type winUserStats struct {
+		eligibleUSD        float64
+		eligibleWTU        int64
+		explicitOverageUSD float64
+		explicitOverageWTU int64
+	}
+	type winStats struct {
+		key                string
+		label              string
+		startStr           string
+		endStr             string
+		eligibleUSD        float64
+		eligibleWTU        int64
+		explicitOverageUSD float64
+		explicitOverageWTU int64
+		nonPoolPaygUSD     float64
+		nonPoolPaygWTU     int64
+		users              map[string]*winUserStats
+	}
+
+	winMap := make(map[string]*winStats)
+	now := time.Now().UTC()
+	curStart, curEnd, curKey, curLabel := weekWindowBounds(now)
+	winMap[curKey] = &winStats{
+		key:      curKey,
+		label:    curLabel,
+		startStr: curStart.Format("2006-01-02"),
+		endStr:   curEnd.Format("2006-01-02"),
+		users:    make(map[string]*winUserStats),
+	}
+
+	for _, l := range logs {
+		wStart, wEnd, wKey, wLabel := weekWindowBounds(l.Timestamp)
+		ws, ok := winMap[wKey]
+		if !ok {
+			ws = &winStats{
+				key:      wKey,
+				label:    wLabel,
+				startStr: wStart.Format("2006-01-02"),
+				endStr:   wEnd.Format("2006-01-02"),
+				users:    make(map[string]*winUserStats),
+			}
+			winMap[wKey] = ws
+		}
+
+		isLic := true
+		if len(licensed) > 0 {
+			isLic = licensed[l.UserID]
+		}
+		wtu, inc, payg := domain.CalculateCallWTU(l.Model, l.PromptTokens, l.CachedTokens, l.CompletionTokens, l.ThoughtsTokens, l.QuotaType, isLic)
+		callUSD := inc + payg
+
+		if isLic && domain.IsPoolEligibleModel(l.Model) {
+			ws.eligibleUSD += callUSD
+			ws.eligibleWTU += wtu
+			if payg > 0 {
+				ws.explicitOverageUSD += payg
+				ws.explicitOverageWTU += wtu
+			}
+			us, ok := ws.users[l.UserID]
+			if !ok {
+				us = &winUserStats{}
+				ws.users[l.UserID] = us
+			}
+			us.eligibleUSD += callUSD
+			us.eligibleWTU += wtu
+			if payg > 0 {
+				us.explicitOverageUSD += payg
+				us.explicitOverageWTU += wtu
+			}
+		} else {
+			ws.nonPoolPaygUSD += payg
+			ws.nonPoolPaygWTU += wtu
+		}
+	}
+
+	winKeys := make([]string, 0, len(winMap))
+	for k := range winMap {
+		winKeys = append(winKeys, k)
+	}
+	slices.Sort(winKeys)
+
+	// Sum of active users' seat allowances for per-user stranded allowance scaling
+	var activeSeatUSD float64
+	for _, s := range seats {
+		if s.Assigned && s.Status == domain.SeatStatusActive {
+			activeSeatUSD += cmp.Or(s.WeeklyAllowanceUSD, 3.75)
+		}
+	}
+	if activeSeatUSD <= 0 {
+		activeSeatUSD = assignedLimitUSD
+	}
+	strandedScale := 1.0
+	if assignedLimitUSD > activeSeatUSD && activeSeatUSD > 0 {
+		strandedScale = assignedLimitUSD / activeSeatUSD
+	}
+
+	buildScenario := func(poolMode, seatBasis string) domain.PoolWhatIfScenario {
+		limitUSD := assignedLimitUSD
+		limitWTU := assignedLimitWTU
+		extraUSD := 0.0
+		extraWTU := int64(0)
+		if seatBasis == "purchased" {
+			limitUSD = purchasedLimitUSD
+			limitWTU = purchasedLimitWTU
+			extraUSD = max(purchasedLimitUSD-assignedLimitUSD, 0)
+			extraWTU = max(purchasedLimitWTU-assignedLimitWTU, 0)
+		}
+
+		windows := make([]domain.WeeklyPoolWindow, 0, len(winKeys))
+		for _, k := range winKeys {
+			ws := winMap[k]
+			var incUSD, overUSD float64
+			var incWTU, overWTU int64
+
+			if poolMode == "pooled" {
+				baseOverUSD := max(ws.eligibleUSD-assignedLimitUSD, ws.explicitOverageUSD)
+				baseOverWTU := max(ws.eligibleWTU-assignedLimitWTU, ws.explicitOverageWTU)
+				overUSD = min(max(baseOverUSD-extraUSD, 0), ws.eligibleUSD)
+				overWTU = min(max(baseOverWTU-extraWTU, 0), ws.eligibleWTU)
+				incUSD = max(ws.eligibleUSD-overUSD, 0)
+				incWTU = max(ws.eligibleWTU-overWTU, 0)
+			} else {
+				// per_user mode: each user is capped by their individual seat allowance (dormant seats cannot share)
+				for uID, us := range ws.users {
+					uLimUSD := cmp.Or(userSeatUSD[uID], 3.75)
+					uLimWTU := cmp.Or(userSeatWTU[uID], int64(1875000))
+					uOverUSD := min(max(us.eligibleUSD-uLimUSD, us.explicitOverageUSD*strandedScale), us.eligibleUSD)
+					uOverWTU := min(max(us.eligibleWTU-uLimWTU, int64(float64(us.explicitOverageWTU)*strandedScale)), us.eligibleWTU)
+					overUSD += uOverUSD
+					overWTU += uOverWTU
+					incUSD += max(us.eligibleUSD-uOverUSD, 0)
+					incWTU += max(us.eligibleWTU-uOverWTU, 0)
+				}
+			}
+
+			totalOverUSD := overUSD + ws.nonPoolPaygUSD
+			totalOverWTU := overWTU + ws.nonPoolPaygWTU
+			var utilPct float64
+			if limitUSD > 0 {
+				utilPct = math.Round(min((incUSD/limitUSD)*100.0, 100.0)*10) / 10.0
+			}
+
+			windows = append(windows, domain.WeeklyPoolWindow{
+				WindowLabel:     ws.label,
+				WindowStart:     ws.startStr,
+				WindowEnd:       ws.endStr,
+				PoolLimitUSD:    math.Round(limitUSD*100) / 100,
+				PoolLimitWTU:    limitWTU,
+				IncludedUsedUSD: math.Round(incUSD*100) / 100,
+				IncludedUsedWTU: incWTU,
+				PAYGOverageUSD:  math.Round(totalOverUSD*100) / 100,
+				PAYGOverageWTU:  totalOverWTU,
+				UtilizationPct:  utilPct,
+			})
+		}
+
+		// Pick the most recent active window (or current window) for top-level KPIs
+		activeWin := windows[len(windows)-1]
+		for i := len(windows) - 1; i >= 0; i-- {
+			if windows[i].IncludedUsedUSD > 0 || windows[i].PAYGOverageUSD > 0 {
+				activeWin = windows[i]
+				break
+			}
+		}
+
+		remUSD := math.Round(max(limitUSD-activeWin.IncludedUsedUSD, 0)*100) / 100
+		remWTU := max(limitWTU-activeWin.IncludedUsedWTU, 0)
+
+		return domain.PoolWhatIfScenario{
+			PoolMode:        poolMode,
+			SeatBasis:       seatBasis,
+			PoolLimitUSD:    activeWin.PoolLimitUSD,
+			PoolLimitWTU:    activeWin.PoolLimitWTU,
+			IncludedUsedUSD: activeWin.IncludedUsedUSD,
+			IncludedUsedWTU: activeWin.IncludedUsedWTU,
+			PAYGOverageUSD:  activeWin.PAYGOverageUSD,
+			PAYGOverageWTU:  activeWin.PAYGOverageWTU,
+			RemainingUSD:    remUSD,
+			RemainingWTU:    remWTU,
+			UtilizationPct:  activeWin.UtilizationPct,
+			Windows:         windows,
+		}
+	}
+
+	scenarios := map[string]domain.PoolWhatIfScenario{
+		"pooled_assigned":    buildScenario("pooled", "assigned"),
+		"pooled_purchased":   buildScenario("pooled", "purchased"),
+		"per_user_assigned":  buildScenario("per_user", "assigned"),
+		"per_user_purchased": buildScenario("per_user", "purchased"),
+	}
+
+	def := scenarios["pooled_assigned"]
+	activeStart := curStart.Format("2006-01-02")
+	activeEnd := curEnd.Format("2006-01-02")
+	for i := len(def.Windows) - 1; i >= 0; i-- {
+		if def.Windows[i].IncludedUsedUSD > 0 || def.Windows[i].PAYGOverageUSD > 0 {
+			activeStart = def.Windows[i].WindowStart
+			activeEnd = def.Windows[i].WindowEnd
+			break
+		}
+	}
+
+	nextReset := curEnd.AddDate(0, 0, 1)
+	resetHours := max(int(math.Ceil(nextReset.Sub(now).Hours())), 1)
+	resetCountdown := fmt.Sprintf("%dd %02dh", resetHours/24, resetHours%24)
+
+	return &domain.WeeklyAllowancePool{
+		WindowStart:     activeStart,
+		WindowEnd:       activeEnd,
+		ResetInHours:    resetHours,
+		ResetCountdown:  resetCountdown,
+		PoolMode:        def.PoolMode,
+		SeatBasis:       def.SeatBasis,
+		PoolLimitUSD:    def.PoolLimitUSD,
+		PoolLimitWTU:    def.PoolLimitWTU,
+		IncludedUsedUSD: def.IncludedUsedUSD,
+		IncludedUsedWTU: def.IncludedUsedWTU,
+		PAYGOverageUSD:  def.PAYGOverageUSD,
+		PAYGOverageWTU:  def.PAYGOverageWTU,
+		RemainingUSD:    def.RemainingUSD,
+		RemainingWTU:    def.RemainingWTU,
+		UtilizationPct:  def.UtilizationPct,
+		Windows:         def.Windows,
+		Scenarios:       scenarios,
+	}
+}
+
+// ApplyPoolWhatIf returns a copy of the WeeklyAllowancePool projected to the requested poolMode and seatBasis.
+func ApplyPoolWhatIf(pool *domain.WeeklyAllowancePool, poolMode, seatBasis string) *domain.WeeklyAllowancePool {
+	if pool == nil {
+		return nil
+	}
+	pm := strings.ToLower(strings.TrimSpace(poolMode))
+	if pm != "per_user" {
+		pm = "pooled"
+	}
+	sb := strings.ToLower(strings.TrimSpace(seatBasis))
+	if sb != "purchased" {
+		sb = "assigned"
+	}
+	key := fmt.Sprintf("%s_%s", pm, sb)
+	sc, ok := pool.Scenarios[key]
+	if !ok {
+		return pool
+	}
+	cp := *pool
+	cp.PoolMode = sc.PoolMode
+	cp.SeatBasis = sc.SeatBasis
+	cp.PoolLimitUSD = sc.PoolLimitUSD
+	cp.PoolLimitWTU = sc.PoolLimitWTU
+	cp.IncludedUsedUSD = sc.IncludedUsedUSD
+	cp.IncludedUsedWTU = sc.IncludedUsedWTU
+	cp.PAYGOverageUSD = sc.PAYGOverageUSD
+	cp.PAYGOverageWTU = sc.PAYGOverageWTU
+	cp.RemainingUSD = sc.RemainingUSD
+	cp.RemainingWTU = sc.RemainingWTU
+	cp.UtilizationPct = sc.UtilizationPct
+	cp.Windows = sc.Windows
+	return &cp
+}
+
+// ApplyPAYGModeToCosts projects IncludedCost and PAYGCost on a slice of AllocatedUserCost according to mode ("fair_share" or "when_used").
+func ApplyPAYGModeToCosts(costs []domain.AllocatedUserCost, mode string) []domain.AllocatedUserCost {
+	whenUsed := strings.EqualFold(strings.TrimSpace(mode), "when_used")
+	out := make([]domain.AllocatedUserCost, len(costs))
+	for i, c := range costs {
+		if whenUsed {
+			c.IncludedCost = c.WhenUsedIncludedCost
+			c.PAYGCost = c.WhenUsedPAYGCost
+		} else {
+			c.IncludedCost = c.FairShareIncludedCost
+			c.PAYGCost = c.FairSharePAYGCost
+		}
+		out[i] = c
+	}
+	return out
+}
+
+// ApplyPAYGModeToLeaderboard projects IncludedCost and PAYGCost on a slice of LeaderboardEntry according to mode ("fair_share" or "when_used").
+func ApplyPAYGModeToLeaderboard(entries []domain.LeaderboardEntry, mode string) []domain.LeaderboardEntry {
+	whenUsed := strings.EqualFold(strings.TrimSpace(mode), "when_used")
+	out := make([]domain.LeaderboardEntry, len(entries))
+	for i, e := range entries {
+		if whenUsed {
+			e.IncludedCost = e.WhenUsedIncludedCost
+			e.PAYGCost = e.WhenUsedPAYGCost
+		} else {
+			e.IncludedCost = e.FairShareIncludedCost
+			e.PAYGCost = e.FairSharePAYGCost
+		}
+		out[i] = e
+	}
+	return out
+}
+
 // isUserLicensedMap builds a lookup map of licensed user IDs from FetchLicenseSeats.
 func (e *Engine) isUserLicensedMap(ctx context.Context, days int) map[string]bool {
 	licensed := make(map[string]bool)
@@ -91,7 +452,7 @@ func (e *Engine) isUserLicensedMap(ctx context.Context, days int) map[string]boo
 	return licensed
 }
 
-// GetAttributedCosts computes proportional costs per user, date, and model.
+// GetAttributedCosts computes proportional costs per user, date, and model, including Fair Share and When Used PAYG attribution.
 func (e *Engine) GetAttributedCosts(ctx context.Context, days int, modelFilter string) ([]domain.AllocatedUserCost, error) {
 	cacheKey := fmt.Sprintf("costs_%d_%s", days, modelFilter)
 	if val, ok := e.getFromCache(cacheKey); ok {
@@ -108,8 +469,64 @@ func (e *Engine) GetAttributedCosts(ctx context.Context, days int, modelFilter s
 		return nil, fmt.Errorf("fetch billed costs: %w", err)
 	}
 
-	licensedUsers := e.isUserLicensedMap(ctx, days)
+	seats, _, _ := e.provider.FetchLicenseSeats(ctx, days)
+	licensedUsers := make(map[string]bool)
+	var assignedPoolLimitUSD float64
+	for _, s := range seats {
+		if s.Assigned {
+			licensedUsers[s.UserID] = true
+			_, usd, _ := domain.ResolveSeatAllowance(s.Tier)
+			if s.WeeklyAllowanceUSD > 0 {
+				usd = s.WeeklyAllowanceUSD
+			}
+			assignedPoolLimitUSD += usd
+		}
+	}
+	if assignedPoolLimitUSD <= 0 {
+		assignedPoolLimitUSD = 30.00
+	}
+
 	currency := resolveCurrency(billedCosts)
+
+	// First pass: compute 7-day window pool eligible USD vs pool overage USD for Fair Share ratio
+	type windowPoolTotals struct {
+		eligibleUSD        float64
+		explicitOverageUSD float64
+	}
+	winTotals := make(map[string]*windowPoolTotals)
+	for _, l := range logs {
+		_, _, wKey, _ := weekWindowBounds(l.Timestamp)
+		wt, ok := winTotals[wKey]
+		if !ok {
+			wt = &windowPoolTotals{}
+			winTotals[wKey] = wt
+		}
+		isLicensed := true
+		if len(licensedUsers) > 0 {
+			isLicensed = licensedUsers[l.UserID]
+		}
+		_, inc, payg := domain.CalculateCallWTU(
+			l.Model,
+			l.PromptTokens,
+			l.CachedTokens,
+			l.CompletionTokens,
+			l.ThoughtsTokens,
+			l.QuotaType,
+			isLicensed,
+		)
+		if isLicensed && domain.IsPoolEligibleModel(l.Model) {
+			wt.eligibleUSD += inc + payg
+			wt.explicitOverageUSD += payg
+		}
+	}
+
+	winOverageRatio := make(map[string]float64, len(winTotals))
+	for wKey, wt := range winTotals {
+		if wt.eligibleUSD > 0 {
+			poolOverage := max(wt.eligibleUSD-assignedPoolLimitUSD, wt.explicitOverageUSD)
+			winOverageRatio[wKey] = min(poolOverage/wt.eligibleUSD, 1.0)
+		}
+	}
 
 	// Group billing by date
 	dailyBilled := make(map[string]float64)
@@ -118,12 +535,14 @@ func (e *Engine) GetAttributedCosts(ctx context.Context, days int, modelFilter s
 	}
 
 	type userDayModelStats struct {
-		tokens       int64
-		promptTokens int64
-		cachedTokens int64
-		wtu          int64
-		includedCost float64
-		paygCost     float64
+		tokens                int64
+		promptTokens          int64
+		cachedTokens          int64
+		wtu                   int64
+		whenUsedIncludedCost  float64
+		whenUsedPAYGCost      float64
+		fairShareIncludedCost float64
+		fairSharePAYGCost     float64
 	}
 
 	// Group tokens by Date -> Model -> User -> Stats
@@ -136,6 +555,8 @@ func (e *Engine) GetAttributedCosts(ctx context.Context, days int, modelFilter s
 
 	for _, l := range logs {
 		dateStr := l.Timestamp.UTC().Format("2006-01-02")
+		_, _, wKey, _ := weekWindowBounds(l.Timestamp)
+
 		if _, ok := dayModelMap[dateStr]; !ok {
 			dayModelMap[dateStr] = make(map[string]*ModelUserTokens)
 		}
@@ -164,12 +585,25 @@ func (e *Engine) GetAttributedCosts(ctx context.Context, days int, modelFilter s
 			isLicensed,
 		)
 
+		var fsInc, fsPayg float64
+		if isLicensed && domain.IsPoolEligibleModel(l.Model) {
+			callUSD := inc + payg
+			ratio := winOverageRatio[wKey]
+			fsPayg = callUSD * ratio
+			fsInc = callUSD - fsPayg
+		} else {
+			fsInc = 0.0
+			fsPayg = payg
+		}
+
 		uStats.tokens += l.TotalTokens
 		uStats.promptTokens += l.PromptTokens
 		uStats.cachedTokens += l.CachedTokens
 		uStats.wtu += wtu
-		uStats.includedCost += inc
-		uStats.paygCost += payg
+		uStats.whenUsedIncludedCost += inc
+		uStats.whenUsedPAYGCost += payg
+		uStats.fairShareIncludedCost += fsInc
+		uStats.fairSharePAYGCost += fsPayg
 
 		dayModelMap[dateStr][l.Model].totalTokens += l.TotalTokens
 		dayTotalTokens[dateStr] += l.TotalTokens
@@ -199,20 +633,29 @@ func (e *Engine) GetAttributedCosts(ctx context.Context, days int, modelFilter s
 					cacheHitRate = math.Round((float64(uStats.cachedTokens)/float64(uStats.promptTokens))*1000) / 10.0
 				}
 
+				fsInc := math.Round(uStats.fairShareIncludedCost*10000) / 10000
+				fsPayg := math.Round(uStats.fairSharePAYGCost*10000) / 10000
+				wuInc := math.Round(uStats.whenUsedIncludedCost*10000) / 10000
+				wuPayg := math.Round(uStats.whenUsedPAYGCost*10000) / 10000
+
 				results = append(results, domain.AllocatedUserCost{
-					UserID:           userID,
-					Model:            model,
-					UsageDate:        dateStr,
-					UserTokens:       uStats.tokens,
-					CachedTokens:     uStats.cachedTokens,
-					CacheHitRate:     cacheHitRate,
-					TotalModelTokens: mut.totalTokens,
-					TokenShare:       share,
-					AllocatedCost:    allocated,
-					WTU:              uStats.wtu,
-					IncludedCost:     math.Round(uStats.includedCost*10000) / 10000,
-					PAYGCost:         math.Round(uStats.paygCost*10000) / 10000,
-					Currency:         currency,
+					UserID:                userID,
+					Model:                 model,
+					UsageDate:             dateStr,
+					UserTokens:            uStats.tokens,
+					CachedTokens:          uStats.cachedTokens,
+					CacheHitRate:          cacheHitRate,
+					TotalModelTokens:      mut.totalTokens,
+					TokenShare:            share,
+					AllocatedCost:         allocated,
+					WTU:                   uStats.wtu,
+					IncludedCost:          fsInc,
+					PAYGCost:              fsPayg,
+					FairShareIncludedCost: fsInc,
+					FairSharePAYGCost:     fsPayg,
+					WhenUsedIncludedCost:  wuInc,
+					WhenUsedPAYGCost:      wuPayg,
+					Currency:              currency,
 				})
 			}
 		}
@@ -274,6 +717,10 @@ func (e *Engine) GetUserSummary(ctx context.Context, userID string, days int) (*
 			summary.WTU += c.WTU
 			summary.IncludedCost += c.IncludedCost
 			summary.PAYGCost += c.PAYGCost
+			summary.FairShareIncludedCost += c.FairShareIncludedCost
+			summary.FairSharePAYGCost += c.FairSharePAYGCost
+			summary.WhenUsedIncludedCost += c.WhenUsedIncludedCost
+			summary.WhenUsedPAYGCost += c.WhenUsedPAYGCost
 			summary.CachedTokens += c.CachedTokens
 
 			detail := summary.ModelBreakdown[c.Model]
@@ -284,6 +731,10 @@ func (e *Engine) GetUserSummary(ctx context.Context, userID string, days int) (*
 	}
 	summary.IncludedCost = math.Round(summary.IncludedCost*100) / 100
 	summary.PAYGCost = math.Round(summary.PAYGCost*100) / 100
+	summary.FairShareIncludedCost = math.Round(summary.FairShareIncludedCost*100) / 100
+	summary.FairSharePAYGCost = math.Round(summary.FairSharePAYGCost*100) / 100
+	summary.WhenUsedIncludedCost = math.Round(summary.WhenUsedIncludedCost*100) / 100
+	summary.WhenUsedPAYGCost = math.Round(summary.WhenUsedPAYGCost*100) / 100
 	if userPromptTokens > 0 {
 		summary.CacheHitRate = math.Round((float64(summary.CachedTokens)/float64(userPromptTokens))*1000) / 10.0
 	}
@@ -340,17 +791,21 @@ func (e *Engine) GetLeaderboard(ctx context.Context, days int) ([]domain.Leaderb
 	}
 
 	type userLeaderboardAgg struct {
-		userID       string
-		totalCost    float64
-		wtu          int64
-		includedCost float64
-		paygCost     float64
-		totalTokens  int64
-		promptTokens int64
-		cachedTokens int64
-		activeDates  map[string]bool
-		modelTokens  map[string]int64
-		effortTokens map[string]int64
+		userID                string
+		totalCost             float64
+		wtu                   int64
+		includedCost          float64
+		paygCost              float64
+		fairShareIncludedCost float64
+		fairSharePAYGCost     float64
+		whenUsedIncludedCost  float64
+		whenUsedPAYGCost      float64
+		totalTokens           int64
+		promptTokens          int64
+		cachedTokens          int64
+		activeDates           map[string]bool
+		modelTokens           map[string]int64
+		effortTokens          map[string]int64
 	}
 
 	aggMap := make(map[string]*userLeaderboardAgg)
@@ -372,6 +827,10 @@ func (e *Engine) GetLeaderboard(ctx context.Context, days int) ([]domain.Leaderb
 		u.wtu += c.WTU
 		u.includedCost += c.IncludedCost
 		u.paygCost += c.PAYGCost
+		u.fairShareIncludedCost += c.FairShareIncludedCost
+		u.fairSharePAYGCost += c.FairSharePAYGCost
+		u.whenUsedIncludedCost += c.WhenUsedIncludedCost
+		u.whenUsedPAYGCost += c.WhenUsedPAYGCost
 		u.totalTokens += c.UserTokens
 		u.cachedTokens += c.CachedTokens
 		if c.UsageDate != "" {
@@ -433,22 +892,26 @@ func (e *Engine) GetLeaderboard(ctx context.Context, days int) ([]domain.Leaderb
 		}
 
 		entries = append(entries, domain.LeaderboardEntry{
-			UserID:          u.userID,
-			TotalCost:       math.Round(u.totalCost*100) / 100,
-			ShareOfSpend:    shareOfSpend,
-			WTU:             u.wtu,
-			IncludedCost:    math.Round(u.includedCost*100) / 100,
-			PAYGCost:        math.Round(u.paygCost*100) / 100,
-			TotalTokens:     u.totalTokens,
-			CachedTokens:    u.cachedTokens,
-			CacheHitRate:    cacheHitRate,
-			ShareOfTokens:   shareOfTokens,
-			ActiveDays:      len(u.activeDates),
-			CostPer1KTokens: costPer1K,
-			TopModel:        topModel,
-			TopEffort:       topEffort,
-			ModelBreakdown:  modelBreakdown,
-			Currency:        currency,
+			UserID:                u.userID,
+			TotalCost:             math.Round(u.totalCost*100) / 100,
+			ShareOfSpend:          shareOfSpend,
+			WTU:                   u.wtu,
+			IncludedCost:          math.Round(u.includedCost*100) / 100,
+			PAYGCost:              math.Round(u.paygCost*100) / 100,
+			FairShareIncludedCost: math.Round(u.fairShareIncludedCost*100) / 100,
+			FairSharePAYGCost:     math.Round(u.fairSharePAYGCost*100) / 100,
+			WhenUsedIncludedCost:  math.Round(u.whenUsedIncludedCost*100) / 100,
+			WhenUsedPAYGCost:      math.Round(u.whenUsedPAYGCost*100) / 100,
+			TotalTokens:           u.totalTokens,
+			CachedTokens:          u.cachedTokens,
+			CacheHitRate:          cacheHitRate,
+			ShareOfTokens:         shareOfTokens,
+			ActiveDays:            len(u.activeDates),
+			CostPer1KTokens:       costPer1K,
+			TopModel:              topModel,
+			TopEffort:             topEffort,
+			ModelBreakdown:        modelBreakdown,
+			Currency:              currency,
 		})
 	}
 
@@ -470,7 +933,7 @@ func (e *Engine) GetLeaderboard(ctx context.Context, days int) ([]domain.Leaderb
 	return entries, nil
 }
 
-// GetLicenseGovernance computes seat quotas, active vs dormant licenses, and potential savings.
+// GetLicenseGovernance computes seat quotas, multi-tier/location breakdowns, active vs dormant licenses, and the Weekly Allowance Pool.
 func (e *Engine) GetLicenseGovernance(ctx context.Context, windowDays int) (*domain.LicenseGovernanceSummary, error) {
 	cacheKey := fmt.Sprintf("governance_%d", windowDays)
 	if val, ok := e.getFromCache(cacheKey); ok {
@@ -482,6 +945,8 @@ func (e *Engine) GetLicenseGovernance(ctx context.Context, windowDays int) (*dom
 		return nil, fmt.Errorf("fetch seats: %w", err)
 	}
 
+	logs, _ := e.provider.FetchTelemetryLogs(ctx, windowDays)
+
 	govCurrency := "USD"
 	if billedCosts, err := e.provider.FetchBilledCosts(ctx, windowDays); err == nil {
 		govCurrency = resolveCurrency(billedCosts)
@@ -492,9 +957,31 @@ func (e *Engine) GetLicenseGovernance(ctx context.Context, windowDays int) (*dom
 		AssignedSeats: len(seats),
 		Currency:      govCurrency,
 		DormantUsers:  make([]domain.LicenseSeat, 0),
+		AllSeats:      make([]domain.LicenseSeat, 0, len(seats)),
 	}
 
+	locationSet := make(map[string]bool)
 	for _, s := range seats {
+		tier, usd, wtu := domain.ResolveSeatAllowance(s.Tier)
+		s.Tier = tier
+		if s.WeeklyAllowanceUSD <= 0 {
+			s.WeeklyAllowanceUSD = usd
+		}
+		if s.WeeklyAllowanceWTU <= 0 {
+			s.WeeklyAllowanceWTU = wtu
+		}
+		s.Location = cmp.Or(strings.TrimSpace(s.Location), "global")
+		locationSet[s.Location] = true
+
+		if s.Tier == "standard" {
+			summary.StandardSeats++
+		} else {
+			summary.PlusSeats++
+		}
+		if s.IsTrial {
+			summary.TrialSeats++
+		}
+
 		switch s.Status {
 		case domain.SeatStatusActive:
 			summary.ActiveSeats++
@@ -504,18 +991,27 @@ func (e *Engine) GetLicenseGovernance(ctx context.Context, windowDays int) (*dom
 			summary.DormantSeats++
 			summary.DormantUsers = append(summary.DormantUsers, s)
 		}
+		summary.AllSeats = append(summary.AllSeats, s)
 	}
+
+	locations := make([]string, 0, len(locationSet))
+	for loc := range locationSet {
+		locations = append(locations, loc)
+	}
+	slices.Sort(locations)
+	summary.Locations = locations
 
 	if quota > 0 {
 		summary.UtilizationPct = math.Round((float64(summary.ActiveSeats)/float64(quota))*1000) / 10.0
 	}
 	summary.EstimatedMonthlySavings = float64(summary.DormantSeats) * DefaultMonthlySeatCostUSD
+	summary.WeeklyPool = computeWeeklyAllowancePool(logs, summary.AllSeats, quota)
 
 	e.setToCache(cacheKey, summary)
 	return summary, nil
 }
 
-// GetOverviewMetrics compiles top KPIs, daily trends, and model distributions for dashboards.
+// GetOverviewMetrics compiles top KPIs, daily trends, model distributions, and Weekly Allowance Pool for dashboards.
 func (e *Engine) GetOverviewMetrics(ctx context.Context, days int) (*domain.OverviewMetrics, error) {
 	cacheKey := fmt.Sprintf("overview_%d", days)
 	if val, ok := e.getFromCache(cacheKey); ok {
@@ -555,6 +1051,7 @@ func (e *Engine) GetOverviewMetrics(ctx context.Context, days int) (*domain.Over
 		TokenCostShares:         make([]domain.TokenCostShare, 0, 4),
 		ModelEffortStats:        make([]domain.ModelEffortStats, 0),
 		ClientBreakdown:         make([]domain.ClientStats, 0),
+		WeeklyPool:              gov.WeeklyPool,
 	}
 
 	for _, b := range billedCosts {

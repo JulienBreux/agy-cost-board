@@ -314,7 +314,74 @@ func TestAttributionEngine(t *testing.T) {
 			t.Errorf("expected user driving TopEffort to be set")
 		}
 	})
+
+	t.Run("Computes WeeklyAllowancePool, What-If scenarios, Multi-Tier seats, and FairShare vs WhenUsed PAYG", func(t *testing.T) {
+		gov, err := engine.GetLicenseGovernance(ctx, 30)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if len(gov.AllSeats) == 0 {
+			t.Errorf("expected non-empty AllSeats in governance summary")
+		}
+		if gov.StandardSeats <= 0 || gov.PlusSeats <= 0 {
+			t.Errorf("expected both StandardSeats (%d) and PlusSeats (%d) > 0", gov.StandardSeats, gov.PlusSeats)
+		}
+		if gov.TrialSeats <= 0 {
+			t.Errorf("expected TrialSeats > 0, got %d", gov.TrialSeats)
+		}
+		if len(gov.Locations) < 3 {
+			t.Errorf("expected at least 3 distinct locations (eu, global, us), got %v", gov.Locations)
+		}
+		if gov.WeeklyPool == nil {
+			t.Fatalf("expected non-nil WeeklyPool in LicenseGovernanceSummary")
+		}
+		if gov.WeeklyPool.PoolLimitUSD <= 0 || gov.WeeklyPool.PoolLimitWTU <= 0 {
+			t.Errorf("expected positive pool limits, got USD=%.2f WTU=%d", gov.WeeklyPool.PoolLimitUSD, gov.WeeklyPool.PoolLimitWTU)
+		}
+		if gov.WeeklyPool.ResetCountdown == "" || gov.WeeklyPool.ResetInHours <= 0 {
+			t.Errorf("expected positive ResetInHours and non-empty ResetCountdown, got %d / %q",
+				gov.WeeklyPool.ResetInHours, gov.WeeklyPool.ResetCountdown)
+		}
+		if len(gov.WeeklyPool.Windows) == 0 {
+			t.Errorf("expected non-empty 7-day rolling Windows in WeeklyPool")
+		}
+		for _, key := range []string{"pooled_assigned", "pooled_purchased", "per_user_assigned", "per_user_purchased"} {
+			sc, ok := gov.WeeklyPool.Scenarios[key]
+			if !ok {
+				t.Errorf("expected What-If scenario %q in WeeklyPool.Scenarios", key)
+			}
+			if sc.PoolLimitUSD <= 0 {
+				t.Errorf("expected scenario %q PoolLimitUSD > 0, got %.2f", key, sc.PoolLimitUSD)
+			}
+		}
+		if gov.WeeklyPool.Scenarios["pooled_purchased"].PoolLimitUSD <= gov.WeeklyPool.Scenarios["pooled_assigned"].PoolLimitUSD {
+			t.Errorf("expected pooled_purchased limit (%.2f) > pooled_assigned limit (%.2f) when quota > assigned",
+				gov.WeeklyPool.Scenarios["pooled_purchased"].PoolLimitUSD, gov.WeeklyPool.Scenarios["pooled_assigned"].PoolLimitUSD)
+		}
+
+		overview, err := engine.GetOverviewMetrics(ctx, 30)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if overview.WeeklyPool == nil {
+			t.Fatalf("expected non-nil WeeklyPool in OverviewMetrics")
+		}
+
+		entries, err := engine.GetLeaderboard(ctx, 30)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		for _, e := range entries {
+			if e.FairShareIncludedCost <= 0 && e.FairSharePAYGCost <= 0 {
+				t.Errorf("expected FairShare costs to be populated for %s", e.UserID)
+			}
+			if e.WhenUsedIncludedCost <= 0 && e.WhenUsedPAYGCost <= 0 {
+				t.Errorf("expected WhenUsed costs to be populated for %s", e.UserID)
+			}
+		}
+	})
 }
+
 
 
 
