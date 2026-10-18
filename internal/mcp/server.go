@@ -78,7 +78,7 @@ func (s *Server) Tools() []Tool {
 	return []Tool{
 		{
 			Name:        "get_overview_metrics",
-			Description: "Retrieve project-wide Antigravity AI billed spend (Included seat allowance vs. PAYG overage), Weekly Allowance Pool & What-If simulation scenarios, total token volumes, Weighted Token Units (WTU), overall Cache Hit Rate %, active users count, Gemini Enterprise seat quota utilization, per-model cost breakdown, token/cost share categories, thinking effort stats, and client breakdown.",
+			Description: "Retrieve project-wide Antigravity AI billed spend (Included seat allowance vs. PAYG overage), Weekly Allowance Pool & Cloud Monitoring quota meter sync, 30-day window-aware usage & PAYG spillover forecast, What-If simulation scenarios, total token volumes, Weighted Token Units (WTU), overall Cache Hit Rate %, active users count, Gemini Enterprise seat quota utilization, per-model cost breakdown, token/cost share categories, thinking effort stats, and client breakdown.",
 			InputSchema: map[string]any{
 				"type": "object",
 				"properties": map[string]any{
@@ -86,6 +86,10 @@ func (s *Server) Tools() []Tool {
 						"type":        "integer",
 						"description": "Lookback telemetry window in days (default: 30).",
 						"default":     30,
+					},
+					"project": map[string]any{
+						"type":        "string",
+						"description": "Optional GCP project ID filter (or 'all' for all monitored projects).",
 					},
 					"pool_mode": map[string]any{
 						"type":        "string",
@@ -100,7 +104,7 @@ func (s *Server) Tools() []Tool {
 		},
 		{
 			Name:        "get_license_status",
-			Description: "Retrieve Gemini Enterprise license seat quota, Multi-Tier (Standard vs. Plus) & Multi-Location (global, eu, us) seat discovery, Trial status, Weekly Allowance Pool drawdown, assigned vs. active/dormant seats, utilization rate, estimated monthly savings, and dormant users list.",
+			Description: "Retrieve Gemini Enterprise license seat quota, Multi-Tier (Standard vs. Plus) & Multi-Location (global, eu, us) seat discovery, Trial status, Weekly Allowance Pool drawdown & Cloud Monitoring quota meter comparison, assigned vs. active/dormant seats, utilization rate, estimated monthly savings, and dormant users list.",
 			InputSchema: map[string]any{
 				"type": "object",
 				"properties": map[string]any{
@@ -108,6 +112,10 @@ func (s *Server) Tools() []Tool {
 						"type":        "integer",
 						"description": "Lookback window in days to evaluate seat activity (default: 30).",
 						"default":     30,
+					},
+					"project": map[string]any{
+						"type":        "string",
+						"description": "Optional GCP project ID filter (or 'all' for all monitored projects).",
 					},
 					"pool_mode": map[string]any{
 						"type":        "string",
@@ -122,7 +130,7 @@ func (s *Server) Tools() []Tool {
 		},
 		{
 			Name:        "get_users_costs",
-			Description: "List proportional per-user AI cost attributions (including Fair Share vs. When Used PAYG cost, Included cost, WTU, and Cache Hit Rate %) across the project, with optional lookback days, model, and payg_mode filters.",
+			Description: "List proportional per-user AI cost attributions (including Fair Share vs. When Used PAYG cost, Included cost, WTU, Cache Hit Rate %, and project_id) across the project, with optional lookback days, project, model, and payg_mode filters.",
 			InputSchema: map[string]any{
 				"type": "object",
 				"properties": map[string]any{
@@ -130,6 +138,10 @@ func (s *Server) Tools() []Tool {
 						"type":        "integer",
 						"description": "Lookback telemetry window in days (default: 30).",
 						"default":     30,
+					},
+					"project": map[string]any{
+						"type":        "string",
+						"description": "Optional GCP project ID filter (or 'all' for all monitored projects).",
 					},
 					"model": map[string]any{
 						"type":        "string",
@@ -157,6 +169,10 @@ func (s *Server) Tools() []Tool {
 						"type":        "integer",
 						"description": "Lookback telemetry window in days (default: 30).",
 						"default":     30,
+					},
+					"project": map[string]any{
+						"type":        "string",
+						"description": "Optional GCP project ID filter (or 'all' for all monitored projects).",
 					},
 					"monthly_budget": map[string]any{
 						"type":        "number",
@@ -330,10 +346,13 @@ func (s *Server) handleToolCall(ctx context.Context, rawParams json.RawMessage) 
 		args = map[string]any{}
 	}
 
+	project := stringArg(args, "project", "")
+	engine := s.engine.FilterByProject(project)
+
 	switch params.Name {
 	case "get_overview_metrics":
 		days := intArg(args, "days", 30)
-		metrics, err := s.engine.GetOverviewMetrics(ctx, days)
+		metrics, err := engine.GetOverviewMetrics(ctx, days)
 		if err != nil {
 			return errorToolResult(fmt.Sprintf("failed to get overview metrics: %v", err))
 		}
@@ -342,13 +361,14 @@ func (s *Server) handleToolCall(ctx context.Context, rawParams json.RawMessage) 
 		if (poolMode != "" || seatBasis != "") && metrics != nil {
 			ovCopy := *metrics
 			ovCopy.WeeklyPool = attribution.ApplyPoolWhatIf(metrics.WeeklyPool, poolMode, seatBasis)
+			ovCopy.Forecast = attribution.RecomputeForecastForPool(metrics.Forecast, ovCopy.WeeklyPool)
 			metrics = &ovCopy
 		}
 		return jsonToolResult(metrics)
 
 	case "get_license_status":
 		days := intArg(args, "days", 30)
-		gov, err := s.engine.GetLicenseGovernance(ctx, days)
+		gov, err := engine.GetLicenseGovernance(ctx, days)
 		if err != nil {
 			return errorToolResult(fmt.Sprintf("failed to get license governance: %v", err))
 		}
@@ -365,7 +385,7 @@ func (s *Server) handleToolCall(ctx context.Context, rawParams json.RawMessage) 
 		days := intArg(args, "days", 30)
 		model := stringArg(args, "model", "")
 		paygMode := stringArg(args, "payg_mode", "")
-		costs, err := s.engine.GetAttributedCosts(ctx, days, model)
+		costs, err := engine.GetAttributedCosts(ctx, days, model)
 		if err != nil {
 			return errorToolResult(fmt.Sprintf("failed to get attributed user costs: %v", err))
 		}
@@ -381,11 +401,11 @@ func (s *Server) handleToolCall(ctx context.Context, rawParams json.RawMessage) 
 		}
 		days := intArg(args, "days", 30)
 		budget := floatArg(args, "monthly_budget", 150.0)
-		driving, err := s.engine.GetUserConsumptionDriving(ctx, userID, days, budget)
+		driving, err := engine.GetUserConsumptionDriving(ctx, userID, days, budget)
 		if err != nil {
 			return errorToolResult(fmt.Sprintf("failed to get user dashboard for %q: %v", userID, err))
 		}
-		summary, _ := s.engine.GetUserSummary(ctx, userID, days)
+		summary, _ := engine.GetUserSummary(ctx, userID, days)
 		return jsonToolResult(map[string]any{
 			"dashboard": driving,
 			"summary":   summary,

@@ -176,9 +176,17 @@ func (s *Server) handleMCPStatus(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (s *Server) scopedEngine(r *http.Request) *attribution.Engine {
+	if s.engine == nil {
+		return nil
+	}
+	return s.engine.FilterByProject(r.URL.Query().Get("project"))
+}
+
 func (s *Server) handleOverviewMetrics(w http.ResponseWriter, r *http.Request) {
 	days := parseIntQuery(r, "days", 30)
-	overview, err := s.engine.GetOverviewMetrics(r.Context(), days)
+	engine := s.scopedEngine(r)
+	overview, err := engine.GetOverviewMetrics(r.Context(), days)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -188,6 +196,7 @@ func (s *Server) handleOverviewMetrics(w http.ResponseWriter, r *http.Request) {
 	if (poolMode != "" || seatBasis != "") && overview != nil {
 		ovCopy := *overview
 		ovCopy.WeeklyPool = attribution.ApplyPoolWhatIf(overview.WeeklyPool, poolMode, seatBasis)
+		ovCopy.Forecast = attribution.RecomputeForecastForPool(overview.Forecast, ovCopy.WeeklyPool)
 		overview = &ovCopy
 	}
 	respondJSON(w, http.StatusOK, overview)
@@ -195,7 +204,8 @@ func (s *Server) handleOverviewMetrics(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleLeaderboard(w http.ResponseWriter, r *http.Request) {
 	days := parseIntQuery(r, "days", 30)
-	entries, err := s.engine.GetLeaderboard(r.Context(), days)
+	engine := s.scopedEngine(r)
+	entries, err := engine.GetLeaderboard(r.Context(), days)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -209,8 +219,9 @@ func (s *Server) handleLeaderboard(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleAttributedCosts(w http.ResponseWriter, r *http.Request) {
 	days := parseIntQuery(r, "days", 30)
 	modelFilter := r.URL.Query().Get("model")
+	engine := s.scopedEngine(r)
 
-	costs, err := s.engine.GetAttributedCosts(r.Context(), days, modelFilter)
+	costs, err := engine.GetAttributedCosts(r.Context(), days, modelFilter)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -223,7 +234,9 @@ func (s *Server) handleAttributedCosts(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleLicenseGovernance(w http.ResponseWriter, r *http.Request) {
 	days := parseIntQuery(r, "days", 30)
-	gov, err := s.engine.GetLicenseGovernance(r.Context(), days)
+	engine := s.scopedEngine(r)
+	gov, err := s.scopedEngine(r).GetLicenseGovernance(r.Context(), days)
+	_ = engine
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -254,7 +267,7 @@ func (s *Server) handleUserSummary(w http.ResponseWriter, r *http.Request) {
 	}
 	days := parseIntQuery(r, "days", 30)
 
-	summary, err := s.engine.GetUserSummary(r.Context(), userID, days)
+	summary, err := s.scopedEngine(r).GetUserSummary(r.Context(), userID, days)
 	if err != nil {
 		if errors.Is(err, domain.ErrUserNotFound) {
 			respondError(w, http.StatusNotFound, "user not found in telemetry window")
@@ -308,7 +321,7 @@ func (s *Server) handleUserActivity(w http.ResponseWriter, r *http.Request) {
 	days := parseIntQuery(r, "days", 30)
 	limit := parseIntQuery(r, "limit", 50)
 
-	activity, err := s.engine.GetUserActivity(r.Context(), userID, days, limit)
+	activity, err := s.scopedEngine(r).GetUserActivity(r.Context(), userID, days, limit)
 	if err != nil {
 		respondError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -328,7 +341,7 @@ func (s *Server) handleUserDashboard(w http.ResponseWriter, r *http.Request) {
 		budget = parseFloatQuery(r, "monthlyBudget", 150.0)
 	}
 
-	driving, err := s.engine.GetUserConsumptionDriving(r.Context(), userID, days, budget)
+	driving, err := s.scopedEngine(r).GetUserConsumptionDriving(r.Context(), userID, days, budget)
 	if err != nil {
 		if errors.Is(err, domain.ErrUserNotFound) {
 			respondError(w, http.StatusNotFound, "user not found in telemetry window")

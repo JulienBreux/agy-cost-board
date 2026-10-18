@@ -193,8 +193,24 @@ func TestCLICommandsWithDemo(t *testing.T) {
 		}
 
 		out := buf.String()
-		if !strings.Contains(out, "SEAT QUOTA") || !strings.Contains(out, "DORMANT") || !strings.Contains(out, "STANDARD") || !strings.Contains(out, "PLUS") || !strings.Contains(out, "WEEKLY ALLOWANCE POOL") {
-			t.Errorf("expected license quota, tier breakdown, and weekly allowance pool stats, got: %s", out)
+		if !strings.Contains(out, "SEAT QUOTA") || !strings.Contains(out, "DORMANT") || !strings.Contains(out, "STANDARD") || !strings.Contains(out, "PLUS") || !strings.Contains(out, "WEEKLY ALLOWANCE POOL") || !strings.Contains(out, "CLOUD MONITORING QUOTA METER") {
+			t.Errorf("expected license quota, tier breakdown, weekly allowance pool, and Cloud Monitoring quota meter stats, got: %s", out)
+		}
+	})
+
+	t.Run("cost command with --demo and --project filters to target project", func(t *testing.T) {
+		buf := new(bytes.Buffer)
+		rootCmd := cli.NewRootCommand()
+		rootCmd.SetOut(buf)
+		rootCmd.SetErr(buf)
+		rootCmd.SetArgs([]string{"cost", "--demo", "--project=gcp-ai-platform-prod", "--format=json"})
+
+		if err := rootCmd.Execute(); err != nil {
+			t.Fatalf("command failed: %v", err)
+		}
+		out := buf.String()
+		if !strings.Contains(out, `"project_id": "gcp-ai-platform-prod"`) || strings.Contains(out, `"project_id": "gcp-agent-sandbox"`) {
+			t.Errorf("expected JSON filtered to gcp-ai-platform-prod, got: %s", out)
 		}
 	})
 

@@ -10,12 +10,12 @@
 - [x] Task: Implement 30-Day Window-Aware Forecast, Cloud Monitoring Quota Meter comparison, and Project Filtering (`FilterByProject`) in `internal/attribution/engine.go`
     - [x] Add unit tests in `internal/attribution/engine_test.go` verifying 30-day window-aware forecast spillover calculation, Cloud Monitoring meter drift calculation, and per-project filtering.
     - [x] Update `internal/attribution/engine.go` to compute `UsageForecast`, `MonitoringQuotaMeter`, and project-scoped views.
-- [~] Task: Expose `?project=` query parameter, 30-day forecast, and Cloud Monitoring meter across REST API (`internal/server`), CLI (`internal/cli`), TUI (`internal/tui`), and MCP (`internal/mcp`)
-    - [ ] Add unit tests in `internal/server/server_test.go`, `internal/cli/formatter_test.go`, and `internal/mcp/server_test.go`.
-    - [ ] Update HTTP handlers, CLI formatters, TUI views, and MCP tools.
+- [x] Task: Expose `?project=` query parameter, 30-day forecast, and Cloud Monitoring meter across REST API (`internal/server`), CLI (`internal/cli`), TUI (`internal/tui`), and MCP (`internal/mcp`)
+    - [x] Add unit tests in `internal/server/server_test.go`, `internal/cli/root_test.go`, and `internal/mcp/server_test.go`.
+    - [x] Update HTTP handlers, CLI formatters, TUI views, and MCP tools.
 
 ## Phase 2: Web UI Components (30-Day Forecast Card, Cloud Monitoring Meter Badge & Navbar Project Selector)
-- [ ] Task: Update `web/src/api.ts`, create `web/src/components/ForecastCard.tsx`, and add Cloud Monitoring Quota Meter badge to `WeeklyAllowancePoolCard.tsx`
+- [~] Task: Update `web/src/api.ts`, create `web/src/components/ForecastCard.tsx`, and add Cloud Monitoring Quota Meter badge to `WeeklyAllowancePoolCard.tsx`
     - [ ] Add unit tests in `web/src/components/ForecastCard.test.tsx` and `web/src/components/WeeklyAllowancePoolCard.test.tsx`.
     - [ ] Implement `ForecastCard.tsx` and update `WeeklyAllowancePoolCard.tsx` and `web/src/api.ts`.
 - [ ] Task: Add Multi-Project Selector to `Navbar.tsx` and integrate `ForecastCard` and `selectedProject` state into `App.tsx`

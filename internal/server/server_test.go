@@ -239,6 +239,39 @@ func TestAPIEndpoints(t *testing.T) {
 		}
 	})
 
+	t.Run("GET /api/v1/metrics/overview and /api/v1/licenses/status support ?project= filtering, Forecast, and MonitoringMeter", func(t *testing.T) {
+		reqAll := httptest.NewRequest(http.MethodGet, "/api/v1/metrics/overview?days=30", nil)
+		recAll := httptest.NewRecorder()
+		router.ServeHTTP(recAll, reqAll)
+		var metricsAll domain.OverviewMetrics
+		if err := json.NewDecoder(recAll.Body).Decode(&metricsAll); err != nil {
+			t.Fatalf("decode err: %v", err)
+		}
+		if metricsAll.Forecast == nil || len(metricsAll.Forecast.ForecastDays) != 30 {
+			t.Errorf("expected 30-day Forecast in OverviewMetrics, got %+v", metricsAll.Forecast)
+		}
+		if metricsAll.WeeklyPool == nil || metricsAll.WeeklyPool.MonitoringMeter == nil {
+			t.Errorf("expected WeeklyPool.MonitoringMeter in OverviewMetrics")
+		}
+		if len(metricsAll.MonitoredProjects) == 0 {
+			t.Errorf("expected non-empty MonitoredProjects in OverviewMetrics")
+		}
+
+		reqProj := httptest.NewRequest(http.MethodGet, "/api/v1/metrics/overview?days=30&project=gcp-ai-platform-prod", nil)
+		recProj := httptest.NewRecorder()
+		router.ServeHTTP(recProj, reqProj)
+		var metricsProj domain.OverviewMetrics
+		if err := json.NewDecoder(recProj.Body).Decode(&metricsProj); err != nil {
+			t.Fatalf("decode err: %v", err)
+		}
+		if metricsProj.SelectedProject != "gcp-ai-platform-prod" {
+			t.Errorf("expected SelectedProject gcp-ai-platform-prod, got %q", metricsProj.SelectedProject)
+		}
+		if metricsProj.TotalTokens <= 0 || metricsProj.TotalTokens >= metricsAll.TotalTokens {
+			t.Errorf("expected project-filtered tokens (0 < %d < %d)", metricsProj.TotalTokens, metricsAll.TotalTokens)
+		}
+	})
+
 	t.Run("GET /api/v1/costs/users and /api/v1/leaderboard support payg_mode=fair_share|when_used", func(t *testing.T) {
 		reqFS := httptest.NewRequest(http.MethodGet, "/api/v1/leaderboard?days=30&payg_mode=fair_share", nil)
 		recFS := httptest.NewRecorder()

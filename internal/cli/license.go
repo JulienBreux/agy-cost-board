@@ -89,6 +89,14 @@ func newLicenseCommand(v *viper.Viper) *cobra.Command {
 						gov.WeeklyPool.UtilizationPct,
 						gov.WeeklyPool.ResetInHours,
 					)
+					if m := gov.WeeklyPool.MonitoringMeter; m != nil {
+						cmd.Printf("CLOUD MONITORING QUOTA METER (%s): %d WTU metered vs %d WTU log est. (%+.1f%% drift)\n",
+							m.Status,
+							m.MeteredUsedWTU,
+							m.LogEstimatedWTU,
+							m.DriftPct,
+						)
+					}
 				}
 
 				if len(gov.DormantUsers) > 0 {

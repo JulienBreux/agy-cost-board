@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"slices"
 	"time"
 
 	"github.com/julienbreux/agy-cost-board/internal/attribution"
@@ -23,14 +24,15 @@ var (
 
 // Global CLI options
 var (
-	flagConfigFile     string
-	flagDemo           bool
-	flagProjectID      string
-	flagTelemetryTable string
-	flagBillingTable   string
-	flagSeatQuota      int
-	flagFormat         string
-	flagMCPEnabled     = true
+	flagConfigFile        string
+	flagDemo              bool
+	flagProjectID         string
+	flagMonitoredProjects string
+	flagTelemetryTable    string
+	flagBillingTable      string
+	flagSeatQuota         int
+	flagFormat            string
+	flagMCPEnabled        = true
 )
 
 // ResetFlags restores default flag values across unit test runs.
@@ -38,6 +40,7 @@ func ResetFlags() {
 	flagConfigFile = ""
 	flagDemo = false
 	flagProjectID = ""
+	flagMonitoredProjects = ""
 	flagTelemetryTable = ""
 	flagBillingTable = ""
 	flagSeatQuota = 10
@@ -116,7 +119,8 @@ to compute proportional, per-user AI costs and track Gemini Enterprise seat util
 
 	rootCmd.PersistentFlags().StringVar(&flagConfigFile, "config", "", "Path to configuration file (default .agy-cost-board.yaml)")
 	rootCmd.PersistentFlags().BoolVar(&flagDemo, "demo", false, "Use realistic synthetic demo data without GCP connection")
-	rootCmd.PersistentFlags().StringVar(&flagProjectID, "project", "", "Google Cloud Project ID")
+	rootCmd.PersistentFlags().StringVar(&flagProjectID, "project", "", "Google Cloud Project ID (or filter by project in demo mode)")
+	rootCmd.PersistentFlags().StringVar(&flagMonitoredProjects, "monitored-projects", "", "Comma-separated list of monitored GCP project IDs")
 	rootCmd.PersistentFlags().StringVar(&flagTelemetryTable, "telemetry-table", "", "BigQuery table for inference logs")
 	rootCmd.PersistentFlags().StringVar(&flagBillingTable, "billing-table", "", "BigQuery table for GCP billing export")
 	rootCmd.PersistentFlags().IntVar(&flagSeatQuota, "seat-quota", 10, "Gemini Enterprise seat quota")
@@ -127,6 +131,8 @@ to compute proportional, per-user AI costs and track Gemini Enterprise seat util
 	_ = v.BindPFlag("demo", rootCmd.PersistentFlags().Lookup("demo"))
 	_ = v.BindPFlag("project_id", rootCmd.PersistentFlags().Lookup("project"))
 	_ = v.BindPFlag("project", rootCmd.PersistentFlags().Lookup("project"))
+	_ = v.BindPFlag("monitored_projects", rootCmd.PersistentFlags().Lookup("monitored-projects"))
+	_ = v.BindPFlag("monitored-projects", rootCmd.PersistentFlags().Lookup("monitored-projects"))
 	_ = v.BindPFlag("telemetry_table", rootCmd.PersistentFlags().Lookup("telemetry-table"))
 	_ = v.BindPFlag("telemetry-table", rootCmd.PersistentFlags().Lookup("telemetry-table"))
 	_ = v.BindPFlag("billing_table", rootCmd.PersistentFlags().Lookup("billing-table"))
@@ -159,6 +165,7 @@ func BuildEngine(ctx context.Context) (*attribution.Engine, string, error) {
 	telemetryTable := flagTelemetryTable
 	billingTable := flagBillingTable
 	seatQuota := flagSeatQuota
+	monitoredProjects := config.ParseMonitoredProjects(flagMonitoredProjects)
 
 	if cfg != nil {
 		demo = cfg.Demo
@@ -168,10 +175,20 @@ func BuildEngine(ctx context.Context) (*attribution.Engine, string, error) {
 		if cfg.SeatQuota > 0 {
 			seatQuota = cfg.SeatQuota
 		}
+		if len(cfg.MonitoredProjects) > 0 {
+			monitoredProjects = cfg.MonitoredProjects
+		}
 	}
 
 	if demo || projectID == "" {
-		return attribution.NewEngine(bigquery.NewDemoDataProviderWithQuota(seatQuota), 5*time.Minute), "demo (synthetic data)", nil
+		engine := attribution.NewEngine(bigquery.NewDemoDataProviderWithQuota(seatQuota), 5*time.Minute)
+		if len(monitoredProjects) > 0 {
+			engine.SetMonitoredProjects(monitoredProjects)
+		}
+		if demo && projectID != "" && (slices.Contains(bigquery.DemoProjects, projectID) || slices.Contains(monitoredProjects, projectID)) {
+			engine = engine.FilterByProject(projectID)
+		}
+		return engine, "demo (synthetic data)", nil
 	}
 
 	clientCfg := bigquery.ClientConfig{
@@ -186,7 +203,11 @@ func BuildEngine(ctx context.Context) (*attribution.Engine, string, error) {
 		return nil, "", fmt.Errorf("failed to initialize BigQuery client: %w", err)
 	}
 
-	return attribution.NewEngine(bqClient, 15*time.Minute), "Google Cloud BigQuery (" + projectID + ")", nil
+	engine := attribution.NewEngine(bqClient, 15*time.Minute)
+	if len(monitoredProjects) > 0 {
+		engine.SetMonitoredProjects(monitoredProjects)
+	}
+	return engine, "Google Cloud BigQuery (" + projectID + ")", nil
 }
 
 // Execute runs the root CLI command.

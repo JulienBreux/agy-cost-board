@@ -196,6 +196,25 @@ func TestMCPErrorHandling(t *testing.T) {
 			t.Fatalf("expected isError=true for unknown tool")
 		}
 	})
+
+	t.Run("get_overview_metrics supports project argument and returns forecast and monitoring_meter", func(t *testing.T) {
+		req := `{"jsonrpc":"2.0","id":13,"method":"tools/call","params":{"name":"get_overview_metrics","arguments":{"days":30,"project":"gcp-ai-platform-prod"}}}` + "\n"
+		var out bytes.Buffer
+		_ = srv.ServeStdio(context.Background(), strings.NewReader(req), &out)
+		var callResp struct {
+			Result mcp.ToolResult `json:"result"`
+		}
+		if err := json.Unmarshal(out.Bytes(), &callResp); err != nil {
+			t.Fatalf("unmarshal error: %v", err)
+		}
+		if callResp.Result.IsError || len(callResp.Result.Content) == 0 {
+			t.Fatalf("unexpected tool error: %+v", callResp.Result)
+		}
+		text := callResp.Result.Content[0].Text
+		if !strings.Contains(text, `"selected_project": "gcp-ai-platform-prod"`) || !strings.Contains(text, `"forecast"`) || !strings.Contains(text, `"monitoring_meter"`) {
+			t.Errorf("expected selected_project, forecast, and monitoring_meter in MCP output, got: %s", text)
+		}
+	})
 }
 
 func TestMCPHTTPHandler(t *testing.T) {

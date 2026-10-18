@@ -485,6 +485,22 @@ func (m Model) renderGovernanceView() string {
 			domain.FormatCost(m.Governance.WeeklyPool.PoolLimitUSD, m.Governance.Currency),
 			m.Governance.WeeklyPool.UtilizationPct,
 			m.Governance.WeeklyPool.ResetInHours))
+		if meter := m.Governance.WeeklyPool.MonitoringMeter; meter != nil {
+			sb.WriteString(fmt.Sprintf("CLOUD MONITORING QUOTA METER (%s): %d WTU metered vs %d WTU log est. (%+.1f%% drift)\n",
+				meter.Status, meter.MeteredUsedWTU, meter.LogEstimatedWTU, meter.DriftPct))
+		}
+	}
+	if m.Overview != nil && m.Overview.Forecast != nil {
+		fc := m.Overview.Forecast
+		spilloverNote := "Within Weekly Pool"
+		if fc.SpilloverDate != "" {
+			spilloverNote = fmt.Sprintf("PAYG Spillover on %s (%dd)", fc.SpilloverDate, fc.DaysUntilSpillover)
+		}
+		sb.WriteString(fmt.Sprintf("30-DAY FORECAST: %s projected (Inc: %s | PAYG: %s) | %s\n",
+			domain.FormatCost(fc.Projected30dTotalUSD, m.Overview.Currency),
+			domain.FormatCost(fc.Projected30dIncludedUSD, m.Overview.Currency),
+			domain.FormatCost(fc.Projected30dPAYGUSD, m.Overview.Currency),
+			spilloverNote))
 	}
 	sb.WriteString("\n")
 
